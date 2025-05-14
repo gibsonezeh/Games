@@ -3,8 +3,9 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    id("com.android.application")
+    id("com.google.gms.google-services")
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
@@ -64,6 +65,8 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     debugImplementation(compose.uiTooling)
 }
-
