@@ -55,6 +55,26 @@ class MainActivity : ComponentActivity() {
         appOpenAd?.show(this)
     }
 
+
+    fun loadAppOpenAd() {
+    val adRequest = AdRequest.Builder().build()
+    AppOpenAd.load(
+        this,
+        "ca-app-pub-8105096464664625/3196099815", // your App Open Ad ID
+        adRequest,
+        AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
+        object : AppOpenAd.AppOpenAdLoadCallback() {
+            override fun onAdLoaded(ad: AppOpenAd) {
+                appOpenAd = ad
+            }
+
+            override fun onAdFailedToLoad(error: LoadAdError) {
+                appOpenAd = null
+            }
+        }
+    )
+    }
+
     fun showRewardedAd() {
         rewardedAd?.show(this) { _: RewardItem -> }
         loadRewardedAd()
