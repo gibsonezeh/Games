@@ -91,7 +91,7 @@ dependencies {
        // implementation("androidx.compose.runtime:runtime-livedata")
         //implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
        // implementation("io.coil-kt:coil-compose:2.5.0")
-    implementation("com.google.android.gms:play-services-ads:24.2.0")
+    implementation("com.google.android.gms:play-services-ads:22.6.0")
     implementation("com.google.firebase:firebase-analytics")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     debugImplementation(compose.uiTooling)

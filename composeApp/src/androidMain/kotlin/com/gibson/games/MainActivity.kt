@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.android.gms.ads.appopen.AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.nativead.NativeAd
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
         "ca-app-pub-8105096464664625/3196099815", // your App Open Ad ID
         adRequest,
         AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
-        object : AppOpenAd.AppOpenAdLoadCallback() {
+        object : AppOpenAd.AppOpenAdLoadCallback(){
             override fun onAdLoaded(ad: AppOpenAd) {
                 appOpenAd = ad
             }
@@ -227,7 +228,7 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
 
         AndroidView(factory = { context ->
             AdView(context).apply {
-                adSize = AdSize.BANNER
+                setAdSize(AdSize.BANNER)
                 adUnitId = "ca-app-pub-8105096464664625/6118918264"
                 loadAd(AdRequest.Builder().build())
             }
