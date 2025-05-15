@@ -138,9 +138,13 @@ fun GameMenu(onSelectGame: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Choose a Game", style = MaterialTheme.typography.h5)
-        Button(onClick = { onSelectGame("tank") }) {
-            Text("Play Tank Game")
+        Button(onClick = { onSelectGame("ludo") }) {
+            Text("Play ludo Game")
         }
+         Button(onClick = { onSelectGame("tank") }) {
+             Text("Play tank Game")
+         }
+
         Button(onClick = { onSelectGame("archery") }) {
             Text("Play Archery Game")
         }
