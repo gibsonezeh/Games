@@ -59,10 +59,7 @@ class MainActivity : ComponentActivity() {
     fun loadAppOpenAd() {
     val adRequest = AdRequest.Builder().build()
     AppOpenAd.load(
-        this,
-        "ca-app-pub-8105096464664625/3196099815", // your App Open Ad ID
-        adRequest,
-        AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
+        this.APP_OPEN_AD_ORIENTATION_PORTRAIT,
         object : AppOpenAd.AppOpenAdLoadCallback() {
             override fun onAdLoaded(ad: AppOpenAd) {
                 appOpenAd = ad
@@ -227,7 +224,7 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
 
         AndroidView(factory = { context ->
             AdView(context).apply {
-                adSize = AdSize.BANNER
+               setAdSize(AdSize.BANNER)
                 adUnitId = "ca-app-pub-8105096464664625/6118918264"
                 loadAd(AdRequest.Builder().build())
             }
