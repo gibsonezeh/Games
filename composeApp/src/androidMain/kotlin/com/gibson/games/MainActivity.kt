@@ -1,4 +1,3 @@
-
 package com.gibson.games
 
 import android.os.Bundle
@@ -19,12 +18,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
-import com.google.android.gms.ads.nativead.NativeAdViewAttributes
-import com.google.android.gms.ads.nativead.NativeAdViewHolder
-import com.google.android.gms.ads.nativead.NativeAdViewHolderDelegate
-import com.google.android.gms.ads.nativead.NativeAdViewProvider
-import com.google.android.gms.ads.nativead.NativeAdViewUtils
-import com.google.android.gms.ads.nativead.NativeAdLoader
+import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
@@ -58,141 +52,111 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        showAppOpenAd()
-    }
-
-    private fun loadAppOpenAd() {
-        val adRequest = AdRequest.Builder().build()
-        AppOpenAd.load(this,
-            "ca-app-pub-8105096464664625/3196099815",
-            adRequest,
-            AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
-            object : AppOpenAd.AppOpenAdLoadCallback() {
-                override fun onAdLoaded(ad: AppOpenAd) {
-                    appOpenAd = ad
-                }
-
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    appOpenAd = null
-                }
-            })
-    }
-
-    private fun showAppOpenAd() {
         appOpenAd?.show(this)
     }
 
-    private fun loadInterstitialAd() {
-        val adRequest = AdRequest.Builder().build()
+    fun showRewardedAd() {
+        rewardedAd?.show(this) { _: RewardItem -> }
+        loadRewardedAd()
+    }
+
+    fun showRewardedInterstitialAd() {
+        rewardedInterstitialAd?.show(this) { _: RewardItem -> }
+        loadRewardedInterstitialAd()
+    }
+
+    fun showInterstitialAd() {
+        interstitialAd?.show(this)
+        loadInterstitialAd()
+    }
+
+    fun loadNativeAd() {
+        val builder = AdLoader.Builder(this, "ca-app-pub-8105096464664625/9250388185")
+        builder.forNativeAd {
+            nativeAd = it
+        }
+        builder.withAdListener(object : AdListener() {
+            override fun onAdFailedToLoad(error: LoadAdError) {
+                nativeAd = null
+            }
+        }).withNativeAdOptions(NativeAdOptions.Builder().build()).build().loadAd(AdRequest.Builder().build())
+    }
+
+    fun loadInterstitialAd() {
         InterstitialAd.load(this,
             "ca-app-pub-8105096464664625/5115702056",
-            adRequest,
+            AdRequest.Builder().build(),
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     interstitialAd = ad
                 }
-
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     interstitialAd = null
                 }
             })
     }
 
-    private fun showInterstitialAd() {
-        interstitialAd?.show(this)
-        loadInterstitialAd()
-    }
-
-    private fun loadRewardedAd() {
-        val adRequest = AdRequest.Builder().build()
+    fun loadRewardedAd() {
         RewardedAd.load(this,
             "ca-app-pub-8105096464664625/6717684064",
-            adRequest,
+            AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad
                 }
-
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     rewardedAd = null
                 }
             })
     }
 
-    private fun showRewardedAd() {
-        rewardedAd?.show(this) { _: RewardItem -> }
-        loadRewardedAd()
-    }
-
-    private fun loadRewardedInterstitialAd() {
-        val adRequest = AdRequest.Builder().build()
+    fun loadRewardedInterstitialAd() {
         RewardedInterstitialAd.load(this,
             "ca-app-pub-8105096464664625/9695201197",
-            adRequest,
+            AdRequest.Builder().build(),
             object : RewardedInterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedInterstitialAd) {
                     rewardedInterstitialAd = ad
                 }
-
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     rewardedInterstitialAd = null
                 }
             })
     }
 
-    private fun showRewardedInterstitialAd() {
-        rewardedInterstitialAd?.show(this) { _: RewardItem -> }
-        loadRewardedInterstitialAd()
-    }
-
-    private fun loadNativeAd() {
-        val builder = AdLoader.Builder(this, "ca-app-pub-8105096464664625/9250388185")
-        builder.forNativeAd { ad: NativeAd ->
-            nativeAd = ad
-        }
-
-        val adLoader = builder.withAdListener(object : AdListener() {
-            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                nativeAd = null
-            }
-        }).withNativeAdOptions(NativeAdOptions.Builder().build()).build()
-
-        adLoader.loadAd(AdRequest.Builder().build())
-    }
-
     fun getNativeAd(): NativeAd? = nativeAd
 }
 
-// Composables
+// -- COMPOSABLES --
 
 @Composable
 fun GameApp(activity: MainActivity) {
     var selectedGame by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect("rewarded_timer") {
         while (true) {
-            delay(2 * 60 * 1000) // 2 min
+            delay(2 * 60 * 1000)
             activity.showRewardedAd()
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect("rewarded_interstitial_timer") {
         while (true) {
-            delay(5 * 60 * 1000) // 5 min
+            delay(5 * 60 * 1000)
             activity.showRewardedInterstitialAd()
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect("interstitial_timer") {
         while (true) {
-            delay(7 * 60 * 1000) // 7 min
+            delay(7 * 60 * 1000)
             activity.showInterstitialAd()
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect("native_ad_timer") {
         while (true) {
-            delay(10 * 60 * 1000) // 10 min
+            delay(10 * 60 * 1000)
             activity.loadNativeAd()
         }
     }
@@ -200,11 +164,7 @@ fun GameApp(activity: MainActivity) {
     if (selectedGame == null) {
         GameMenu { selectedGame = it }
     } else {
-        GameScreen(
-            gamePath = "file:///android_asset/games/$selectedGame/$selectedGame.html",
-            onBack = { selectedGame = null },
-            activity = activity
-        )
+        GameScreen("file:///android_asset/games/$selectedGame/$selectedGame.html", { selectedGame = null }, activity)
     }
 }
 
@@ -245,16 +205,14 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
             modifier = Modifier.weight(1f)
         )
 
-        // Banner Ad
         AndroidView(factory = { context ->
             AdView(context).apply {
-                setAdSize(AdSize.BANNER)
+                adSize = AdSize.BANNER
                 adUnitId = "ca-app-pub-8105096464664625/6118918264"
                 loadAd(AdRequest.Builder().build())
             }
         })
 
-        // Native Advanced Ad
         val nativeAd = activity.getNativeAd()
         if (nativeAd != null) {
             AndroidView(factory = { context ->
