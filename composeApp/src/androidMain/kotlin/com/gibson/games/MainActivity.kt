@@ -201,6 +201,7 @@ fun GameMenu(onSelectGame: (String) -> Unit) {
         Button(onClick = { onSelectGame("tank") }) { Text("Play Tank Game") }
         Button(onClick = { onSelectGame("archery") }) { Text("Play Archery Game") }
         Button(onClick = { onSelectGame("castle") }) { Text("Play Castle Game") }
+        Button(onClick = { onSelectGame("bike") }) { Text("Play bike Game") }
     }
 }
 
