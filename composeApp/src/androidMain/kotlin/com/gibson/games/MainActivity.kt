@@ -227,6 +227,7 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
             modifier = Modifier.weight(1f)
         )
 
+        // Banner Ad
         AndroidView(factory = { context ->
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
@@ -235,13 +236,31 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
             }
         })
 
+        // Native Advanced Ad
         val nativeAd = activity.getNativeAd()
         if (nativeAd != null) {
-            AndroidView(factory = { context ->
-                NativeAdView(context).apply {
-                    setNativeAd(nativeAd)
-                }
-            }, modifier = Modifier.height(120.dp).padding(8.dp))
+            AndroidView(
+                factory = { context ->
+                    val adView = LayoutInflater.from(context)
+                        .inflate(R.layout.native_ad_view, null) as NativeAdView
+
+                    // Bind views to native ad
+                    adView.headlineView = adView.findViewById(R.id.ad_headline)
+                    (adView.headlineView as TextView).text = nativeAd.headline
+
+                    adView.mediaView = adView.findViewById(R.id.ad_media)
+
+                    adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
+                    (adView.callToActionView as Button).text = nativeAd.callToAction
+
+                    adView.setNativeAd(nativeAd)
+
+                    adView
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
         }
     }
 }
