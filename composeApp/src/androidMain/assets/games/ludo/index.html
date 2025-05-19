@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="ludo-container">
+        <!-- Settings Menu (Hamburger) -->
+        <div class="settings-menu-container">
+            <button id="settings-toggle" class="settings-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div id="settings-panel" class="settings-panel">
+                <h3>Game Settings</h3>
+                <div class="settings-group">
+                    <label>Game Mode:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="mode-user-only" name="game-mode" value="user-only" checked>
+                        <label for="mode-user-only">User Only</label>
+                        <input type="radio" id="mode-user-computer" name="game-mode" value="user-computer">
+                        <label for="mode-user-computer">User & Computer</label>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Number of Players:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="players-2" name="player-count" value="2">
+                        <label for="players-2">2 Players</label>
+                        <input type="radio" id="players-4" name="player-count" value="4" checked>
+                        <label for="players-4">4 Players</label>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Turn Control:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="turn-manual" name="turn-control" value="manual" checked>
+                        <label for="turn-manual">Manual (select any color)</label>
+                        <input type="radio" id="turn-auto" name="turn-control" value="auto">
+                        <label for="turn-auto">Automatic (sequence)</label>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>Sound:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="sound-on" name="sound" value="on" checked>
+                        <label for="sound-on">On</label>
+                        <input type="radio" id="sound-off" name="sound" value="off">
+                        <label for="sound-off">Off</label>
+                    </div>
+                </div>
+                <button id="apply-settings" class="apply-settings">Apply Settings</button>
+                <button id="reset-game" class="reset-game">Reset Game</button>
+            </div>
+        </div>
+
+        <div class="game-board-area">
+            <div class="player-controls">
+                <div id="player-turn-indicator" class="player-info">Red Player's Turn</div>
+                <div id="player-selection" class="player-selection">
+                    <button class="player-select-btn" data-player="red">Red</button>
+                    <button class="player-select-btn" data-player="green">Green</button>
+                    <button class="player-select-btn" data-player="yellow">Yellow</button>
+                    <button class="player-select-btn" data-player="blue">Blue</button>
+                </div>
+            </div>
+            <div class="game-board">
+                <!-- Player Yards -->
+                <div class="player-yard player-red" id="red-yard">
+                    <div class="piece-home"><div class="piece piece-red" data-player="red" data-piece-id="0"></div></div>
+                    <div class="piece-home"><div class="piece piece-red" data-player="red" data-piece-id="1"></div></div>
+                    <div class="piece-home"><div class="piece piece-red" data-player="red" data-piece-id="2"></div></div>
+                    <div class="piece-home"><div class="piece piece-red" data-player="red" data-piece-id="3"></div></div>
+                </div>
+                <div class="player-yard player-green" id="green-yard">
+                    <div class="piece-home"><div class="piece piece-green" data-player="green" data-piece-id="0"></div></div>
+                    <div class="piece-home"><div class="piece piece-green" data-player="green" data-piece-id="1"></div></div>
+                    <div class="piece-home"><div class="piece piece-green" data-player="green" data-piece-id="2"></div></div>
+                    <div class="piece-home"><div class="piece piece-green" data-player="green" data-piece-id="3"></div></div>
+                </div>
+                <div class="player-yard player-yellow" id="yellow-yard">
+                    <div class="piece-home"><div class="piece piece-yellow" data-player="yellow" data-piece-id="0"></div></div>
+                    <div class="piece-home"><div class="piece piece-yellow" data-player="yellow" data-piece-id="1"></div></div>
+                    <div class="piece-home"><div class="piece piece-yellow" data-player="yellow" data-piece-id="2"></div></div>
+                    <div class="piece-home"><div class="piece piece-yellow" data-player="yellow" data-piece-id="3"></div></div>
+                </div>
+                <div class="player-yard player-blue" id="blue-yard">
+                    <div class="piece-home"><div class="piece piece-blue" data-player="blue" data-piece-id="0"></div></div>
+                    <div class="piece-home"><div class="piece piece-blue" data-player="blue" data-piece-id="1"></div></div>
+                    <div class="piece-home"><div class="piece piece-blue" data-player="blue" data-piece-id="2"></div></div>
+                    <div class="piece-home"><div class="piece piece-blue" data-player="blue" data-piece-id="3"></div></div>
+                </div>
+                <div class="center-home">HOME</div>
+                <!-- Cells will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="controls-area">
+            <div class="dice-area">
+                <div class="dice-container">
+                    <div id="dice-display-d1" class="dice clickable-dice" data-value="d1"></div>
+                    <div id="dice-display-d2" class="dice clickable-dice" data-value="d2"></div>
+                    <div id="dice-display-sum" class="dice clickable-dice" data-value="sum"></div>
+                </div>
+                <button id="roll-dice-btn">Roll Dice</button>
+            </div>
+            <div id="message-area" class="message-area">Welcome to Ludo! Select game settings and click Apply to start.</div>
+        </div>
+    </div>
+
+    <!-- Sound Effects -->
+    <audio id="sound-dice-roll" src="assets/sounds/dice_roll.mp3" preload="auto"></audio>
+    <audio id="sound-piece-move" src="assets/sounds/piece_move.mp3" preload="auto"></audio>
+    <audio id="sound-piece-capture" src="assets/sounds/piece_capture.mp3" preload="auto"></audio>
+    <audio id="sound-piece-home" src="assets/sounds/piece_home.mp3" preload="auto"></audio>
+    <audio id="sound-game-win" src="assets/sounds/game_win.mp3" preload="auto"></audio>
+    <audio id="sound-background-music" src="assets/sounds/background_music.mp3" preload="auto" loop></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

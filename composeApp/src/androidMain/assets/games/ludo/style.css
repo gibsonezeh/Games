@@ -16,6 +16,136 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    position: relative;
+}
+
+/* Settings Menu Styles */
+.settings-menu-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+}
+
+.settings-toggle {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.settings-panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.settings-panel.active {
+    display: block;
+}
+
+.settings-group {
+    margin-bottom: 15px;
+}
+
+.settings-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.radio-group label {
+    font-weight: normal;
+    margin-left: 5px;
+}
+
+.apply-settings, .reset-game {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.reset-game {
+    background-color: #f44336;
+    margin-top: 5px;
+}
+
+/* Player Controls */
+.player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.player-selection {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.player-select-btn {
+    padding: 5px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.player-select-btn[data-player="red"] {
+    background-color: #ffcccc;
+    color: red;
+}
+
+.player-select-btn[data-player="green"] {
+    background-color: #ccffcc;
+    color: green;
+}
+
+.player-select-btn[data-player="yellow"] {
+    background-color: #ffffcc;
+    color: #b8860b; /* Dark gold */
+}
+
+.player-select-btn[data-player="blue"] {
+    background-color: #ccccff;
+    color: blue;
+}
+
+.player-select-btn.active {
+    box-shadow: 0 0 0 2px black;
+}
+
+.player-select-btn.computer {
+    opacity: 0.7;
+}
+
+.player-select-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Game Board Styles */
@@ -62,7 +192,7 @@ body {
 
 /* Cells (Track, Home Path) */
 .cell { border: 1px solid #eee; box-sizing: border-box; display: flex; justify-content: center; align-items: center; font-size: 10px; }
-.cell.safe-zone { background-image: url("star.png"); background-size: contain; background-repeat: no-repeat; background-position: center; }
+.cell.safe-zone { background-image: url("assets/images/star.png"); background-size: contain; background-repeat: no-repeat; background-position: center; }
 
 /* Player Pieces */
 .piece { width: 70%; height: 70%; border-radius: 50%; border: 2px solid #000; box-sizing: border-box; cursor: pointer; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; text-shadow: 1px 1px 1px black; }
@@ -140,4 +270,3 @@ body {
     .dice-container { gap: 5px; }
     #roll-dice-btn { padding: 8px 15px; }
 }
-

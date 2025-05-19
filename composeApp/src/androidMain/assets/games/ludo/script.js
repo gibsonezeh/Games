@@ -1,10 +1,19 @@
 // Ludo Game Logic
 document.addEventListener("DOMContentLoaded", () => {
+    // Game Configuration
+    let gameConfig = {
+        mode: "user-only", // "user-only" or "user-computer"
+        playerCount: 4, // 2 or 4
+        turnControl: "manual", // "manual" or "auto"
+        soundEnabled: true
+    };
+
+    // Player Data
     const players = [
-        { id: "red",    name: "Red Player",    pieces: {}, startCell: 1,  homeEntryCell: 51, yard: "red-yard" }, // startCell is 1-indexed, actual board cell index is startCell-1 for first path cell
-        { id: "green",  name: "Green Player",  pieces: {}, startCell: 14, homeEntryCell: 12, yard: "green-yard" },
-        { id: "yellow", name: "Yellow Player", pieces: {}, startCell: 27, homeEntryCell: 25, yard: "yellow-yard" },
-        { id: "blue",   name: "Blue Player",   pieces: {}, startCell: 40, homeEntryCell: 38, yard: "blue-yard" },
+        { id: "red",    name: "Red Player",    pieces: {}, startCell: 1,  homeEntryCell: 51, yard: "red-yard", isComputer: false, active: true },
+        { id: "green",  name: "Green Player",  pieces: {}, startCell: 14, homeEntryCell: 12, yard: "green-yard", isComputer: false, active: true },
+        { id: "yellow", name: "Yellow Player", pieces: {}, startCell: 27, homeEntryCell: 25, yard: "yellow-yard", isComputer: false, active: true },
+        { id: "blue",   name: "Blue Player",   pieces: {}, startCell: 40, homeEntryCell: 38, yard: "blue-yard", isComputer: false, active: true },
     ];
     const totalCellsOnTrack = 52;
     const cellsInHomePath = 6;
@@ -13,8 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentDiceRoll = { d1: 0, d2: 0, sum: 0, d1_used: false, d2_used: false, rolled: false };
     let selectedMoveValue = 0;
     let awaitingPieceChoice = false;
+    let gameInitialized = false;
 
     // DOM Elements
+    const settingsToggle = document.getElementById("settings-toggle");
+    const settingsPanel = document.getElementById("settings-panel");
+    const applySettingsBtn = document.getElementById("apply-settings");
+    const resetGameBtn = document.getElementById("reset-game");
+    const playerSelectionBtns = document.querySelectorAll(".player-select-btn");
     const diceDisplayD1 = document.getElementById("dice-display-d1");
     const diceDisplayD2 = document.getElementById("dice-display-d2");
     const diceDisplaySum = document.getElementById("dice-display-sum");
@@ -22,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const playerTurnIndicator = document.getElementById("player-turn-indicator");
     const messageArea = document.getElementById("message-area");
     const gameBoard = document.querySelector(".game-board");
+    const playerSelection = document.getElementById("player-selection");
 
     // Audio Elements
     const soundDiceRoll = document.getElementById("sound-dice-roll");
@@ -30,6 +46,132 @@ document.addEventListener("DOMContentLoaded", () => {
     const soundPieceHome = document.getElementById("sound-piece-home");
     const soundGameWin = document.getElementById("sound-game-win");
     const soundBackgroundMusic = document.getElementById("sound-background-music");
+
+    // --- Settings Menu Handlers ---
+    settingsToggle.addEventListener("click", () => {
+        settingsPanel.classList.toggle("active");
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!settingsPanel.contains(event.target) && event.target !== settingsToggle) {
+            settingsPanel.classList.remove("active");
+        }
+    });
+
+    applySettingsBtn.addEventListener("click", () => {
+        // Get settings values
+        const mode = document.querySelector('input[name="game-mode"]:checked').value;
+        const playerCount = parseInt(document.querySelector('input[name="player-count"]:checked').value);
+        const turnControl = document.querySelector('input[name="turn-control"]:checked').value;
+        const soundEnabled = document.querySelector('input[name="sound"]:checked').value === "on";
+
+        // Update game configuration
+        gameConfig = {
+            mode,
+            playerCount,
+            turnControl,
+            soundEnabled
+        };
+
+        // Apply settings
+        applyGameSettings();
+        settingsPanel.classList.remove("active");
+    });
+
+    resetGameBtn.addEventListener("click", () => {
+        resetGame();
+        settingsPanel.classList.remove("active");
+    });
+
+    function applyGameSettings() {
+        // Reset game state
+        resetGame();
+
+        // Configure players based on settings
+        players.forEach((player, index) => {
+            // For 2 players, only use red and yellow
+            if (gameConfig.playerCount === 2) {
+                player.active = (index === 0 || index === 2); // Red and Yellow
+            } else {
+                player.active = true;
+            }
+
+            // Set computer players if in user-computer mode
+            if (gameConfig.mode === "user-computer") {
+                // For 2 players, make yellow a computer
+                if (gameConfig.playerCount === 2) {
+                    player.isComputer = (index === 2); // Yellow is computer
+                } else {
+                    // For 4 players, make green and blue computers
+                    player.isComputer = (index === 1 || index === 3); // Green and Blue are computers
+                }
+            } else {
+                player.isComputer = false;
+            }
+        });
+
+        // Update player selection buttons
+        updatePlayerSelectionButtons();
+
+        // Initialize game
+        if (!gameInitialized) {
+            initializeGame();
+            gameInitialized = true;
+        } else {
+            resetTurnState(true);
+            updatePlayerTurnIndicator();
+        }
+
+        // Show/hide player selection based on turn control
+        playerSelection.style.display = gameConfig.turnControl === "manual" ? "flex" : "none";
+
+        // Update message
+        messageArea.textContent = "Game settings applied. Roll the dice to start!";
+    }
+
+    function updatePlayerSelectionButtons() {
+        playerSelectionBtns.forEach(btn => {
+            const playerId = btn.dataset.player;
+            const player = players.find(p => p.id === playerId);
+            
+            if (!player.active) {
+                btn.classList.add("disabled");
+                btn.disabled = true;
+            } else {
+                btn.classList.remove("disabled");
+                btn.disabled = false;
+                
+                if (player.isComputer) {
+                    btn.classList.add("computer");
+                    btn.textContent = `${playerId.charAt(0).toUpperCase() + playerId.slice(1)} (AI)`;
+                } else {
+                    btn.classList.remove("computer");
+                    btn.textContent = playerId.charAt(0).toUpperCase() + playerId.slice(1);
+                }
+            }
+        });
+    }
+
+    // --- Player Selection Handlers ---
+    playerSelectionBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (gameConfig.turnControl !== "manual" || btn.disabled) return;
+            
+            const playerId = btn.dataset.player;
+            const playerIndex = players.findIndex(p => p.id === playerId);
+            
+            if (playerIndex !== -1 && players[playerIndex].active) {
+                currentPlayerIndex = playerIndex;
+                updatePlayerTurnIndicator();
+                resetTurnState(true);
+                messageArea.textContent = `${players[currentPlayerIndex].name}'s Turn. Roll the dice!`;
+                
+                // Update active button
+                playerSelectionBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            }
+        });
+    });
 
     // --- Game Setup ---
     function initializeGame() {
@@ -43,7 +185,16 @@ document.addEventListener("DOMContentLoaded", () => {
             el.addEventListener("click", handleDiceDisplayClick);
         });
 
-        if (soundBackgroundMusic) {
+        // Set first player button as active
+        if (gameConfig.turnControl === "manual") {
+            const firstActivePlayer = players.find(p => p.active);
+            if (firstActivePlayer) {
+                const btn = document.querySelector(`.player-select-btn[data-player="${firstActivePlayer.id}"]`);
+                if (btn) btn.classList.add("active");
+            }
+        }
+
+        if (gameConfig.soundEnabled && soundBackgroundMusic) {
             soundBackgroundMusic.volume = 0.3;
             soundBackgroundMusic.play().catch(e => {
                 console.warn("Background music autoplay failed. User interaction might be needed.", e);
@@ -124,23 +275,59 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function playSound(soundElement) {
-        if (soundElement && soundElement !== soundBackgroundMusic) {
-            soundElement.currentTime = 0;
-        }
-        if (soundElement) {
-            soundElement.play()
-                .catch(e => {
-                    console.warn("Audio play failed for " + (soundElement.id || "audio element") + ": ", e);
-                });
+    function playSound(soundType) {
+        if (!gameConfig.soundEnabled) return;
+        
+        // Check if running in Android WebView
+        if (typeof Android !== "undefined") {
+            // Call Android interface methods
+            switch(soundType) {
+                case "dice-roll": Android.playDiceRollSound(); break;
+                case "piece-move": Android.playPieceMoveSound(); break;
+                case "piece-capture": Android.playPieceCaptureSound(); break;
+                case "piece-home": Android.playPieceHomeSound(); break;
+                case "game-win": Android.playGameWinSound(); break;
+                case "background-music": Android.playBackgroundMusic(true); break;
+            }
         } else {
-            console.warn("playSound called with a null soundElement.");
+            // Use HTML5 audio
+            let soundElement;
+            switch(soundType) {
+                case "dice-roll": soundElement = soundDiceRoll; break;
+                case "piece-move": soundElement = soundPieceMove; break;
+                case "piece-capture": soundElement = soundPieceCapture; break;
+                case "piece-home": soundElement = soundPieceHome; break;
+                case "game-win": soundElement = soundGameWin; break;
+                case "background-music": soundElement = soundBackgroundMusic; break;
+            }
+            
+            if (soundElement && soundElement !== soundBackgroundMusic) {
+                soundElement.currentTime = 0;
+            }
+            if (soundElement) {
+                soundElement.play()
+                    .catch(e => {
+                        console.warn("Audio play failed for " + soundType + ": ", e);
+                    });
+            }
         }
     }
 
     function updatePlayerTurnIndicator() {
-        playerTurnIndicator.textContent = `${players[currentPlayerIndex].name}\'s Turn`;
-        playerTurnIndicator.style.color = players[currentPlayerIndex].id;
+        const currentPlayer = players[currentPlayerIndex];
+        playerTurnIndicator.textContent = `${currentPlayer.name}\'s Turn`;
+        playerTurnIndicator.style.color = currentPlayer.id;
+        
+        // Update player selection buttons
+        if (gameConfig.turnControl === "manual") {
+            playerSelectionBtns.forEach(btn => {
+                if (btn.dataset.player === currentPlayer.id) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+        }
     }
 
     function resetTurnState(fullReset = true) {
@@ -160,6 +347,39 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!fullReset) {
             [diceDisplayD1, diceDisplayD2, diceDisplaySum].forEach(el => el.classList.remove("active-dice"));
         }
+    }
+
+    function resetGame() {
+        // Clear the board
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach(cell => {
+            const pieces = cell.querySelectorAll(".piece");
+            pieces.forEach(piece => {
+                const playerId = piece.dataset.player;
+                const pieceId = parseInt(piece.dataset.pieceId);
+                const yard = document.getElementById(`${playerId}-yard`);
+                const homes = yard.querySelectorAll(".piece-home");
+                homes[pieceId].appendChild(piece);
+            });
+        });
+
+        // Reset player pieces
+        players.forEach(player => {
+            for (const pieceId in player.pieces) {
+                player.pieces[pieceId].position = -1;
+                player.pieces[pieceId].isHome = false;
+            }
+        });
+
+        // Reset game state
+        currentPlayerIndex = 0;
+        while (!players[currentPlayerIndex].active) {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        }
+        
+        resetTurnState(true);
+        updatePlayerTurnIndicator();
+        messageArea.textContent = "Game reset. Roll the dice to start!";
     }
 
     rollDiceBtn.addEventListener("click", () => {
@@ -184,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
         diceDisplayD2.classList.add("dice-rolled");
         diceDisplaySum.textContent = currentDiceRoll.sum;
         diceDisplaySum.classList.add("dice-rolled");
-        playSound(soundDiceRoll);
+        playSound("dice-roll");
         
         const currentPlayer = players[currentPlayerIndex];
         let hasPiecesOnTrack = false;
@@ -207,9 +427,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         messageArea.textContent = `Rolled ${currentDiceRoll.d1} & ${currentDiceRoll.d2}. Click a dice value to use.`;
+        
+        // If current player is computer, make AI move
+        if (currentPlayer.isComputer) {
+            setTimeout(() => makeAIMove(), 1000);
+        }
     });
 
     function handleDiceDisplayClick(event) {
+        const currentPlayer = players[currentPlayerIndex];
+        
+        // If current player is computer, ignore clicks
+        if (currentPlayer.isComputer) {
+            messageArea.textContent = "It's the computer's turn. Please wait.";
+            return;
+        }
+        
         if (!currentDiceRoll.rolled || awaitingPieceChoice) {
             messageArea.textContent = "Roll the dice first, or complete your current piece move.";
             return;
@@ -267,18 +500,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handlePieceClick(playerId, pieceId) {
-        if (playerId !== players[currentPlayerIndex].id || !awaitingPieceChoice || selectedMoveValue === 0) {
+        const currentPlayer = players[currentPlayerIndex];
+        
+        // If current player is computer, ignore clicks
+        if (currentPlayer.isComputer) {
+            messageArea.textContent = "It's the computer's turn. Please wait.";
             return;
         }
-        const player = players[currentPlayerIndex];
-        const piece = player.pieces[pieceId];
+        
+        if (playerId !== currentPlayer.id || !awaitingPieceChoice || selectedMoveValue === 0) {
+            return;
+        }
+        
+        const piece = currentPlayer.pieces[pieceId];
         const isMovable = piece.element.classList.contains("movable"); 
         if (!isMovable) {
             messageArea.textContent = "This piece cannot be moved with the selected dice value.";
             return;
         }
         clearHighlights();
-        movePiece(player, pieceId, selectedMoveValue);
+        movePiece(currentPlayer, pieceId, selectedMoveValue);
     }
     
     function getMovablePieces(playerId, moveValue, isYardExitAttemptWithSelectedSix) {
@@ -332,148 +573,343 @@ document.addEventListener("DOMContentLoaded", () => {
         return movable;
     }
 
-    function clearHighlights() {
-        const allPieces = document.querySelectorAll(".piece");
-        allPieces.forEach(p => p.classList.remove("movable"));
-    }
-
-    function highlightMovablePieces(piecesToHighlight, highlight) {
-        clearHighlights();
-        if (highlight) {
-            piecesToHighlight.forEach(pInfo => {
-                const player = players.find(p => p.id === pInfo.playerId);
-                player.pieces[pInfo.pieceId].element.classList.add("movable");
-            });
-        }
-    }
-
-    function movePiece(player, pieceId, moveValueToUse) {
-        const pieceData = player.pieces[pieceId];
-        let newPositionOnBoardId; 
-        let newPieceDataPosition; 
-        let capturedOpponentThisMove = false;
-        let pieceReachedHomeThisMove = false;
-
-        const isYardExit = pieceData.position === -1 && moveValueToUse === 6 && 
-                           ((selectedMoveValue === currentDiceRoll.d1 && currentDiceRoll.d1 === 6) || 
-                            (selectedMoveValue === currentDiceRoll.d2 && currentDiceRoll.d2 === 6) ||
-                            (selectedMoveValue === currentDiceRoll.sum && (currentDiceRoll.d1 === 6 || currentDiceRoll.d2 === 6) && moveValueToUse === 6) );
-
-        if (isYardExit) {
-            newPieceDataPosition = player.startCell; // This is the 0-indexed second cell of the path
-            newPositionOnBoardId = `cell-${newPieceDataPosition}`;
-        } else {
-            const isSixSelectedForYard = (moveValueToUse === 6 && 
-                                         ((selectedMoveValue === currentDiceRoll.d1 && currentDiceRoll.d1 === 6) ||
-                                          (selectedMoveValue === currentDiceRoll.d2 && currentDiceRoll.d2 === 6) ||
-                                          (selectedMoveValue === currentDiceRoll.sum && (currentDiceRoll.d1 === 6 || currentDiceRoll.d2 === 6) && moveValueToUse === 6)));
-            const confirmedMoves = getMovablePieces(player.id, moveValueToUse, isSixSelectedForYard);
-            const specificMove = confirmedMoves.find(m => m.pieceId === pieceId);
-            if (!specificMove) {
-                console.error("Error: Piece was clicked but no valid move found in movePiece.");
-                messageArea.textContent = "Error processing move. Try again.";
-                resetTurnState(false); 
-                messageArea.textContent = `Rolled ${currentDiceRoll.d1} & ${currentDiceRoll.d2}. Click a dice value to use.`;
-                return;
-            }
-            newPieceDataPosition = specificMove.newPosition;
-            if (newPieceDataPosition === 200) { pieceData.isHome = true; newPositionOnBoardId = null; pieceReachedHomeThisMove = true; }
-            else if (newPieceDataPosition >= 100) { newPositionOnBoardId = `${player.id}-home-cell-${newPieceDataPosition - 100}`; }
-            else { newPositionOnBoardId = `cell-${newPieceDataPosition}`; }
-        }
-        
-        playSound(soundPieceMove);
-        pieceData.position = newPieceDataPosition;
-        const pieceElement = pieceData.element;
-
-        if (newPositionOnBoardId) {
-            const targetCell = document.getElementById(newPositionOnBoardId);
-            if (targetCell) {
-                if (newPieceDataPosition < 100 && !targetCell.classList.contains("safe-zone")) {
-                    const opponentPieceElements = targetCell.querySelectorAll(".piece");
-                    opponentPieceElements.forEach(opEl => {
-                        if (opEl !== pieceElement && opEl.dataset.player !== player.id) {
-                            capturePiece(opEl);
-                            capturedOpponentThisMove = true; 
-                        }
-                    });
+    function highlightMovablePieces(movablePieces, highlight) {
+        movablePieces.forEach(({ playerId, pieceId }) => {
+            const player = players.find(p => p.id === playerId);
+            if (player && player.pieces[pieceId]) {
+                if (highlight) {
+                    player.pieces[pieceId].element.classList.add("movable");
+                } else {
+                    player.pieces[pieceId].element.classList.remove("movable");
                 }
-                targetCell.appendChild(pieceElement);
             }
-        } else if (newPieceDataPosition === 200) {
-            pieceElement.style.display = "none"; 
-            playSound(soundPieceHome);
+        });
+    }
+
+    function clearHighlights() {
+        players.forEach(player => {
+            for (const pieceId in player.pieces) {
+                player.pieces[pieceId].element.classList.remove("movable");
+            }
+        });
+    }
+
+    function movePiece(player, pieceId, moveValue) {
+        const piece = player.pieces[pieceId];
+        const oldPosition = piece.position;
+        let newPosition;
+        let isYardMove = false;
+        let isHomeMove = false;
+        let isCapture = false;
+        let capturedPiece = null;
+
+        // Determine new position
+        if (oldPosition === -1) { // Moving from yard
+            newPosition = player.startCell;
+            isYardMove = true;
+        } else if (oldPosition >= 100) { // Moving on home path
+            const currentHomePathPos = oldPosition - 100;
+            if (currentHomePathPos + moveValue < cellsInHomePath) {
+                newPosition = oldPosition + moveValue;
+            } else if (currentHomePathPos + moveValue === cellsInHomePath - 1) {
+                newPosition = 200; // Reached home
+                isHomeMove = true;
+            }
+        } else { // Moving on main track
+            const homeEntryCellIndex = player.homeEntryCell - 1;
+            
+            // Check if piece will enter home path
+            if (oldPosition <= homeEntryCellIndex && (oldPosition + moveValue) > homeEntryCellIndex) {
+                const stepsIntoHomePath = (oldPosition + moveValue) - (homeEntryCellIndex + 1);
+                if (stepsIntoHomePath >= 0 && stepsIntoHomePath < cellsInHomePath) {
+                    newPosition = 100 + stepsIntoHomePath;
+                } else if (stepsIntoHomePath === cellsInHomePath - 1) {
+                    newPosition = 200; // Reached home
+                    isHomeMove = true;
+                }
+            } else {
+                newPosition = (oldPosition + moveValue) % totalCellsOnTrack;
+            }
         }
 
-        if (selectedMoveValue === currentDiceRoll.d1 && !currentDiceRoll.d1_used) {
+        // Update piece position
+        piece.position = newPosition;
+
+        // Move piece on the board
+        if (isYardMove) {
+            // Move from yard to board
+            const targetCell = document.getElementById(`cell-${newPosition}`);
+            targetCell.appendChild(piece.element);
+            playSound("piece-move");
+        } else if (isHomeMove) {
+            // Move to center home
+            const centerHome = document.querySelector(".center-home");
+            centerHome.appendChild(piece.element);
+            piece.isHome = true;
+            playSound("piece-home");
+        } else if (newPosition >= 100 && newPosition < 200) {
+            // Move to home path
+            const homePathIndex = newPosition - 100;
+            const targetCell = document.getElementById(`${player.id}-home-cell-${homePathIndex}`);
+            targetCell.appendChild(piece.element);
+            playSound("piece-move");
+        } else {
+            // Move on main track
+            const targetCell = document.getElementById(`cell-${newPosition}`);
+            
+            // Check for capture
+            const existingPieces = targetCell.querySelectorAll(".piece");
+            existingPieces.forEach(existingPiece => {
+                const existingPlayerId = existingPiece.dataset.player;
+                const existingPieceId = parseInt(existingPiece.dataset.pieceId);
+                
+                if (existingPlayerId !== player.id) {
+                    // Found opponent piece to capture
+                    const opponentPlayer = players.find(p => p.id === existingPlayerId);
+                    if (opponentPlayer) {
+                        capturedPiece = { player: opponentPlayer, pieceId: existingPieceId };
+                        isCapture = true;
+                    }
+                }
+            });
+            
+            // Move piece to target cell
+            targetCell.appendChild(piece.element);
+            
+            // Handle capture
+            if (isCapture && capturedPiece) {
+                const opponentPiece = capturedPiece.player.pieces[capturedPiece.pieceId];
+                opponentPiece.position = -1; // Back to yard
+                
+                // Move captured piece back to yard
+                const opponentYard = document.getElementById(capturedPiece.player.yard);
+                const opponentHome = opponentYard.querySelectorAll(".piece-home")[capturedPiece.pieceId];
+                opponentHome.appendChild(opponentPiece.element);
+                
+                playSound("piece-capture");
+                messageArea.textContent = `${player.name} captured ${capturedPiece.player.name}'s piece!`;
+            } else {
+                playSound("piece-move");
+            }
+        }
+
+        // Update dice usage
+        if (moveValue === currentDiceRoll.d1) {
             currentDiceRoll.d1_used = true;
-            diceDisplayD1.classList.remove("dice-rolled", "active-dice");
-        } else if (selectedMoveValue === currentDiceRoll.d2 && !currentDiceRoll.d2_used) {
+            diceDisplayD1.classList.remove("dice-rolled");
+        } else if (moveValue === currentDiceRoll.d2) {
             currentDiceRoll.d2_used = true;
-            diceDisplayD2.classList.remove("dice-rolled", "active-dice");
-        } else if (selectedMoveValue === currentDiceRoll.sum) {
+            diceDisplayD2.classList.remove("dice-rolled");
+        } else if (moveValue === currentDiceRoll.sum) {
             currentDiceRoll.d1_used = true;
             currentDiceRoll.d2_used = true;
-            diceDisplayD1.classList.remove("dice-rolled", "active-dice");
-            diceDisplayD2.classList.remove("dice-rolled", "active-dice");
-            diceDisplaySum.classList.remove("dice-rolled", "active-dice");
+            diceDisplayD1.classList.remove("dice-rolled");
+            diceDisplayD2.classList.remove("dice-rolled");
+            diceDisplaySum.classList.remove("dice-rolled");
+        }
+
+        // Reset for next move
+        resetTurnState(false);
+
+        // Check if player has won
+        if (checkPlayerWin(player)) {
+            playSound("game-win");
+            messageArea.textContent = `${player.name} has won the game!`;
+            rollDiceBtn.disabled = true;
+            return;
+        }
+
+        // Check if player gets another turn (double sixes)
+        const isDoubleSix = currentDiceRoll.d1 === 6 && currentDiceRoll.d2 === 6;
+        
+        // Check if there are more moves available
+        if (!currentDiceRoll.d1_used || !currentDiceRoll.d2_used) {
+            messageArea.textContent = "Select another dice value to continue your turn.";
+        } else {
+            // All dice used, check for double six
+            if (isDoubleSix) {
+                messageArea.textContent = "Double six! Roll again.";
+                setTimeout(() => resetTurnState(true), 1000);
+            } else {
+                // Switch to next player
+                setTimeout(() => switchPlayer(), 1000);
+            }
         }
         
-        resetTurnState(false); 
-
-        if (checkWinCondition(player.id)) {
-            messageArea.textContent = `${player.name} Wins! Congratulations!`;
-            playSound(soundGameWin);
-            rollDiceBtn.disabled = true;
-            return; 
-        }
-
-        if (!currentDiceRoll.d1_used || !currentDiceRoll.d2_used) {
-            messageArea.textContent = "Move complete. Select another dice value if available.";
-        } else {
-            let bonusTurn = (currentDiceRoll.d1 === 6 && currentDiceRoll.d2 === 6);
-            if (!bonusTurn && (capturedOpponentThisMove || pieceReachedHomeThisMove)) {
-                bonusTurn = true;
-                 messageArea.textContent = `${player.name} gets an extra turn! Roll again.`;
-            } else if (bonusTurn) {
-                 messageArea.textContent = `Double Sixes! ${player.name} gets an extra turn. Roll again.`;
-            }
-
-            if (bonusTurn) {
-                resetTurnState(true); 
-                updatePlayerTurnIndicator(); 
-            } else {
-                switchPlayer();
-            }
+        // If current player is computer and has more moves, continue AI turn
+        if (player.isComputer && (!currentDiceRoll.d1_used || !currentDiceRoll.d2_used)) {
+            setTimeout(() => makeAIMove(), 1000);
         }
     }
 
-    function capturePiece(opponentPieceElement) {
-        const opponentPlayerId = opponentPieceElement.dataset.player;
-        const opponentPieceId = parseInt(opponentPieceElement.dataset.pieceId);
-        const opponentPlayer = players.find(p => p.id === opponentPlayerId);
-        const opponentYard = document.getElementById(`${opponentPlayerId}-yard`);
-        const homeSlots = opponentYard.querySelectorAll(".piece-home");
-        let emptySlot = null;
-        for(let slot of homeSlots) { if (!slot.querySelector(".piece")) { emptySlot = slot; break; } }
-        if(emptySlot) { emptySlot.appendChild(opponentPieceElement); }
-        opponentPlayer.pieces[opponentPieceId].position = -1; 
-        playSound(soundPieceCapture);
+    function checkPlayerWin(player) {
+        let allPiecesHome = true;
+        for (const pieceId in player.pieces) {
+            if (!player.pieces[pieceId].isHome) {
+                allPiecesHome = false;
+                break;
+            }
+        }
+        return allPiecesHome;
     }
 
     function switchPlayer() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-        resetTurnState(true);
+        // Find next active player
+        let nextPlayerIndex = currentPlayerIndex;
+        do {
+            nextPlayerIndex = (nextPlayerIndex + 1) % players.length;
+        } while (!players[nextPlayerIndex].active && nextPlayerIndex !== currentPlayerIndex);
+        
+        // Update current player
+        currentPlayerIndex = nextPlayerIndex;
         updatePlayerTurnIndicator();
-        messageArea.textContent = `${players[currentPlayerIndex].name}, roll the dice.`;
+        resetTurnState(true);
+        
+        const currentPlayer = players[currentPlayerIndex];
+        messageArea.textContent = `${currentPlayer.name}'s Turn. Roll the dice!`;
+        
+        // If current player is computer, make AI move
+        if (currentPlayer.isComputer) {
+            setTimeout(() => {
+                rollDiceBtn.click();
+            }, 1000);
+        }
     }
 
-    function checkWinCondition(playerId) {
-        const player = players.find(p => p.id === playerId);
-        for (const pieceId in player.pieces) { if (!player.pieces[pieceId].isHome) return false; }
-        return true;
+    // --- AI Logic ---
+    function makeAIMove() {
+        const currentPlayer = players[currentPlayerIndex];
+        if (!currentPlayer.isComputer) return;
+        
+        // If dice not rolled yet, roll dice
+        if (!currentDiceRoll.rolled) {
+            rollDiceBtn.click();
+            return;
+        }
+        
+        // Choose dice value
+        let bestDiceValue = 0;
+        let bestMove = null;
+        
+        // Try sum first if available
+        if (!currentDiceRoll.d1_used && !currentDiceRoll.d2_used) {
+            const isSixSelectedForYard = currentDiceRoll.sum === 6 && (currentDiceRoll.d1 === 6 || currentDiceRoll.d2 === 6);
+            const movesWithSum = getMovablePieces(currentPlayer.id, currentDiceRoll.sum, isSixSelectedForYard);
+            if (movesWithSum.length > 0) {
+                bestDiceValue = currentDiceRoll.sum;
+                bestMove = evaluateBestMove(movesWithSum);
+            }
+        }
+        
+        // Try individual dice if sum not used
+        if (bestDiceValue === 0) {
+            // Try die 1
+            if (!currentDiceRoll.d1_used) {
+                const isSixSelectedForYard = currentDiceRoll.d1 === 6;
+                const movesWithD1 = getMovablePieces(currentPlayer.id, currentDiceRoll.d1, isSixSelectedForYard);
+                if (movesWithD1.length > 0) {
+                    bestDiceValue = currentDiceRoll.d1;
+                    bestMove = evaluateBestMove(movesWithD1);
+                }
+            }
+            
+            // Try die 2 if die 1 not used
+            if (bestDiceValue === 0 && !currentDiceRoll.d2_used) {
+                const isSixSelectedForYard = currentDiceRoll.d2 === 6;
+                const movesWithD2 = getMovablePieces(currentPlayer.id, currentDiceRoll.d2, isSixSelectedForYard);
+                if (movesWithD2.length > 0) {
+                    bestDiceValue = currentDiceRoll.d2;
+                    bestMove = evaluateBestMove(movesWithD2);
+                }
+            }
+        }
+        
+        // Make the move if found
+        if (bestDiceValue > 0 && bestMove) {
+            // Highlight the selected dice
+            if (bestDiceValue === currentDiceRoll.d1) {
+                diceDisplayD1.classList.add("active-dice");
+            } else if (bestDiceValue === currentDiceRoll.d2) {
+                diceDisplayD2.classList.add("active-dice");
+            } else if (bestDiceValue === currentDiceRoll.sum) {
+                diceDisplaySum.classList.add("active-dice");
+            }
+            
+            // Highlight the selected piece
+            selectedMoveValue = bestDiceValue;
+            awaitingPieceChoice = true;
+            currentPlayer.pieces[bestMove.pieceId].element.classList.add("movable");
+            
+            // Show message
+            messageArea.textContent = `Computer selects ${bestDiceValue} and moves a piece.`;
+            
+            // Make the move after a delay
+            setTimeout(() => {
+                clearHighlights();
+                movePiece(currentPlayer, bestMove.pieceId, bestDiceValue);
+            }, 1000);
+        } else {
+            // No valid moves, switch player
+            messageArea.textContent = "Computer has no valid moves. Next player.";
+            setTimeout(() => switchPlayer(), 1000);
+        }
     }
 
-    initializeGame();
+    function evaluateBestMove(possibleMoves) {
+        if (possibleMoves.length === 0) return null;
+        if (possibleMoves.length === 1) return possibleMoves[0];
+        
+        // Score each move
+        const scoredMoves = possibleMoves.map(move => {
+            let score = 0;
+            const currentPlayer = players.find(p => p.id === move.playerId);
+            
+            // Prioritize getting pieces out of yard
+            if (move.isYardMove) {
+                score += 50;
+            }
+            
+            // Prioritize getting pieces home
+            if (move.newPosition === 200) {
+                score += 100;
+            }
+            
+            // Prioritize moving pieces onto home path
+            if (move.newPosition >= 100 && move.newPosition < 200) {
+                score += 70;
+            }
+            
+            // Check if move lands on safe zone
+            if (move.newPosition < 100) {
+                const safeZones = [0, 8, 13, 21, 26, 34, 39, 47];
+                if (safeZones.includes(move.newPosition)) {
+                    score += 30;
+                }
+            }
+            
+            // Check if move captures opponent
+            const targetCell = move.newPosition < 100 ? document.getElementById(`cell-${move.newPosition}`) : null;
+            if (targetCell) {
+                const existingPieces = targetCell.querySelectorAll(".piece");
+                existingPieces.forEach(existingPiece => {
+                    const existingPlayerId = existingPiece.dataset.player;
+                    if (existingPlayerId !== currentPlayer.id) {
+                        score += 80; // High priority for captures
+                    }
+                });
+            }
+            
+            // Add some randomness to avoid predictable AI
+            score += Math.random() * 10;
+            
+            return { ...move, score };
+        });
+        
+        // Sort by score (highest first) and return the best move
+        scoredMoves.sort((a, b) => b.score - a.score);
+        return scoredMoves[0];
+    }
+
+    // Initialize settings panel
+    applyGameSettings();
 });
-
