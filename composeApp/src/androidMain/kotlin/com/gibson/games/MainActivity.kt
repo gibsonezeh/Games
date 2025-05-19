@@ -152,7 +152,6 @@ class MainActivity : ComponentActivity() {
 }
 
 // -- COMPOSABLES --
-
 @Composable
 fun GameApp(activity: MainActivity) {
     var selectedGame by remember { mutableStateOf<String?>(null) }
@@ -185,10 +184,28 @@ fun GameApp(activity: MainActivity) {
         }
     }
 
-    if (selectedGame == null) {
-        GameMenu { selectedGame = it }
-    } else {
-        GameScreen("file:///android_asset/games/$selectedGame/$selectedGame.html", { selectedGame = null }, activity)
+    // Handle external games
+    val externalGameUrl = when (selectedGame) {
+        "temple_run_online" -> "https://poki.com/en/g/temple-run-2"
+        "bubbles_cool_online" -> "https://poki.com/en/g/bubbles-cool#fullscreen"
+        "ludo_online" -> "https://playludoonline.netlify.app/"
+        else -> null
+    }
+
+    when {
+        externalGameUrl != null -> {
+            ExternalGameScreen(url = externalGameUrl) { selectedGame = null }
+        }
+        selectedGame != null -> {
+            GameScreen(
+                gamePath = "file:///android_asset/games/$selectedGame/$selectedGame.html",
+                onBack = { selectedGame = null },
+                activity = activity
+            )
+        }
+        else -> {
+            GameMenu { selectedGame = it }
+        }
     }
 }
 
