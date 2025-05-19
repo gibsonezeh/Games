@@ -205,7 +205,13 @@ fun GameMenu(onSelectGame: (String) -> Unit) {
         Button(onClick = { onSelectGame("tank") }) { Text("Play Tank Game") }
         Button(onClick = { onSelectGame("archery") }) { Text("Play Archery Game") }
         Button(onClick = { onSelectGame("castle") }) { Text("Play Castle Game") }
-        Button(onClick = { onSelectGame("bike") }) { Text("Play bike Game") }
+        Button(onClick = { onSelectGame("bike") }) { Text("Play Bike Game") }
+
+        // External games
+        Divider(modifier = Modifier.padding(vertical = 12.dp))
+        Button(onClick = { onSelectGame("temple_run_online") }) { Text("Temple Run 2 (Online)") }
+        Button(onClick = { onSelectGame("bubbles_cool_online") }) { Text("Bubbles Cool (Online)") }
+        Button(onClick = { onSelectGame("ludo_online") }) { Text("Ludo (Online)") }
     }
 }
 
