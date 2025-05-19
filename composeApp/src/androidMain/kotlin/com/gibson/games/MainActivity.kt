@@ -267,3 +267,33 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
         }
     }
 }
+
+@Composable
+fun ExternalGameScreen(url: String, onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+            Button(onClick = onBack, modifier = Modifier.padding(8.dp)) {
+                Text("Back")
+            }
+        }
+
+        Text(
+            text = "You're playing an online game hosted externally.",
+            style = MaterialTheme.typography.caption,
+            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+        )
+
+        AndroidView(
+            factory = { context ->
+                WebView(context).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    webViewClient = WebViewClient()
+                    loadUrl(url)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
