@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
         playerSelection.style.display = gameConfig.turnControl === "manual" ? "flex" : "none";
 
         // Update message
-        messageArea.textContent = "Game settings applied. Roll the dice to start!";
+        messageArea.textContent = "Game settings applied. Roll the dice!";
     }
 
     function updatePlayerSelectionButtons() {
@@ -379,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         resetTurnState(true);
         updatePlayerTurnIndicator();
-        messageArea.textContent = "Game reset. Roll the dice to start!";
+        messageArea.textContent = "Game reset. Roll the dice!";
     }
 
     rollDiceBtn.addEventListener("click", () => {
@@ -729,7 +729,13 @@ document.addEventListener("DOMContentLoaded", () => {
             // All dice used, check for double six
             if (isDoubleSix) {
                 messageArea.textContent = "Double six! Roll again.";
-                setTimeout(() => resetTurnState(true), 1000);
+                setTimeout(() => {
+                    resetTurnState(true);
+                    // For computer players, automatically roll again
+                    if (player.isComputer) {
+                        setTimeout(() => rollDiceBtn.click(), 1000);
+                    }
+                }, 1000);
             } else {
                 // Switch to next player
                 setTimeout(() => switchPlayer(), 1000);
