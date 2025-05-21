@@ -239,15 +239,18 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
         }
 
         AndroidView(
-            factory = { context ->
-                WebView(context).apply {
-                    webViewClient = WebViewClient()
-                    settings.javaScriptEnabled = true
-                    loadUrl(gamePath)
-                }
-            },
-            modifier = Modifier.weight(1f)
-        )
+    factory = { context ->
+        WebView(context).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            webViewClient = WebViewClient()
+            // Add the JavaScript interface for sound handling
+            addJavascriptInterface(WebAppInterface(context), "Android")
+            loadUrl(url)
+        }
+    },
+    modifier = Modifier.weight(1f)
+)
 
         // Banner Ad
         AndroidView(factory = { context ->
