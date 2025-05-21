@@ -209,6 +209,8 @@ fun GameApp(activity: MainActivity) {
 
 @Composable
 fun GameMenu(onSelectGame: (String) -> Unit) {
+    val nativeAd = rememberUpdatedState(activity.getNativeAd())
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -216,15 +218,61 @@ fun GameMenu(onSelectGame: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Choose a Game", style = MaterialTheme.typography.h5)
+
         Button(onClick = { onSelectGame("ludo") }) { Text("Play Ludo Game") }
         Button(onClick = { onSelectGame("tank") }) { Text("Play Tank Game") }
         Button(onClick = { onSelectGame("archery") }) { Text("Play Archery Game") }
+
+        // Native Ad after 3 buttons
+        val ad1 = nativeAd.value
+        if (ad1 != null) {
+            AndroidView(
+                factory = { context ->
+                    val adView = LayoutInflater.from(context)
+                        .inflate(R.layout.native_ad_view, null) as NativeAdView
+
+                    adView.headlineView = adView.findViewById(R.id.ad_headline)
+                    (adView.headlineView as TextView).text = ad1.headline
+                    adView.mediaView = adView.findViewById(R.id.ad_media)
+                    adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
+                    (adView.callToActionView as Button).text = ad1.callToAction
+                    adView.setNativeAd(ad1)
+                    adView
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+        }
+
         Button(onClick = { onSelectGame("castle") }) { Text("Play Castle Game") }
         Button(onClick = { onSelectGame("bike") }) { Text("Play Bike Game") }
 
         // External games
         Divider(modifier = Modifier.padding(vertical = 12.dp))
         Button(onClick = { onSelectGame("ludo_online") }) { Text("Ludo (Online)") }
+
+        // Optional second Native Ad after 3 more buttons
+        val ad2 = nativeAd.value
+        if (ad2 != null) {
+            AndroidView(
+                factory = { context ->
+                    val adView = LayoutInflater.from(context)
+                        .inflate(R.layout.native_ad_view, null) as NativeAdView
+
+                    adView.headlineView = adView.findViewById(R.id.ad_headline)
+                    (adView.headlineView as TextView).text = ad2.headline
+                    adView.mediaView = adView.findViewById(R.id.ad_media)
+                    adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
+                    (adView.callToActionView as Button).text = ad2.callToAction
+                    adView.setNativeAd(ad2)
+                    adView
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+        }
     }
 }
 
@@ -239,20 +287,19 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
         }
 
         AndroidView(
-    factory = { context ->
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
-            // Add the JavaScript interface for sound handling
-            addJavascriptInterface(WebAppInterface(context), "Android")
-            loadUrl(url)
-        }
-    },
-    modifier = Modifier.weight(1f)
-)
+            factory = { context ->
+                WebView(context).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    webViewClient = WebViewClient()
+                    addJavascriptInterface(WebAppInterface(context), "Android")
+                    loadUrl(gamePath)
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
 
-        // Banner Ad
+        // Banner Ad only
         AndroidView(factory = { context ->
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
@@ -260,33 +307,6 @@ fun GameScreen(gamePath: String, onBack: () -> Unit, activity: MainActivity) {
                 loadAd(AdRequest.Builder().build())
             }
         })
-
-        // Native Advanced Ad
-        val nativeAd = activity.getNativeAd()
-        if (nativeAd != null) {
-            AndroidView(
-                factory = { context ->
-                    val adView = LayoutInflater.from(context)
-                        .inflate(R.layout.native_ad_view, null) as NativeAdView
-
-                    // Bind views to native ad
-                    adView.headlineView = adView.findViewById(R.id.ad_headline)
-                    (adView.headlineView as TextView).text = nativeAd.headline
-
-                    adView.mediaView = adView.findViewById(R.id.ad_media)
-
-                    adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
-                    (adView.callToActionView as Button).text = nativeAd.callToAction
-
-                    adView.setNativeAd(nativeAd)
-
-                    adView
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            )
-        }
     }
 }
 
