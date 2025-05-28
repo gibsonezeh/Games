@@ -1,6 +1,6 @@
 package com.gibson.games.dreamtreats
 
-enum class TreatType { CUPCAKE, COOKIE, DONUT, ICECREAM, CANDY }
+enum class TreatType { CUPCAKE, COOKIE, DONUT, ICECREAM, CANDY, CAKE, CHOCOLATE, SHAVED_ICE, LOLLIPOP, PIE }
 
 data class GameTile(
     val id: Int,
