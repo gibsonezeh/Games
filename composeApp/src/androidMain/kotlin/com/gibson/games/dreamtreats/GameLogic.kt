@@ -20,7 +20,6 @@ object GameLogic {
         }
     }
 
-    // 8-direction adjacency (includes diagonals)
     private val directions = listOf(
         Pair(0, -1),  // Up
         Pair(0, 1),   // Down
@@ -38,7 +37,8 @@ object GameLogic {
 
         for (row in board) {
             for (tile in row) {
-                if (visited.contains(tile.x to tile.y)) continue
+                val key = tile.x to tile.y
+                if (visited.contains(key)) continue
 
                 val group = mutableSetOf<Pair<Int, Int>>()
                 dfs(tile, board, tile.type, group, visited)
@@ -64,7 +64,6 @@ object GameLogic {
         visited.add(key)
 
         if (tile.type != targetType) return
-
         group.add(key)
 
         for ((dx, dy) in directions) {
@@ -72,8 +71,7 @@ object GameLogic {
             val ny = tile.y + dy
 
             if (nx in 0 until BOARD_SIZE && ny in 0 until BOARD_SIZE) {
-                val neighbor = board[ny][nx]
-                dfs(neighbor, board, targetType, group, visited)
+                dfs(board[ny][nx], board, targetType, group, visited)
             }
         }
     }
@@ -81,8 +79,31 @@ object GameLogic {
     fun clearMatchesAndRefill(board: List<List<TreatTile>>, matches: Set<Pair<Int, Int>>): List<List<TreatTile>> {
         val newBoard = board.map { it.toMutableList() }
 
+        // Step 1: Clear matched tiles by setting them to null
         for ((x, y) in matches) {
             newBoard[y][x] = TreatTile(x, y, TreatType.values().random())
+        }
+
+        // Step 2: Apply gravity (move non-null tiles downward)
+        for (x in 0 until BOARD_SIZE) {
+            val column = mutableListOf<TreatTile>()
+            for (y in 0 until BOARD_SIZE) {
+                val tile = newBoard[y][x]
+                if (!matches.contains(x to y)) {
+                    column.add(tile)
+                }
+            }
+
+            // Add new tiles to the top
+            while (column.size < BOARD_SIZE) {
+                val newTile = TreatTile(x, BOARD_SIZE - column.size - 1, TreatType.values().random())
+                column.add(0, newTile)
+            }
+
+            // Replace column in board
+            for (y in 0 until BOARD_SIZE) {
+                newBoard[y][x] = column[y].copy(y = y)
+            }
         }
 
         return newBoard
