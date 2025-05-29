@@ -1,77 +1,75 @@
 package com.gibson.games
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.gibson.games.dreamtreats.DreamTreatsGameScreen
-// import other game screens here as you build them
+import com.gibson.games.dreamtreats.DreamTreatsActivity // Import your game activity
+import com.gibson.games.ui.theme.GamesTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MultiGameApp()
+            GamesTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    GameSelectionScreen { gameName ->
+                        when (gameName) {
+                            "DreamTreats" -> {
+                                startActivity(Intent(this, DreamTreatsActivity::class.java))
+                            }
+                            // Add more games here
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun MultiGameApp() {
-    var currentGame by remember { mutableStateOf<GameOption?>(null) }
-
-    when (currentGame) {
-        null -> GameMenuScreen(onGameSelected = { selected -> currentGame = selected })
-        GameOption.DREAM_TREATS -> DreamTreatsGameScreen()
-        // Add more cases as you implement other games
-    }
-}
-
-enum class GameOption {
-    DREAM_TREATS,
-    // Add more game identifiers here: TIC_TAC_TOE, MEMORY_GAME, etc.
-}
-
-@Composable
-fun GameMenuScreen(onGameSelected: (GameOption) -> Unit) {
-    Surface(color = MaterialTheme.colors.background, modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+fun GameSelectionScreen(onGameSelected: (String) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Choose a Game", style = MaterialTheme.typography.headlineMedium)
+        Button(
+            onClick = { onGameSelected("DreamTreats") },
+            modifier = Modifier.padding(top = 16.dp)
         ) {
-            Text("🎮 Game Hub", style = MaterialTheme.typography.h4, color = Color(0xFF3F51B5))
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = { onGameSelected(GameOption.DREAM_TREATS) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("🍬 Dream Treats")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Future Games:
-            /*
-            Button(onClick = { onGameSelected(GameOption.TIC_TAC_TOE) }) {
-                Text("❌ Tic Tac Toe")
-            }
-
-            Button(onClick = { onGameSelected(GameOption.MEMORY_GAME) }) {
-                Text("🧠 Memory Match")
-            }
-            */
+            Text("DreamTreats (Candy Crush)")
         }
+        // Add more game buttons here as you create them
+        // Button(onClick = { onGameSelected("AnotherGame") }) {
+        //     Text("Another Game")
+        // }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GameSelectionScreenPreview() {
+    GamesTheme {
+        GameSelectionScreen {}
     }
 }
