@@ -2,110 +2,141 @@ package com.gibson.games.dreamtreats
 
 import kotlin.random.Random
 
-enum class TreatType {
-    CUPCAKE, COOKIE, DONUT, ICECREAM, CANDY,
-    CAKE, CHOCOLATE, SHAVED_ICE, LOLLIPOP, PIE
-}
-
-data class TreatTile(val x: Int, val y: Int, var type: TreatType)
+// Note: TreatType and GameTile are now defined in HarmonizedGameTile.kt
 
 object GameLogic {
-    const val BOARD_SIZE = 6
+    const val BOARD_SIZE = 6 // Keep board size consistent
 
-    fun createBoard(): List<List<TreatTile>> {
-        return List(BOARD_SIZE) { y ->
-            List(BOARD_SIZE) { x ->
-                TreatTile(x, y, TreatType.values().random())
+    fun createBoard(): List<List<GameTile>> {
+        // Ensure no matches on creation (simple approach: retry until no matches)
+        var board: List<List<GameTile>>
+        do {
+            board = List(BOARD_SIZE) { y ->
+                List(BOARD_SIZE) { x ->
+                    GameTile(x, y, TreatType.values().random())
+                }
             }
-        }
+        } while (detectMatches(board).isNotEmpty())
+        return board
     }
 
-    private val directions = listOf(
-        Pair(0, -1),  // Up
+    // Using only cardinal directions for match detection as per typical match-3
+    private val matchDirections = listOf(
         Pair(0, 1),   // Down
-        Pair(-1, 0),  // Left
-        Pair(1, 0),   // Right
-        Pair(-1, -1), // Top-left
-        Pair(1, -1),  // Top-right
-        Pair(-1, 1),  // Bottom-left
-        Pair(1, 1)    // Bottom-right
+        Pair(1, 0)    // Right
     )
 
-    fun detectMatches(board: List<List<TreatTile>>): Set<Pair<Int, Int>> {
-        val visited = mutableSetOf<Pair<Int, Int>>()
-        val matched = mutableSetOf<Pair<Int, Int>>()
+    // Simplified match detection for horizontal and vertical lines of 3+
+    fun detectMatches(board: List<List<GameTile>>): Set<GameTile> {
+        val matchedTiles = mutableSetOf<GameTile>()
 
-        for (row in board) {
-            for (tile in row) {
-                val key = tile.x to tile.y
-                if (visited.contains(key)) continue
-
-                val group = mutableSetOf<Pair<Int, Int>>()
-                dfs(tile, board, tile.type, group, visited)
-
-                if (group.size >= 3) {
-                    matched.addAll(group)
+        // Check horizontal matches
+        for (y in 0 until BOARD_SIZE) {
+            for (x in 0 until BOARD_SIZE - 2) {
+                val tile1 = board[y][x]
+                val tile2 = board[y][x + 1]
+                val tile3 = board[y][x + 2]
+                if (tile1.type == tile2.type && tile2.type == tile3.type) {
+                    matchedTiles.add(tile1)
+                    matchedTiles.add(tile2)
+                    matchedTiles.add(tile3)
+                    // Check for longer matches
+                    for (k in x + 3 until BOARD_SIZE) {
+                        if (board[y][k].type == tile1.type) {
+                            matchedTiles.add(board[y][k])
+                        } else {
+                            break
+                        }
+                    }
                 }
             }
         }
 
-        return matched
-    }
-
-    private fun dfs(
-        tile: TreatTile,
-        board: List<List<TreatTile>>,
-        targetType: TreatType,
-        group: MutableSet<Pair<Int, Int>>,
-        visited: MutableSet<Pair<Int, Int>>
-    ) {
-        val key = tile.x to tile.y
-        if (visited.contains(key)) return
-        visited.add(key)
-
-        if (tile.type != targetType) return
-        group.add(key)
-
-        for ((dx, dy) in directions) {
-            val nx = tile.x + dx
-            val ny = tile.y + dy
-
-            if (nx in 0 until BOARD_SIZE && ny in 0 until BOARD_SIZE) {
-                dfs(board[ny][nx], board, targetType, group, visited)
-            }
-        }
-    }
-
-    fun clearMatchesAndRefill(board: List<List<TreatTile>>, matches: Set<Pair<Int, Int>>): List<List<TreatTile>> {
-        val newBoard = board.map { it.toMutableList() }
-
-        // Step 1: Clear matched tiles by setting them to null
-        for ((x, y) in matches) {
-            newBoard[y][x] = TreatTile(x, y, TreatType.values().random())
-        }
-
-        // Step 2: Apply gravity (move non-null tiles downward)
+        // Check vertical matches
         for (x in 0 until BOARD_SIZE) {
-            val column = mutableListOf<TreatTile>()
-            for (y in 0 until BOARD_SIZE) {
-                val tile = newBoard[y][x]
-                if (!matches.contains(x to y)) {
-                    column.add(tile)
+            for (y in 0 until BOARD_SIZE - 2) {
+                val tile1 = board[y][x]
+                val tile2 = board[y + 1][x]
+                val tile3 = board[y + 2][x]
+                if (tile1.type == tile2.type && tile2.type == tile3.type) {
+                    matchedTiles.add(tile1)
+                    matchedTiles.add(tile2)
+                    matchedTiles.add(tile3)
+                    // Check for longer matches
+                    for (k in y + 3 until BOARD_SIZE) {
+                        if (board[k][x].type == tile1.type) {
+                            matchedTiles.add(board[k][x])
+                        } else {
+                            break
+                        }
+                    }
                 }
-            }
-
-            // Add new tiles to the top
-            while (column.size < BOARD_SIZE) {
-                val newTile = TreatTile(x, BOARD_SIZE - column.size - 1, TreatType.values().random())
-                column.add(0, newTile)
-            }
-
-            // Replace column in board
-            for (y in 0 until BOARD_SIZE) {
-                newBoard[y][x] = column[y].copy(y = y)
             }
         }
 
-        return newBoard
+        return matchedTiles
+    }
+
+    // Function to check if a swap results in a match
+    fun isSwapValid(board: List<List<GameTile>>, x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+        if (x1 !in 0 until BOARD_SIZE || y1 !in 0 until BOARD_SIZE ||
+            x2 !in 0 until BOARD_SIZE || y2 !in 0 until BOARD_SIZE) {
+            return false // Out of bounds
+        }
+
+        // Check if adjacent
+        if (abs(x1 - x2) + abs(y1 - y2) != 1) {
+            return false // Not adjacent
+        }
+
+        // Create a temporary board with the swap
+        val tempBoard = board.map { it.toMutableList() }.toMutableList()
+        val tempTile = tempBoard[y1][x1]
+        tempBoard[y1][x1] = tempBoard[y2][x2].copy(x = x1, y = y1)
+        tempBoard[y2][x2] = tempTile.copy(x = x2, y = y2)
+
+        // Check if the swap creates a match involving either swapped tile
+        return detectMatches(tempBoard).any { it.id == tempBoard[y1][x1].id || it.id == tempBoard[y2][x2].id }
+    }
+
+    fun clearMatchesAndRefill(board: List<List<GameTile>>, matches: Set<GameTile>): List<List<GameTile>> {
+        val mutableBoard = board.map { it.toMutableList() }.toMutableList()
+        val matchedCoords = matches.map { it.x to it.y }.toSet()
+
+        // Mark matched tiles (e.g., set type to null or use a flag)
+        matches.forEach { tile ->
+            mutableBoard[tile.y][tile.x] = mutableBoard[tile.y][tile.x].copy(isMatched = true)
+        }
+
+        // Apply gravity column by column
+        for (x in 0 until BOARD_SIZE) {
+            val column = mutableListOf<GameTile?>()
+            // Add non-matched tiles from bottom up
+            for (y in BOARD_SIZE - 1 downTo 0) {
+                if (!mutableBoard[y][x].isMatched) {
+                    column.add(mutableBoard[y][x])
+                }
+            }
+
+            // Fill the rest with nulls (representing empty spaces)
+            while (column.size < BOARD_SIZE) {
+                column.add(null)
+            }
+
+            // Place tiles back into the column, from bottom up
+            for (y in BOARD_SIZE - 1 downTo 0) {
+                mutableBoard[y][x] = column[BOARD_SIZE - 1 - y]?.copy(y = y) ?: 
+                                     // Generate new tile for empty space
+                                     GameTile(x, y, TreatType.values().random())
+            }
+        }
+        
+        // Reset isMatched flag for the new board state
+        val finalBoard = mutableBoard.map { row -> 
+            row.map { tile -> tile.copy(isMatched = false) } 
+        }
+
+        return finalBoard
     }
 }
+
