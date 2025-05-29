@@ -1,75 +1,63 @@
 package com.gibson.games
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.gibson.games.dreamtreats.DreamTreatsActivity // Import your game activity
-import com.gibson.games.ui.theme.GamesTheme
+import androidx.compose.ui.unit.sp
+import com.gibson.games.candycrush.CandyCrushScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            GamesTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    GameSelectionScreen { gameName ->
-                        when (gameName) {
-                            "DreamTreats" -> {
-                                startActivity(Intent(this, DreamTreatsActivity::class.java))
-                            }
-                            // Add more games here
-                        }
-                    }
-                }
+            GamesApp()
+        }
+    }
+}
+
+@Composable
+fun GamesApp() {
+    var selectedGame by remember { mutableStateOf<String?>(null) }
+
+    MaterialTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            when (selectedGame) {
+                "candy_crush" -> CandyCrushScreen { selectedGame = null }
+                else -> GameMenu(onGameSelected = { selectedGame = it })
             }
         }
     }
 }
 
 @Composable
-fun GameSelectionScreen(onGameSelected: (String) -> Unit) {
+fun GameMenu(onGameSelected: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Choose a Game", style = MaterialTheme.typography.headlineMedium)
-        Button(
-            onClick = { onGameSelected("DreamTreats") },
-            modifier = Modifier.padding(top = 16.dp)
-        ) {
-            Text("DreamTreats (Candy Crush)")
-        }
-        // Add more game buttons here as you create them
-        // Button(onClick = { onGameSelected("AnotherGame") }) {
-        //     Text("Another Game")
-        // }
-    }
-}
+        Text("🎮 Multi Game App", fontSize = 28.sp)
 
-@Preview(showBackground = true)
-@Composable
-fun GameSelectionScreenPreview() {
-    GamesTheme {
-        GameSelectionScreen {}
+        Button(onClick = { onGameSelected("candy_crush") }) {
+            Text("🍬 Play Candy Crush")
+        }
+
+        // Add more game buttons below as you expand
+        Button(onClick = { /* onGameSelected("tetris") */ }, enabled = false) {
+            Text("🧱 Tetris (Coming Soon)")
+        }
+
+        Button(onClick = { /* onGameSelected("sudoku") */ }, enabled = false) {
+            Text("🔢 Sudoku (Coming Soon)")
+        }
     }
 }
