@@ -71,14 +71,21 @@ dependencies {
 
         // Material
         //implementation("androidx.compose.material:material")
-       // implementation("androidx.compose.material3:material3") // Optional for Material 3
+       implementation("androidx.compose.material3:material3:1.3.2") // Optional for Material 3
 
         // Runtime & animation
         //implementation("androidx.compose.runtime:runtime")
        // implementation("androidx.compose.animation:animation")
 
         // Activity integration
-        //implementation("androidx.activity:activity-compose:1.9.0")
+        implementation("androidx.activity:activity-compose:1.9.0")
+        implementation("androidx.compose.ui:ui:1.8.2")
+    implementation("androidx.compose.foundation:foundation:1.8.2")
+    implementation(platform("androidx.compose:compose-bom:2025.05.01"))
+    implementation("androidx.compose.ui:ui-graphics:1.8.2")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.8.2")
+     implementation("androidx.compose.ui:ui-tooling:1.8.2")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.8.2")
 
         // ViewModel integration
         //implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")

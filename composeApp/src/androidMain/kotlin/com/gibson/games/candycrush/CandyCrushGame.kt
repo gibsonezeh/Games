@@ -1,6 +1,6 @@
 package com.gibson.games.candycrush
 
-import kotlin.random.Random
+import kotlin.math.absoluteValue
 
 class CandyCrushGame(val size: Int = 8) {
     private val candyTypes = listOf("🍒", "🍇", "🍋", "🍊", "🍏", "🍉")

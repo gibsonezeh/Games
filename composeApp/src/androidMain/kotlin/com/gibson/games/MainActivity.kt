@@ -18,6 +18,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             GamesApp()
+               CandyCrushScreen(onBack = {})
+
         }
     }
 }
