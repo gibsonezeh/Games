@@ -1,131 +1,160 @@
 package com.gibson.games.candycrush
 
-import kotlin.math.absoluteValue
+import androidx.compose.foundation.Canvas 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text 
+import androidx.compose.runtime.* 
+import androidx.compose.ui.Modifier 
+import androidx.compose.ui.geometry.Offset 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput 
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp 
+import kotlin.math.absoluteValue 
+import kotlin.random.Random
 
-class CandyCrushGame(val size: Int = 8) {
-    private val candyTypes = listOf("🍒", "🍇", "🍋", "🍊", "🍏", "🍉")
-    var board = MutableList(size * size) { randomCandy() }
+@Composable fun CandyCrushScreen(onBack: () -> Unit) {
+    val gridSize = 8 
+    val candyTypes = listOf("🍒", "🍋", "🍇", "🍎", "🍉", "🍬") 
+    val cellSize = 48.dp val grid = remember { mutableStateListOf<MutableList<String>>() }
 
-    fun get(x: Int, y: Int): String = board[y * size + x]
-
-    private fun randomCandy(): String = candyTypes.random()
-
-    fun swap(x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
-        val idx1 = y1 * size + x1
-        val idx2 = y2 * size + x2
-
-        if (!isAdjacent(x1, y1, x2, y2)) return false
-
-        board[idx1] = board[idx2].also { board[idx2] = board[idx1] }
-
-        return if (hasMatches()) {
-            processMatches()
-            true
-        } else {
-            // revert
-            board[idx1] = board[idx2].also { board[idx2] = board[idx1] }
-            false
-        }
+LaunchedEffect(Unit) {
+    // Initialize grid with random candies
+    grid.clear()
+    repeat(gridSize) {
+        grid.add(MutableList(gridSize) { candyTypes.random() })
     }
+    removeMatches(grid, candyTypes)
+}
 
-    private fun isAdjacent(x1: Int, y1: Int, x2: Int, y2: Int) =
-        (x1 == x2 && (y1 - y2).absoluteValue == 1) ||
-        (y1 == y2 && (x1 - x2).absoluteValue == 1)
+Column(
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)
+) {
+    Text("🍬 Candy Crush", fontSize = 24.sp)
 
-    fun hasMatches(): Boolean {
-        return findMatches().isNotEmpty()
-    }
+    Spacer(Modifier.height(16.dp))
 
-    private fun findMatches(): Set<Int> {
-        val matched = mutableSetOf<Int>()
-
-        // Horizontal
-        for (y in 0 until size) {
-            var count = 1
-            for (x in 1 until size) {
-                val cur = get(x, y)
-                val prev = get(x - 1, y)
-                if (cur == prev) count++ else count = 1
-                if (count >= 3) {
-                    for (i in 0 until count) matched.add(y * size + x - i)
+    Box(
+        modifier = Modifier
+            .size((cellSize + 2.dp) * gridSize)
+            .background(Color.LightGray)
+    ) {
+        for (row in 0 until gridSize) {
+            for (col in 0 until gridSize) {
+                val candy = grid[row][col]
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = col * (cellSize + 2.dp),
+                            y = row * (cellSize + 2.dp)
+                        )
+                        .size(cellSize)
+                        .background(Color.White)
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val (dx, dy) = dragAmount
+                                if (dx.absoluteValue > dy.absoluteValue) {
+                                    val newCol = col + if (dx > 0) 1 else -1
+                                    if (newCol in 0 until gridSize) {
+                                        swapAndCheck(grid, row, col, row, newCol, candyTypes)
+                                    }
+                                } else {
+                                    val newRow = row + if (dy > 0) 1 else -1
+                                    if (newRow in 0 until gridSize) {
+                                        swapAndCheck(grid, row, col, newRow, col, candyTypes)
+                                    }
+                                }
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = candy, fontSize = 24.sp)
                 }
             }
         }
-
-        // Vertical
-        for (x in 0 until size) {
-            var count = 1
-            for (y in 1 until size) {
-                val cur = get(x, y)
-                val prev = get(x, y - 1)
-                if (cur == prev) count++ else count = 1
-                if (count >= 3) {
-                    for (i in 0 until count) matched.add((y - i) * size + x)
-                }
-            }
-        }
-
-        return matched
     }
 
-    fun processMatches() {
-        while (true) {
-            val matches = findMatches()
-            if (matches.isEmpty()) break
+    Spacer(Modifier.height(24.dp))
 
-            // Remove matched
-            for (index in matches) {
-                board[index] = ""
-            }
+    Text(
+        "⬅️ Back",
+        color = Color.Blue,
+        modifier = Modifier
+            .clickable { onBack() }
+            .padding(8.dp)
+    )
+}
 
-            // Drop candies
-            for (x in 0 until size) {
-                val column = mutableListOf<String>()
-                for (y in size - 1 downTo 0) {
-                    val idx = y * size + x
-                    if (board[idx].isNotEmpty()) {
-                        column.add(board[idx])
-                    }
-                }
+}
 
-                // Fill column from bottom
-                for (y in size - 1 downTo 0) {
-                    val idx = y * size + x
-                    board[idx] = if (column.isNotEmpty()) column.removeAt(0) else randomCandy()
-                }
-            }
+fun swapAndCheck( grid: MutableList<MutableList<String>>, r1: Int, c1: Int, r2: Int, c2: Int, candyTypes: List<String> ) { 
+    val temp = grid[r1][c1] grid[r1][c1] = grid[r2][c2] grid[r2][c2] = temp
+
+if (!removeMatches(grid, candyTypes)) {
+    // No match → swap back
+    grid[r2][c2] = grid[r1][c1]
+    grid[r1][c1] = temp
+}
+
+}
+
+fun removeMatches( grid: MutableList<MutableList<String>>, candyTypes: List<String> ): Boolean {
+    val size = grid.size 
+    var matchFound = false 
+    val toClear = mutableSetOf<Pair<Int, Int>>()
+
+// Horizontal
+for (row in 0 until size) {
+    for (col in 0 until size - 2) {
+        val c = grid[row][col]
+        if (c != "" && c == grid[row][col + 1] && c == grid[row][col + 2]) {
+            toClear.add(Pair(row, col))
+            toClear.add(Pair(row, col + 1))
+            toClear.add(Pair(row, col + 2))
         }
-
-        // Auto-refresh if no more matches
-        if (!hasPossibleMoves()) reshuffle()
-    }
-
-    fun reshuffle() {
-        do {
-            board = MutableList(size * size) { randomCandy() }
-        } while (!hasPossibleMoves())
-    }
-
-    fun hasPossibleMoves(): Boolean {
-        for (y in 0 until size) {
-            for (x in 0 until size) {
-                val current = get(x, y)
-                val neighbors = listOf(
-                    x + 1 to y, x - 1 to y, x to y + 1, x to y - 1
-                ).filter { (nx, ny) -> nx in 0 until size && ny in 0 until size }
-
-                for ((nx, ny) in neighbors) {
-                    val idx1 = y * size + x
-                    val idx2 = ny * size + nx
-                    board[idx1] = board[idx2].also { board[idx2] = board[idx1] }
-                    if (hasMatches()) {
-                        board[idx1] = board[idx2].also { board[idx2] = board[idx1] }
-                        return true
-                    }
-                    board[idx1] = board[idx2].also { board[idx2] = board[idx1] }
-                }
-            }
-        }
-        return false
     }
 }
+
+// Vertical
+for (col in 0 until size) {
+    for (row in 0 until size - 2) {
+        val c = grid[row][col]
+        if (c != "" && c == grid[row + 1][col] && c == grid[row + 2][col]) {
+            toClear.add(Pair(row, col))
+            toClear.add(Pair(row + 1, col))
+            toClear.add(Pair(row + 2, col))
+        }
+    }
+}
+
+if (toClear.isNotEmpty()) {
+    matchFound = true
+    for ((r, c) in toClear) {
+        grid[r][c] = ""
+    }
+    dropCandies(grid, candyTypes)
+    removeMatches(grid, candyTypes) // Recursive until all matches are gone
+}
+
+return matchFound
+
+}
+
+fun dropCandies( grid: MutableList<MutableList<String>>, candyTypes: List<String> ) { 
+    val size = grid.size for (col in 0 until size) { 
+        val stack = mutableListOf<String>() for (row in size - 1 downTo 0) { 
+            val candy = grid[row][col] 
+            if (candy != "") stack.add(candy)
+        } for (row in size - 1 downTo 0) { 
+            grid[row][col] = if (stack.isNotEmpty()) stack.removeAt(0)
+            else candyTypes.random() 
+        } 
+    }
+}
+
