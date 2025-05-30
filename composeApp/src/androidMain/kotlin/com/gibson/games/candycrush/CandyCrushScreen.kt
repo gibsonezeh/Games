@@ -1,25 +1,21 @@
+// CandyCrushScreen.kt
 package com.gibson.games.candycrush
 
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.*
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlin.math.abs
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun CandyCrushScreen(viewModel: CandyCrushViewModel, onBack: () -> Unit) {
-    //val viewModel: CandyCrushViewModel = viewModel(LocalActivity.current as ComponentActivity)
     val board by viewModel.board.collectAsState()
     val score by viewModel.score.collectAsState()
 
@@ -29,66 +25,49 @@ fun CandyCrushScreen(viewModel: CandyCrushViewModel, onBack: () -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("🍬 Candy Crush", style = MaterialTheme.typography.headlineMedium)
-        Text("Score: $score", style = MaterialTheme.typography.bodyLarge)
+        Text("🍬 Candy Crush", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("Score: $score", fontSize = 20.sp)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        for (row in board.indices) {
+        for (i in board.indices) {
             Row {
-                for (col in board[row].indices) {
-                    CandyCell(
-                        emoji = board[row][col],
-                        onSwipe = { direction ->
-                            val (newRow, newCol) = getSwipeTarget(row, col, direction)
-                            if (newRow in board.indices && newCol in board[row].indices) {
-                                viewModel.swapCandies(row, col, newRow, newCol)
-                            }
-                        }
-                    )
+                for (j in board[i].indices) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.LightGray)
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    val (dx, dy) = dragAmount
+                                    val direction = when {
+                                        dx > 50 -> Pair(0, 1)
+                                        dx < -50 -> Pair(0, -1)
+                                        dy > 50 -> Pair(1, 0)
+                                        dy < -50 -> Pair(-1, 0)
+                                        else -> null
+                                    }
+                                    direction?.let { (di, dj) ->
+                                        val newRow = i + di
+                                        val newCol = j + dj
+                                        if (newRow in board.indices && newCol in board[i].indices) {
+                                            viewModel.swapCandies(i, j, newRow, newCol)
+                                        }
+                                    }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = board[i][j], fontSize = 18.sp)
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = onBack) {
-            Text("⬅ Back to Menu")
+            Text("Back to Menu")
         }
-    }
-}
-
-@Composable
-fun CandyCell(emoji: String, onSwipe: (Direction) -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .padding(2.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(6.dp))
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val (dx, dy) = dragAmount
-                    if (abs(dx) > abs(dy)) {
-                        if (dx > 0) onSwipe(Direction.RIGHT) else onSwipe(Direction.LEFT)
-                    } else {
-                        if (dy > 0) onSwipe(Direction.DOWN) else onSwipe(Direction.UP)
-                    }
-                }
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(emoji, fontSize = 24.sp)
-    }
-}
-
-enum class Direction { UP, DOWN, LEFT, RIGHT }
-
-fun getSwipeTarget(row: Int, col: Int, direction: Direction): Pair<Int, Int> {
-    return when (direction) {
-        Direction.UP -> row - 1 to col
-        Direction.DOWN -> row + 1 to col
-        Direction.LEFT -> row to col - 1
-        Direction.RIGHT -> row to col + 1
     }
 }
