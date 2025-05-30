@@ -6,32 +6,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.*
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
-import kotlin.random.Random
 
 @Composable
-fun CandyCrushScreen(onBack: () -> Unit) {
-    val gridSize = 8
-    val candyTypes = listOf("🍒", "🍋", "🍇", "🍓", "🍊", "🍍")
-    val maxMoves = 30
+fun CandyCrushScreen(onBack: () -> Unit, viewModel: CandyCrushViewModel = viewModel()) {
+    val board = remember { mutableStateListOf<List<String>>() }
 
-    var grid by remember { mutableStateOf(generateInitialGrid(gridSize, candyTypes)) }
-    var score by remember { mutableIntStateOf(0) }
-    var movesLeft by remember { mutableIntStateOf(maxMoves) }
-    var gameOver by remember { mutableStateOf(false) }
+    // Update board when ViewModel changes
+    LaunchedEffect(viewModel.board) {
+        board.clear()
+        board.addAll(viewModel.board)
+    }
 
-    fun resetGame() {
-        grid = generateInitialGrid(gridSize, candyTypes)
-        score = 0
-        movesLeft = maxMoves
-        gameOver = false
+    // Auto-refresh board on recomposition
+    LaunchedEffect(Unit) {
+        snapshotFlow { viewModel.board }.collect {
+            board.clear()
+            board.addAll(it)
+        }
     }
 
     Column(
@@ -40,188 +36,69 @@ fun CandyCrushScreen(onBack: () -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("🍬 Candy Crush", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Score: $score", fontSize = 18.sp)
-        Text("Moves Left: $movesLeft", fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (gameOver) {
-            Text("🎮 Game Over!", fontSize = 24.sp, color = Color.Red)
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { resetGame() }) {
-                Text("Restart Game")
-            }
-        } else {
-            CandyGrid(
-                grid = grid,
-                onSwap = { from, to ->
-                    if (movesLeft <= 0) return@CandyGrid
-
-                    val newGrid = grid.map { it.toMutableList() }.toMutableList()
-                    val temp = newGrid[from.first][from.second]
-                    newGrid[from.first][from.second] = newGrid[to.first][to.second]
-                    newGrid[to.first][to.second] = temp
-
-                    val matches = detectMatches(newGrid)
-                    if (matches.isNotEmpty()) {
-                        grid = resolveMatches(newGrid, matches, candyTypes)
-                        score += matches.size * 10
-                        movesLeft--
-                        if (movesLeft == 0) gameOver = true
-                    }
-                }
-            )
-        }
+        Text("🍬 Candy Crush", style = MaterialTheme.typography.headlineMedium)
+        Text("Score: ${viewModel.score}", style = MaterialTheme.typography.bodyLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        for (row in board.indices) {
+            Row {
+                for (col in board[row].indices) {
+                    CandyCell(
+                        emoji = board[row][col],
+                        onSwipe = { direction ->
+                            val (newRow, newCol) = getSwipeTarget(row, col, direction)
+                            if (newRow in board.indices && newCol in board[row].indices) {
+                                viewModel.swapCandies(row, col, newRow, newCol)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         Button(onClick = onBack) {
-            Text("🔙 Back")
+            Text("⬅ Back to Menu")
         }
     }
 }
 
 @Composable
-fun CandyGrid(
-    grid: List<List<String>>,
-    onSwap: (Pair<Int, Int>, Pair<Int, Int>) -> Unit
+fun CandyCell(
+    emoji: String,
+    onSwipe: (Direction) -> Unit
 ) {
-    val gridSize = grid.size
-
-    Column {
-        for (row in 0 until gridSize) {
-            Row {
-                for (col in 0 until gridSize) {
-                    var startOffset by remember { mutableStateOf<Offset?>(null) }
-
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(2.dp)
-                            .background(Color(0xFFF8BBD0), RoundedCornerShape(8.dp))
-                            .pointerInput(Unit) {
-                                detectDragGestures(
-                                    onDragStart = { offset -> startOffset = offset },
-                                    onDragEnd = { startOffset = null },
-                                    onDragCancel = { startOffset = null },
-                                    onDrag = { change, dragAmount ->
-                                        startOffset?.let {
-                                            val direction = getDirectionFromDrag(dragAmount)
-                                            val newRow = row + direction.first
-                                            val newCol = col + direction.second
-                                            if (newRow in 0 until gridSize && newCol in 0 until gridSize) {
-                                                onSwap(Pair(row, col), Pair(newRow, newCol))
-                                            }
-                                            startOffset = null
-                                        }
-                                    }
-                                )
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = grid[row][col], fontSize = 20.sp)
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .padding(2.dp)
+            .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(6.dp))
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val (dx, dy) = dragAmount
+                    if (abs(dx) > abs(dy)) {
+                        if (dx > 0) onSwipe(Direction.RIGHT) else onSwipe(Direction.LEFT)
+                    } else {
+                        if (dy > 0) onSwipe(Direction.DOWN) else onSwipe(Direction.UP)
                     }
                 }
-            }
-        }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(emoji, fontSize = 24.sp)
     }
 }
 
-fun getDirectionFromDrag(drag: Offset): Pair<Int, Int> {
-    return when {
-        abs(drag.x) > abs(drag.y) ->
-            if (drag.x > 0) Pair(0, 1) else Pair(0, -1)
-        else ->
-            if (drag.y > 0) Pair(1, 0) else Pair(-1, 0)
+enum class Direction { UP, DOWN, LEFT, RIGHT }
+
+fun getSwipeTarget(row: Int, col: Int, direction: Direction): Pair<Int, Int> {
+    return when (direction) {
+        Direction.UP -> row - 1 to col
+        Direction.DOWN -> row + 1 to col
+        Direction.LEFT -> row to col - 1
+        Direction.RIGHT -> row to col + 1
     }
-}
-
-fun generateInitialGrid(size: Int, types: List<String>): List<List<String>> {
-    var grid: List<List<String>>
-    do {
-        grid = List(size) {
-            List(size) { types.random() }
-        }
-    } while (detectMatches(grid).isNotEmpty())
-    return grid
-}
-
-fun detectMatches(grid: List<List<String>>): Set<Pair<Int, Int>> {
-    val matched = mutableSetOf<Pair<Int, Int>>()
-    val size = grid.size
-
-    // Check rows
-    for (row in 0 until size) {
-        var count = 1
-        for (col in 1 until size) {
-            if (grid[row][col] == grid[row][col - 1]) {
-                count++
-            } else {
-                if (count >= 3) {
-                    for (i in col - count until col) {
-                        matched.add(Pair(row, i))
-                    }
-                }
-                count = 1
-            }
-        }
-        if (count >= 3) {
-            for (i in size - count until size) {
-                matched.add(Pair(row, i))
-            }
-        }
-    }
-
-    // Check columns
-    for (col in 0 until size) {
-        var count = 1
-        for (row in 1 until size) {
-            if (grid[row][col] == grid[row - 1][col]) {
-                count++
-            } else {
-                if (count >= 3) {
-                    for (i in row - count until row) {
-                        matched.add(Pair(i, col))
-                    }
-                }
-                count = 1
-            }
-        }
-        if (count >= 3) {
-            for (i in size - count until size) {
-                matched.add(Pair(i, col))
-            }
-        }
-    }
-
-    return matched
-}
-
-fun resolveMatches(
-    grid: List<MutableList<String>>,
-    matches: Set<Pair<Int, Int>>,
-    types: List<String>
-): List<List<String>> {
-    for ((row, col) in matches) {
-        grid[row][col] = ""
-    }
-
-    // Refill grid (candies fall down)
-    val size = grid.size
-    for (col in 0 until size) {
-        val column = mutableListOf<String>()
-        for (row in size - 1 downTo 0) {
-            if (grid[row][col].isNotEmpty()) {
-                column.add(grid[row][col])
-            }
-        }
-        while (column.size < size) {
-            column.add(types.random())
-        }
-        for (row in 0 until size) {
-            grid[size - 1 - row][col] = column[row]
-        }
-    }
-
-    return grid
 }
