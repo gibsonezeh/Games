@@ -23,43 +23,82 @@ class CandyCrushViewModel : ViewModel() {
 
     fun swapCandies(row1: Int, col1: Int, row2: Int, col2: Int) {
         val newBoard = _board.value.map { it.toMutableList() }.toMutableList()
+
+        // Swap the selected candies
         val temp = newBoard[row1][col1]
         newBoard[row1][col1] = newBoard[row2][col2]
         newBoard[row2][col2] = temp
+
         _board.value = newBoard
+
+        // Immediately check for and process matches
         processMatches()
     }
 
     private fun processMatches() {
-        val board = _board.value.map { it.toMutableList() }.toMutableList()
-        val matched = mutableSetOf<Pair<Int, Int>>()
+        var board = _board.value.map { it.toMutableList() }.toMutableList()
+        var totalMatched = 0
 
-        for (i in board.indices) {
-            for (j in 0..board[i].size - 3) {
-                val item = board[i][j]
-                if (item != "" && item == board[i][j + 1] && item == board[i][j + 2]) {
-                    matched.add(i to j)
-                    matched.add(i to j + 1)
-                    matched.add(i to j + 2)
+        while (true) {
+            val matched = mutableSetOf<Pair<Int, Int>>()
+
+            // Check horizontal matches (3 or more)
+            for (i in board.indices) {
+                var count = 1
+                for (j in 1 until board[i].size) {
+                    if (board[i][j] == board[i][j - 1] && board[i][j] != "") {
+                        count++
+                    } else {
+                        if (count >= 3) {
+                            for (k in j - count until j) {
+                                matched.add(i to k)
+                            }
+                        }
+                        count = 1
+                    }
+                }
+                if (count >= 3) {
+                    for (k in board[i].size - count until board[i].size) {
+                        matched.add(i to k)
+                    }
                 }
             }
-        }
 
-        for (j in board[0].indices) {
-            for (i in 0..board.size - 3) {
-                val item = board[i][j]
-                if (item != "" && item == board[i + 1][j] && item == board[i + 2][j]) {
-                    matched.add(i to j)
-                    matched.add(i + 1 to j)
-                    matched.add(i + 2 to j)
+            // Check vertical matches (3 or more)
+            for (j in board[0].indices) {
+                var count = 1
+                for (i in 1 until board.size) {
+                    if (board[i][j] == board[i - 1][j] && board[i][j] != "") {
+                        count++
+                    } else {
+                        if (count >= 3) {
+                            for (k in i - count until i) {
+                                matched.add(k to j)
+                            }
+                        }
+                        count = 1
+                    }
+                }
+                if (count >= 3) {
+                    for (k in board.size - count until board.size) {
+                        matched.add(k to j)
+                    }
                 }
             }
-        }
 
-        if (matched.isNotEmpty()) {
+            if (matched.isEmpty()) break
+
+            totalMatched += matched.size
+
+            // Clear matched candies
             matched.forEach { (i, j) -> board[i][j] = "" }
-            _score.value += matched.size * 10
+
+            // Drop candies and refill
             refillBoard(board)
+        }
+
+        if (totalMatched > 0) {
+            _score.value += totalMatched * 10
         }
 
         _board.value = board
@@ -77,7 +116,5 @@ class CandyCrushViewModel : ViewModel() {
                 board[i][j] = newColumn[i]
             }
         }
-        _board.value = board
-        processMatches()
     }
 }
