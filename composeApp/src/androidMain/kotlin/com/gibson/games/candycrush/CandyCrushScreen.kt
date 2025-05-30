@@ -1,5 +1,7 @@
 package com.gibson.games.candycrush
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
@@ -8,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -15,7 +18,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.abs
 
 @Composable
-fun CandyCrushScreen(onBack: () -> Unit, viewModel: CandyCrushViewModel = viewModel()) {
+fun CandyCrushScreen(viewModel: CandyCrushViewModel, onBack: () -> Unit) {
+    //val viewModel: CandyCrushViewModel = viewModel(LocalActivity.current as ComponentActivity)
     val board by viewModel.board.collectAsState()
     val score by viewModel.score.collectAsState()
 

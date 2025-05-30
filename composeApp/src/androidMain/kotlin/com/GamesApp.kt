@@ -8,15 +8,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gibson.games.candycrush.CandyCrushScreen
+import com.gibson.games.candycrush.CandyCrushViewModel
 
 @Composable
-fun GamesApp() {
+fun GamesApp(viewModel: CandyCrushViewModel) {
     var selectedGame by remember { mutableStateOf<String?>(null) }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             when (selectedGame) {
-                "candy_crush" -> CandyCrushScreen(onBack = { selectedGame = null })
+                "candy_crush" -> CandyCrushScreen(viewModel = viewModel, onBack = {
+                    selectedGame = null })
                 else -> GameMenu(onGameSelected = { selectedGame = it })
             }
         }

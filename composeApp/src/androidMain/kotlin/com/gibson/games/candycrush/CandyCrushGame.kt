@@ -9,13 +9,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp 
-import androidx.compose.ui.unit.sp 
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gibson.games.GamesApp
 import com.gibson.games.candycrush.CandyCrushScreen
 
 class MainActivity : ComponentActivity() { 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState) setContent { 
-            GamesApp() 
+        super.onCreate(savedInstanceState)
+        setContent {
+            GamesApp()
         }
     } 
 }
@@ -29,7 +32,7 @@ fun GamesApp() {
 MaterialTheme {
     Surface(modifier = Modifier.fillMaxSize()) {
         when (selectedGame) {
-            "candy_crush" -> CandyCrushScreen(onBack = { selectedGame = null })
+            "candy_crush" -> CandyCrushScreen(viewModel = viewModel(), onBack = { selectedGame = null })
             else -> GameMenu(onGameSelected = { selectedGame = it })
         }
     }
