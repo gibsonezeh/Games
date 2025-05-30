@@ -1,21 +1,21 @@
-// CandyCrushScreen.kt
 package com.gibson.games.candycrush
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun CandyCrushScreen(viewModel: CandyCrushViewModel, onBack: () -> Unit) {
+fun CandyCrushScreen(onBack: () -> Unit) {
+    val viewModel: CandyCrushViewModel = viewModel()
     val board by viewModel.board.collectAsState()
     val score by viewModel.score.collectAsState()
 
@@ -25,46 +25,42 @@ fun CandyCrushScreen(viewModel: CandyCrushViewModel, onBack: () -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("🍬 Candy Crush", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text("Score: $score", fontSize = 20.sp)
+        Text("🍬 Candy Crush Clone", fontSize = 24.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Score: $score", fontSize = 18.sp)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        for (i in board.indices) {
+        board.forEachIndexed { rowIndex, row ->
             Row {
-                for (j in board[i].indices) {
+                row.forEachIndexed { colIndex, candy ->
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.LightGray)
+                            .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
+                            .background(Color.White)
                             .pointerInput(Unit) {
                                 detectDragGestures { change, dragAmount ->
                                     val (dx, dy) = dragAmount
-                                    val direction = when {
-                                        dx > 50 -> Pair(0, 1)
-                                        dx < -50 -> Pair(0, -1)
-                                        dy > 50 -> Pair(1, 0)
-                                        dy < -50 -> Pair(-1, 0)
-                                        else -> null
+                                    val (toRow, toCol) = when {
+                                        dx > 30 -> rowIndex to colIndex + 1
+                                        dx < -30 -> rowIndex to colIndex - 1
+                                        dy > 30 -> rowIndex + 1 to colIndex
+                                        dy < -30 -> rowIndex - 1 to colIndex
+                                        else -> return@detectDragGestures
                                     }
-                                    direction?.let { (di, dj) ->
-                                        val newRow = i + di
-                                        val newCol = j + dj
-                                        if (newRow in board.indices && newCol in board[i].indices) {
-                                            viewModel.swapCandies(i, j, newRow, newCol)
-                                        }
-                                    }
+                                    viewModel.swapCandies(rowIndex, colIndex, toRow, toCol)
                                 }
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = board[i][j], fontSize = 18.sp)
+                        Text(candy, fontSize = 24.sp)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(onClick = onBack) {
             Text("Back to Menu")
