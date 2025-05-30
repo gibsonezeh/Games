@@ -10,25 +10,14 @@ import androidx.compose.ui.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.abs
 
 @Composable
 fun CandyCrushScreen(onBack: () -> Unit, viewModel: CandyCrushViewModel = viewModel()) {
-    val board = remember { mutableStateListOf<List<String>>() }
-
-    // Update board when ViewModel changes
-    LaunchedEffect(viewModel.board) {
-        board.clear()
-        board.addAll(viewModel.board)
-    }
-
-    // Auto-refresh board on recomposition
-    LaunchedEffect(Unit) {
-        snapshotFlow { viewModel.board }.collect {
-            board.clear()
-            board.addAll(it)
-        }
-    }
+    val board by viewModel.board.collectAsState()
+    val score by viewModel.score.collectAsState()
 
     Column(
         modifier = Modifier
@@ -37,7 +26,7 @@ fun CandyCrushScreen(onBack: () -> Unit, viewModel: CandyCrushViewModel = viewMo
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("🍬 Candy Crush", style = MaterialTheme.typography.headlineMedium)
-        Text("Score: ${viewModel.score}", style = MaterialTheme.typography.bodyLarge)
+        Text("Score: $score", style = MaterialTheme.typography.bodyLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -66,10 +55,7 @@ fun CandyCrushScreen(onBack: () -> Unit, viewModel: CandyCrushViewModel = viewMo
 }
 
 @Composable
-fun CandyCell(
-    emoji: String,
-    onSwipe: (Direction) -> Unit
-) {
+fun CandyCell(emoji: String, onSwipe: (Direction) -> Unit) {
     Box(
         modifier = Modifier
             .size(40.dp)
