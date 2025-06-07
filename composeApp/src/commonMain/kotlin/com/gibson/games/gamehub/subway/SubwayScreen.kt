@@ -17,6 +17,7 @@ import com.gibson.games.model.Player
 import kotlinx.coroutines.delay
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import com.gibson.games.core.SwipeDirection
 
 @Composable
 fun SubwayScreen() {
@@ -42,10 +43,10 @@ fun SubwayScreen() {
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     val (dx, dy) = dragAmount
-                    if (dy < -30) playerController.swipeUp()
-                    if (dy > 30) playerController.swipeDown()
-                    if (dx < -30) playerController.swipeLeft()
-                    if (dx > 30) playerController.swipeRight()
+                    if (dy < -30) playerController.onSwipe(SwipeDirection.UP)
+                    if (dy > 30) playerController.onSwipe(SwipeDirection.DOWN)
+                    if (dx < -30) playerController.onSwipe(SwipeDirection.LEFT)
+                    if (dx > 30) playerController.onSwipe(SwipeDirection.RIGHT)
                 }
             }
     ) {
