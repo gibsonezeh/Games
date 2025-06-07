@@ -1,63 +1,76 @@
 package com.gibson.games.gamehub.subway
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import com.gibson.games.core.SwipeDirection
-import com.gibson.games.core.SwipeInputHandler
+import androidx.compose.ui.input.pointer.pointerInput
+import com.gibson.games.core.Vector2
+import com.gibson.games.engine.CollisionManager
+import com.gibson.games.engine.ObstacleManager
 import com.gibson.games.engine.PlayerController
-import com.gibson.games.engine.RoadGenerator
 import com.gibson.games.model.Player
+import kotlinx.coroutines.delay
 
 @Composable
 fun SubwayScreen() {
-    val player = remember { Player() }
+    val player = remember { Player(position = Vector2(400f, 1600f)) }
     val playerController = remember { PlayerController(player) }
-    val roadGenerator = remember { RoadGenerator() }
+    val obstacleManager = remember { ObstacleManager() }
+    val collisionManager = remember { CollisionManager() }
 
-    // Register swipe input listener
-    DisposableEffect(Unit) {
-        SwipeInputHandler.registerListener { direction ->
-            playerController.onSwipe(direction)
-        }
-        onDispose {
-            SwipeInputHandler.unregisterListener()
-        }
-    }
+    var gameOver by remember { mutableStateOf(false) }
 
-    // Game loop (simplified)
     LaunchedEffect(Unit) {
-        while (true) {
-            playerController.update()
-            roadGenerator.update()
-            // Delay to simulate frame tick (~60fps)
-            kotlinx.coroutines.delay(16)
+        while (!gameOver) {
+            obstacleManager.update()
+            gameOver = collisionManager.checkCollisions(player, obstacleManager.getObstacles())
+            delay(16L) // ~60 FPS
         }
     }
 
-    // Render loop
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    val (_, dy) = dragAmount
+                    val (_, y0) = change.position
+
+                    if (dy < -30) playerController.onSwipeUp()
+                    if (dy > 30) playerController.onSwipeDown()
+
+                    val (dx, _) = dragAmount
+                    if (dx < -30) playerController.onSwipeLeft()
+                    if (dx > 30) playerController.onSwipeRight()
+                }
+            }
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Draw the road
-            val roadSegments = roadGenerator.getRoadSegments()
-            roadSegments.forEach { segment ->
+            // Draw player
+            drawRect(
+                color = Color.Green,
+                topLeft = androidx.compose.ui.geometry.Offset(player.position.x, player.position.y),
+                size = androidx.compose.ui.geometry.Size(80f, 80f)
+            )
+
+            // Draw obstacles
+            obstacleManager.getObstacles().forEach { obstacle ->
                 drawRect(
-                    color = Color.DarkGray,
-                    topLeft = Offset(segment.x, segment.y),
-                    size = segment.size
+                    color = Color.Red,
+                    topLeft = androidx.compose.ui.geometry.Offset(obstacle.position.x, obstacle.position.y),
+                    size = androidx.compose.ui.geometry.Size(obstacle.width, obstacle.height)
                 )
             }
-
-            // Draw the player
-            drawCircle(
-                color = Color.Cyan,
-                center = Offset(player.position.x, player.position.y),
-                radius = 40f
-            )
         }
+    }
+
+    if (gameOver) {
+        // Optional: You can render a "Game Over" overlay
     }
 }
