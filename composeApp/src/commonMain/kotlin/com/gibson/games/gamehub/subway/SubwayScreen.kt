@@ -1,5 +1,6 @@
 package com.gibson.games.gamehub.subway
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -13,8 +14,9 @@ import com.gibson.games.engine.CollisionManager
 import com.gibson.games.engine.ObstacleManager
 import com.gibson.games.engine.PlayerController
 import com.gibson.games.model.Player
-import com.gibson.games.ui.GameCanvas
 import kotlinx.coroutines.delay
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 
 @Composable
 fun SubwayScreen() {
@@ -25,7 +27,6 @@ fun SubwayScreen() {
 
     var gameOver by remember { mutableStateOf(false) }
 
-    // Game loop
     LaunchedEffect(Unit) {
         while (!gameOver) {
             obstacleManager.update()
@@ -40,23 +41,34 @@ fun SubwayScreen() {
             .background(Color.Black)
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
-                    val (_, dy) = dragAmount
-                    val (dx, _) = dragAmount
-
-                    if (dy < -30) playerController.onSwipeUp()
-                    if (dy > 30) playerController.onSwipeDown()
-                    if (dx < -30) playerController.onSwipeLeft()
-                    if (dx > 30) playerController.onSwipeRight()
+                    val (dx, dy) = dragAmount
+                    if (dy < -30) playerController.swipeUp()
+                    if (dy > 30) playerController.swipeDown()
+                    if (dx < -30) playerController.swipeLeft()
+                    if (dx > 30) playerController.swipeRight()
                 }
             }
     ) {
-        GameCanvas(
-            player = player,
-            obstacles = obstacleManager.getObstacles()
-        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Draw player
+            drawRect(
+                color = Color.Green,
+                topLeft = Offset(player.position.x, player.position.y),
+                size = Size(player.width, player.height)
+            )
 
-        if (gameOver) {
-            // Optional: Show "Game Over" overlay or button to restart
+            // Draw obstacles
+            obstacleManager.getObstacles().forEach { obstacle ->
+                drawRect(
+                    color = Color.Red,
+                    topLeft = Offset(obstacle.position.x, obstacle.position.y),
+                    size = Size(obstacle.width, obstacle.height)
+                )
+            }
         }
+    }
+
+    if (gameOver) {
+        // TODO: Add Game Over overlay
     }
 }
