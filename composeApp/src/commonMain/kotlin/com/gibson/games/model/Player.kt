@@ -2,9 +2,13 @@ package com.gibson.games.model
 
 import com.gibson.games.core.Vector2
 
-class Player {
-    var position = Vector2(500f, 1200f) // Start center-bottom
-    var lane = 1 // 0: Left, 1: Middle, 2: Right
+class Player(
+    override var position: Vector2 = Vector2(500f, 1200f), // Start center-bottom
+    override var width: Float = 80f,
+    override var height: Float = 80f
+) : GameEntity(position, width, height) {
+
+    var lane: Int = 1 // 0: Left, 1: Middle, 2: Right
 
     fun moveToLane(laneIndex: Int) {
         lane = laneIndex.coerceIn(0, 2)
@@ -15,6 +19,6 @@ class Player {
     }
 
     fun update() {
-        // Optional: gravity, jump, or other animations
+        // Future logic: jump, gravity, animations, etc.
     }
 }
