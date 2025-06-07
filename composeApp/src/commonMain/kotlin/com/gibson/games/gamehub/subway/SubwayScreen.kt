@@ -9,12 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import com.gibson.games.core.GameLoop
 import com.gibson.games.core.Vector2
 import com.gibson.games.engine.CollisionManager
 import com.gibson.games.engine.ObstacleManager
 import com.gibson.games.engine.PlayerController
 import com.gibson.games.model.Player
-import kotlinx.coroutines.delay
 
 @Composable
 fun SubwayScreen() {
@@ -25,12 +26,10 @@ fun SubwayScreen() {
 
     var gameOver by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        while (!gameOver) {
-            obstacleManager.update()
-            gameOver = collisionManager.checkCollisions(player, obstacleManager.getObstacles())
-            delay(16L) // ~60 FPS
-        }
+    // ✅ Use the extracted GameLoop
+    GameLoop(isRunning = !gameOver) {
+        obstacleManager.update()
+        gameOver = collisionManager.checkCollisions(player, obstacleManager.getObstacles())
     }
 
     Box(
@@ -39,27 +38,26 @@ fun SubwayScreen() {
             .background(Color.Black)
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
-                    val (_, dy) = dragAmount
-                    val (_, y0) = change.position
+                    val (dx, dy) = dragAmount
 
-                    if (dy < -30) playerController.onSwipeUp()
-                    if (dy > 30) playerController.onSwipeDown()
-
-                    val (dx, _) = dragAmount
-                    if (dx < -30) playerController.onSwipeLeft()
-                    if (dx > 30) playerController.onSwipeRight()
+                    when {
+                        dx > 30 -> playerController.onSwipeRight()
+                        dx < -30 -> playerController.onSwipeLeft()
+                        dy > 30 -> playerController.onSwipeDown()
+                        dy < -30 -> playerController.onSwipeUp()
+                    }
                 }
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Draw player
+            // ✅ Draw player
             drawRect(
                 color = Color.Green,
                 topLeft = androidx.compose.ui.geometry.Offset(player.position.x, player.position.y),
                 size = androidx.compose.ui.geometry.Size(80f, 80f)
             )
 
-            // Draw obstacles
+            // ✅ Draw obstacles
             obstacleManager.getObstacles().forEach { obstacle ->
                 drawRect(
                     color = Color.Red,
@@ -71,6 +69,6 @@ fun SubwayScreen() {
     }
 
     if (gameOver) {
-        // Optional: You can render a "Game Over" overlay
+        // TODO: Add Game Over UI or Restart Logic
     }
 }
