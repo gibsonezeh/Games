@@ -1,51 +1,72 @@
-
 package com.gibson.games.platform.input
 
 import android.view.MotionEvent
-import android.view.View
-import kotlin.math.abs
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.consumePositionChange
 import com.gibson.games.core.SwipeDirection
+import kotlin.math.abs
 
-class AndroidSwipeDetector(
-    private val onSwipe: (SwipeDirection) -> Unit
-) : View.OnTouchListener {
+actual class AndroidSwipeDetector actual constructor() {
 
-    private var downX = 0f
-    private var downY = 0f
+    actual fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
+        with(pointerInputScope) {
+            coroutineContext.launch {
+                var startX = 0f
+                var startY = 0f
 
-    override fun onTouch(view: View?, event: MotionEvent): Boolean {
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                downX = event.x
-                downY = event.y
-                return true
-            }
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Main)
+                        val change = event.changes.firstOrNull()
 
-            MotionEvent.ACTION_UP -> {
-                val upX = event.x
-                val upY = event.y
+                        if (change != null) {
+                            when (event.type) {
+                                PointerEvent.Type.Press -> {
+                                    startX = change.position.x
+                                    startY = change.position.y
+                                }
+                                PointerEvent.Type.Release -> {
+                                    if (change.changedToUp()) {
+                                        val endX = change.position.x
+                                        val endY = change.position.y
 
-                val deltaX = upX - downX
-                val deltaY = upY - downY
+                                        val diffX = endX - startX
+                                        val diffY = endY - startY
 
-                if (abs(deltaX) > abs(deltaY)) {
-                    // Horizontal swipe
-                    if (deltaX > 100) {
-                        onSwipe(SwipeDirection.RIGHT)
-                    } else if (deltaX < -100) {
-                        onSwipe(SwipeDirection.LEFT)
-                    }
-                } else {
-                    // Vertical swipe
-                    if (deltaY > 100) {
-                        onSwipe(SwipeDirection.DOWN)
-                    } else if (deltaY < -100) {
-                        onSwipe(SwipeDirection.UP)
+                                        if (abs(diffX) > abs(diffY)) {
+                                            if (abs(diffX) > SWIPE_THRESHOLD) {
+                                                if (diffX > 0) {
+                                                    onSwipe(SwipeDirection.RIGHT)
+                                                } else {
+                                                    onSwipe(SwipeDirection.LEFT)
+                                                }
+                                            }
+                                        } else {
+                                            if (abs(diffY) > SWIPE_THRESHOLD) {
+                                                if (diffY > 0) {
+                                                    onSwipe(SwipeDirection.DOWN)
+                                                } else {
+                                                    onSwipe(SwipeDirection.UP)
+                                                }
+                                            }
+                                        }
+                                        change.consumePositionChange()
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                return true
             }
         }
-        return false
+    }
+
+    companion object {
+        private const val SWIPE_THRESHOLD = 50f
     }
 }
+
