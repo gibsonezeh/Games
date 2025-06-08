@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.handwriting.handwritingDetector
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -13,20 +14,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import com.gibson.games.platform.input.detectSwipe // Import the top-level extension function
+import com.gibson.games.detectSwipe
+
+// Import the top-level extension function
 
 @Composable
-fun SubwayScreen() {
-    val scope = rememberCoroutineScope()
-    val subwayLogic = remember { SubwayLogic(scope) }
-    val gameState = subwayLogic.gameState.value
+fuo___________________________________________________________________________________________________
 
-    Box(modifier = Modifier.fillMaxSize().background(SubwayAssets.SkyColor)) {
-        Canvas(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-            detectSwipe { direction -> // Call the extension function directly
+
+    { direction -> // Call the extension function directly
                 subwayLogic.handleSwipe(direction)
             }
-        }) {
+        } ) {
             // Draw road
             drawRect(
                 color = SubwayAssets.RoadColor,

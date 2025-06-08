@@ -8,7 +8,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import com.gibson.games.core.SwipeDirection
 import kotlin.math.abs
 
-actual suspend fun PointerInputScope.detectSwipe(onSwipe: (SwipeDirection) -> Unit) {
+suspend fun PointerInputScope.detectSwipe(onSwipe: (SwipeDirection) -> Unit) {
     var startX = 0f
     var startY = 0f
 
