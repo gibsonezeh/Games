@@ -2,7 +2,6 @@ package com.gibson.games.gamehub.subway
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-//import androidx.compose.foundation.gestures.detectSwipeGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import com.gibson.games.AndroidSwipeDetector
-
-// Assuming this is the common interface
+import com.gibson.games.platform.input.detectSwipe // Import the top-level extension function
 
 @Composable
 fun SubwayScreen() {
@@ -24,11 +21,9 @@ fun SubwayScreen() {
     val subwayLogic = remember { SubwayLogic(scope) }
     val gameState = subwayLogic.gameState.value
 
-    val swipeDetector = remember { AndroidSwipeDetector() }
-
     Box(modifier = Modifier.fillMaxSize().background(SubwayAssets.SkyColor)) {
         Canvas(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-            swipeDetector.detectSwipe(this) { direction ->
+            detectSwipe { direction -> // Call the extension function directly
                 subwayLogic.handleSwipe(direction)
             }
         }) {
@@ -68,4 +63,5 @@ fun SubwayScreen() {
         }
     }
 }
+
 
