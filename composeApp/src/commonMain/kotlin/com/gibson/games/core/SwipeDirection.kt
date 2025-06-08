@@ -1,5 +1,10 @@
 package com.gibson.games.core
 
 enum class SwipeDirection {
-    UP, DOWN, LEFT, RIGHT
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    NONE
 }
+
