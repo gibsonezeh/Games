@@ -3,8 +3,12 @@ package com.gibson.games.model
 import com.gibson.games.core.Vector2
 
 class Obstacle(
-    override var position: Vector2,
-    override var width: Float = 100f,
-    override var height: Float = 100f,
-    val lane: Int = 1 // 0: Left, 1: Middle, 2: Right
-) : GameEntity(position, width, height)
+    override val position: Vector2,
+    override val size: Vector2
+) : GameEntity {
+    override fun update(deltaTime: Long) {
+        // Obstacles typically don't update their own position, they are static relative to the road
+        // Their position is managed by the RoadGenerator
+    }
+}
+
