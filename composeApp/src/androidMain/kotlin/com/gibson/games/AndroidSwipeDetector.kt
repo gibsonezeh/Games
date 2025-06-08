@@ -1,4 +1,4 @@
-package com.gibson.games.platform.input
+package com.gibson.games
 
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
