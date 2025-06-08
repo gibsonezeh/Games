@@ -7,57 +7,54 @@ import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.PointerEventType
 import com.gibson.games.core.SwipeDirection
 import kotlin.math.abs
-import kotlinx.coroutines.launch
 
-actual class AndroidSwipeDetector() : SwipeDetector {
+class AndroidSwipeDetector() : SwipeDetector {
 
-    override fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
+    override suspend fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
         with(pointerInputScope) {
-            launch {
-                var startX = 0f
-                var startY = 0f
+            var startX = 0f
+            var startY = 0f
 
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Main)
-                        val change = event.changes.firstOrNull()
+            awaitPointerEventScope {
+                while (true) {
+                    val event = awaitPointerEvent(PointerEventPass.Main)
+                    val change = event.changes.firstOrNull()
 
-                        if (change != null) {
-                            when (event.type) {
-                                PointerEventType.Press -> {
-                                    startX = change.position.x
-                                    startY = change.position.y
-                                }
-                                PointerEventType.Release -> {
-                                    if (change.changedToUp()) {
-                                        val endX = change.position.x
-                                        val endY = change.position.y
+                    if (change != null) {
+                        when (event.type) {
+                            PointerEventType.Press -> {
+                                startX = change.position.x
+                                startY = change.position.y
+                            }
+                            PointerEventType.Release -> {
+                                if (change.changedToUp()) {
+                                    val endX = change.position.x
+                                    val endY = change.position.y
 
-                                        val diffX = endX - startX
-                                        val diffY = endY - startY
+                                    val diffX = endX - startX
+                                    val diffY = endY - startY
 
-                                        if (abs(diffX) > abs(diffY)) {
-                                            if (abs(diffX) > SWIPE_THRESHOLD) {
-                                                if (diffX > 0) {
-                                                    onSwipe(SwipeDirection.RIGHT)
-                                                } else {
-                                                    onSwipe(SwipeDirection.LEFT)
-                                                }
-                                            }
-                                        } else {
-                                            if (abs(diffY) > SWIPE_THRESHOLD) {
-                                                if (diffY > 0) {
-                                                    onSwipe(SwipeDirection.DOWN)
-                                                } else {
-                                                    onSwipe(SwipeDirection.UP)
-                                                }
+                                    if (abs(diffX) > abs(diffY)) {
+                                        if (abs(diffX) > SWIPE_THRESHOLD) {
+                                            if (diffX > 0) {
+                                                onSwipe(SwipeDirection.RIGHT)
+                                            } else {
+                                                onSwipe(SwipeDirection.LEFT)
                                             }
                                         }
-                                        change.consumePositionChange()
+                                    } else {
+                                        if (abs(diffY) > SWIPE_THRESHOLD) {
+                                            if (diffY > 0) {
+                                                onSwipe(SwipeDirection.DOWN)
+                                            } else {
+                                                onSwipe(SwipeDirection.UP)
+                                            }
+                                        }
                                     }
+                                    change.consumePositionChange()
                                 }
-                                else -> { /* Do nothing for other event types */ }
                             }
+                            else -> { /* Do nothing for other event types */ }
                         }
                     }
                 }
@@ -69,3 +66,5 @@ actual class AndroidSwipeDetector() : SwipeDetector {
         private const val SWIPE_THRESHOLD = 50f
     }
 }
+
+actual fun getSwipeDetector(): SwipeDetector = AndroidSwipeDetector()
