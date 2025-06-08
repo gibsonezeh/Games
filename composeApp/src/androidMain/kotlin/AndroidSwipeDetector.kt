@@ -1,4 +1,6 @@
-package com.gibson.games.platform.input
+package com.gibson.games
+
+
 
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
@@ -10,7 +12,7 @@ import kotlin.math.abs
 
 class AndroidSwipeDetector() : SwipeDetector {
 
-    override suspend fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
+    override fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
         with(pointerInputScope) {
             var startX = 0f
             var startY = 0f
@@ -26,6 +28,7 @@ class AndroidSwipeDetector() : SwipeDetector {
                                 startX = change.position.x
                                 startY = change.position.y
                             }
+
                             PointerEventType.Release -> {
                                 if (change.changedToUp()) {
                                     val endX = change.position.x
@@ -54,7 +57,9 @@ class AndroidSwipeDetector() : SwipeDetector {
                                     change.consumePositionChange()
                                 }
                             }
-                            else -> { /* Do nothing for other event types */ }
+
+                            else -> { /* Do nothing for other event types */
+                            }
                         }
                     }
                 }
@@ -67,4 +72,4 @@ class AndroidSwipeDetector() : SwipeDetector {
     }
 }
 
-actual fun getSwipeDetector(): SwipeDetector = AndroidSwipeDetector()
+ fun getSwipeDetector(): SwipeDetector = AndroidSwipeDetector()
