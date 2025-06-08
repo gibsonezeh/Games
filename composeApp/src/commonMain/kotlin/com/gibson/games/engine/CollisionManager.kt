@@ -1,11 +1,11 @@
 package com.gibson.games.engine
 
-import com.gibson.games.model.Obstacle
 import com.gibson.games.model.Player
+import com.gibson.games.model.Obstacle
 
-class CollisionManager {
+object CollisionManager {
 
-    fun checkCollisions(player: Player, obstacles: List<Obstacle>): Boolean {
+    fun checkCollision(player: Player, obstacles: List<Obstacle>): Boolean {
         for (obstacle in obstacles) {
             if (isColliding(player, obstacle)) {
                 return true
@@ -15,19 +15,21 @@ class CollisionManager {
     }
 
     private fun isColliding(player: Player, obstacle: Obstacle): Boolean {
-        val px = player.position.x
-        val py = player.position.y
-        val pw = 80f
-        val ph = 80f
+        // Simple AABB collision detection for demonstration
+        val playerLeft = player.position.x - player.size.x / 2
+        val playerRight = player.position.x + player.size.x / 2
+        val playerTop = player.position.y - player.size.y / 2
+        val playerBottom = player.position.y + player.size.y / 2
 
-        val ox = obstacle.position.x
-        val oy = obstacle.position.y
-        val ow = obstacle.width
-        val oh = obstacle.height
+        val obstacleLeft = obstacle.position.x - obstacle.size.x / 2
+        val obstacleRight = obstacle.position.x + obstacle.size.x / 2
+        val obstacleTop = obstacle.position.y - obstacle.size.y / 2
+        val obstacleBottom = obstacle.position.y + obstacle.size.y / 2
 
-        val intersectsHorizontally = px < ox + ow && px + pw > ox
-        val intersectsVertically = py < oy + oh && py + ph > oy
-
-        return intersectsHorizontally && intersectsVertically
+        return playerLeft < obstacleRight &&
+               playerRight > obstacleLeft &&
+               playerTop < obstacleBottom &&
+               playerBottom > obstacleTop
     }
 }
+
