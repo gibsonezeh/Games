@@ -1,36 +1,26 @@
 package com.gibson.games.ui
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.gibson.games.core.GameType
-import com.gibson.games.gamehub.subway.SubwayScreen
 
 @Composable
-fun GameSelector() {
-    var selectedGame by remember { mutableStateOf<GameType?>(null) }
-
-    when (selectedGame) {
-        GameType.SUBWAY -> SubwayScreen()
-        null -> GameList { selectedGame = it }
-    }
-}
-
-@Composable
-fun GameList(onGameSelected: (GameType) -> Unit) {
+fun GameSelector(onGameSelected: (String) -> Unit) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = { onGameSelected(GameType.SUBWAY) }) {
-            Text("🚇 Subway Runner")
+        Text(text = "Select a Game")
+        Button(onClick = { onGameSelected("subway") }) {
+            Text(text = "Subway Runner")
         }
-
-        // Future game placeholder
-        Button(onClick = { /* onGameSelected(GameType.FUTURE_GAME) */ }) {
-            Text("🕹️ Future Game")
-        }
+        // Add buttons for future games here
     }
 }
+
