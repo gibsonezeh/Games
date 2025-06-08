@@ -1,20 +1,19 @@
 package com.gibson.games.platform.input
 
-import android.view.MotionEvent
-import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.changedToUp
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.PointerEventType
 import com.gibson.games.core.SwipeDirection
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 
-actual class AndroidSwipeDetector actual constructor() {
+actual class AndroidSwipeDetector() : SwipeDetector {
 
-    actual fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
+    override fun detectSwipe(pointerInputScope: PointerInputScope, onSwipe: (SwipeDirection) -> Unit) {
         with(pointerInputScope) {
-            coroutineContext.launch {
+            launch {
                 var startX = 0f
                 var startY = 0f
 
@@ -25,11 +24,11 @@ actual class AndroidSwipeDetector actual constructor() {
 
                         if (change != null) {
                             when (event.type) {
-                                PointerEvent.Type.Press -> {
+                                PointerEventType.Press -> {
                                     startX = change.position.x
                                     startY = change.position.y
                                 }
-                                PointerEvent.Type.Release -> {
+                                PointerEventType.Release -> {
                                     if (change.changedToUp()) {
                                         val endX = change.position.x
                                         val endY = change.position.y
@@ -57,6 +56,7 @@ actual class AndroidSwipeDetector actual constructor() {
                                         change.consumePositionChange()
                                     }
                                 }
+                                else -> { /* Do nothing for other event types */ }
                             }
                         }
                     }
@@ -69,4 +69,3 @@ actual class AndroidSwipeDetector actual constructor() {
         private const val SWIPE_THRESHOLD = 50f
     }
 }
-
