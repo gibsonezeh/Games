@@ -1,14 +1,32 @@
-// commonMain/com/gibson/games/ninjaassassin/NinjaAssassinGame.kt
-
 package com.gibson.games.ninjaassassin
 
-data class NinjaPlayer(var x: Float = 100f, var y: Float = 100f)
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlin.random.Random
+
+data class Entity(var x: Float, var y: Float, val size: Float = 40f)
 
 class NinjaAssassinGame {
-    var player = NinjaPlayer()
+    val player = Entity(300f, 300f)
+    val enemy = Entity(100f, 100f)
 
     fun update() {
-        // Placeholder for movement, enemy logic, collisions
-        player.x += 1f // Test movement
+        // Make the enemy chase the player
+        val dx = player.x - enemy.x
+        val dy = player.y - enemy.y
+        val distance = sqrt(dx * dx + dy * dy)
+
+        if (distance > 1f) {
+            val angle = atan2(dy, dx)
+            enemy.x += cos(angle) * 2f
+            enemy.y += sin(angle) * 2f
+        }
+    }
+
+    fun movePlayer(dx: Float, dy: Float) {
+        player.x += dx
+        player.y += dy
     }
 }
