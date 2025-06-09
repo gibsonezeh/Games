@@ -65,13 +65,13 @@ fun LudoGameScreen(onExit: () -> Unit) {
                     style = Stroke(width = 3f)
                 )
                 // Inner safe area
-                drawRect(
+                drawRoundRect(
                     color = color.copy(alpha = 0.6f),
                     topLeft = Offset(topLeftX + squareSize, topLeftY + squareSize),
                     size = androidx.compose.ui.geometry.Size(squareSize * 4, squareSize * 4),
                     cornerRadius = CornerRadius(squareSize * 0.2f)
                 )
-                drawRect(
+                drawRoundRect(
                     color = white,
                     topLeft = Offset(topLeftX + squareSize, topLeftY + squareSize),
                     size = androidx.compose.ui.geometry.Size(squareSize * 4, squareSize * 4),
@@ -146,53 +146,71 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Draw the main path (52 squares total in Ludo)
-            // Bottom row (left to right) - positions 1-6
-            for (i in 0..5) {
-                val isYellowStart = i == 1
-                drawGameSquare(1+i, 6, if (isYellowStart) yellow else lightGray, false, isYellowStart)
-            }
-            
-            // Right column (bottom to top) - positions 7-12
-            for (i in 0..5) {
-                drawGameSquare(7, 5-i, lightGray)
-            }
-            
-            // Top-right corner and top row - positions 13-18
-            for (i in 0..5) {
-                val isRedStart = i == 1
-                drawGameSquare(8+i, 0, if (isRedStart) red else lightGray, false, isRedStart)
-            }
-            
-            // Right column (top to bottom) - positions 19-24
-            for (i in 0..5) {
-                drawGameSquare(14, 1+i, lightGray)
-            }
-            
-            // Bottom-right and bottom row - positions 25-30
-            for (i in 0..5) {
-                val isBlueStart = i == 1
-                drawGameSquare(13-i, 8, if (isBlueStart) blue else lightGray, false, isBlueStart)
-            }
-            
-            // Left column (bottom to top) - positions 31-36
-            for (i in 0..5) {
-                drawGameSquare(7, 9+i, lightGray)
-            }
-            
-            // Bottom-left and left column - positions 37-42
-            for (i in 0..5) {
-                val isGreenStart = i == 1
-                drawGameSquare(6-i, 14, if (isGreenStart) green else lightGray, false, isGreenStart)
-            }
-            
-            // Left column (top to bottom) - positions 43-48
-            for (i in 0..5) {
-                drawGameSquare(0, 13-i, lightGray)
-            }
-            
-            // Top-left corner and remaining - positions 49-52
-            for (i in 0..3) {
-                drawGameSquare(1+i, 7, lightGray)
+            val mainPathCoordinates = listOf(
+                // Yellow's path (from home to main path, then clockwise)
+                Pair(1, 6), Pair(2, 6), Pair(3, 6), Pair(4, 6), Pair(5, 6), // 5 squares
+                Pair(6, 6), // Yellow's entry square on main path (also part of main path)
+
+                Pair(6, 5), Pair(6, 4), Pair(6, 3), Pair(6, 2), Pair(6, 1), // 5 squares
+                Pair(6, 0), // Corner
+
+                Pair(7, 0), // Corner
+                Pair(8, 0), // Red's entry square on main path
+
+                Pair(8, 1), Pair(8, 2), Pair(8, 3), Pair(8, 4), Pair(8, 5), // 5 squares
+                Pair(8, 6), // Red's entry square on main path (also part of main path)
+
+                Pair(9, 6), Pair(10, 6), Pair(11, 6), Pair(12, 6), Pair(13, 6), // 5 squares
+                Pair(14, 6), // Corner
+
+                Pair(14, 7), // Corner
+                Pair(14, 8), // Blue's entry square on main path
+
+                Pair(13, 8), Pair(12, 8), Pair(11, 8), Pair(10, 8), Pair(9, 8), // 5 squares
+                Pair(8, 8), // Blue's entry square on main path (also part of main path)
+
+                Pair(8, 9), Pair(8, 10), Pair(8, 11), Pair(8, 12), Pair(8, 13), // 5 squares
+                Pair(8, 14), // Corner
+
+                Pair(7, 14), // Corner
+                Pair(6, 14), // Green's entry square on main path
+
+                Pair(6, 13), Pair(6, 12), Pair(6, 11), Pair(6, 10), Pair(6, 9), // 5 squares
+                Pair(6, 8), // Green's entry square on main path (also part of main path)
+
+                Pair(5, 8), Pair(4, 8), Pair(3, 8), Pair(2, 8), Pair(1, 8), // 5 squares
+                Pair(0, 8), // Corner
+
+                Pair(0, 7), // Corner
+                Pair(0, 6) // Corner
+            )
+
+            val startSquares = setOf(
+                Pair(1, 6), // Yellow
+                Pair(8, 0), // Red
+                Pair(14, 8), // Blue
+                Pair(6, 14)  // Green
+            )
+
+            val safeSquares = setOf(
+                Pair(1, 6), Pair(8, 0), Pair(14, 8), Pair(6, 14), // Player start squares
+                Pair(6, 6), Pair(13, 6), Pair(8, 8), Pair(6, 8), // Safe squares after 5 steps
+                Pair(6, 0), Pair(14, 6), Pair(8, 14), Pair(0, 8), // Corner squares
+                Pair(7, 0), Pair(14, 7), Pair(7, 14), Pair(0, 7)  // Other corner squares
+            )
+
+            for (coord in mainPathCoordinates) {
+                val (x, y) = coord
+                val isStart = startSquares.contains(coord)
+                val isSpecial = safeSquares.contains(coord)
+                val colorForStart = when (coord) {
+                    Pair(1, 6) -> yellow
+                    Pair(8, 0) -> red
+                    Pair(14, 8) -> blue
+                    Pair(6, 14) -> green
+                    else -> lightGray
+                }
+                drawGameSquare(x, y, colorForStart, isSpecial, isStart)
             }
 
             // Draw home stretch paths (colored paths leading to center)
@@ -246,11 +264,11 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 )
             }
 
-            // Mark starting positions (corrected positions)
-            drawStartPosition(2, 6, yellow)   // Yellow start
-            drawStartPosition(9, 0, red)      // Red start  
-            drawStartPosition(12, 8, blue)    // Blue start
-            drawStartPosition(5, 14, green)   // Green start
+            // Mark starting positions (corrected positions based on mainPathCoordinates)
+            drawStartPosition(1, 6, yellow)   // Yellow start
+            drawStartPosition(8, 0, red)      // Red start  
+            drawStartPosition(14, 8, blue)    // Blue start
+            drawStartPosition(6, 14, green)   // Green start
 
             // Draw player tokens in home areas
             fun drawPlayerTokens(color: Color, homeTopLeftX: Float, homeTopLeftY: Float) {
@@ -317,16 +335,20 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Mark safe zones (starting positions and safe squares)
-            drawSafeZone(2, 6, yellow)    // Yellow start (safe)
-            drawSafeZone(9, 0, red)       // Red start (safe)
-            drawSafeZone(12, 8, blue)     // Blue start (safe)
-            drawSafeZone(5, 14, green)    // Green start (safe)
+            drawSafeZone(1, 6, yellow)    // Yellow start (safe)
+            drawSafeZone(8, 0, red)       // Red start (safe)
+            drawSafeZone(14, 8, blue)     // Blue start (safe)
+            drawSafeZone(6, 14, green)    // Green start (safe)
             
             // Additional safe zones around the board (every 8th square)
-            drawSafeZone(0, 8, Color.Gray)    // Safe zone
+            drawSafeZone(6, 6, Color.Gray)    // Safe zone
+            drawSafeZone(13, 6, Color.Gray)   // Safe zone
+            drawSafeZone(8, 8, Color.Gray)    // Safe zone
+            drawSafeZone(6, 8, Color.Gray)    // Safe zone
             drawSafeZone(6, 0, Color.Gray)    // Safe zone
             drawSafeZone(14, 6, Color.Gray)   // Safe zone
             drawSafeZone(8, 14, Color.Gray)   // Safe zone
+            drawSafeZone(0, 8, Color.Gray)    // Safe zone
 
             // Draw directional arrows on the path
             fun drawPathArrow(x: Int, y: Int, direction: String, color: Color = Color.Gray) {
@@ -363,12 +385,18 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Add directional arrows to show movement flow
+            drawPathArrow(6, 7, "right", Color.Gray.copy(alpha = 0.6f)) // Yellow home stretch
+            drawPathArrow(7, 6, "down", Color.Gray.copy(alpha = 0.6f)) // Red home stretch
+            drawPathArrow(8, 7, "left", Color.Gray.copy(alpha = 0.6f)) // Blue home stretch
+            drawPathArrow(7, 8, "up", Color.Gray.copy(alpha = 0.6f)) // Green home stretch
+
+            // Main path arrows
             drawPathArrow(3, 6, "right", Color.Gray.copy(alpha = 0.6f))
-            drawPathArrow(7, 3, "up", Color.Gray.copy(alpha = 0.6f))
+            drawPathArrow(6, 3, "up", Color.Gray.copy(alpha = 0.6f))
             drawPathArrow(11, 0, "right", Color.Gray.copy(alpha = 0.6f))
             drawPathArrow(14, 3, "down", Color.Gray.copy(alpha = 0.6f))
             drawPathArrow(11, 8, "left", Color.Gray.copy(alpha = 0.6f))
-            drawPathArrow(7, 11, "down", Color.Gray.copy(alpha = 0.6f))
+            drawPathArrow(8, 11, "down", Color.Gray.copy(alpha = 0.6f))
             drawPathArrow(3, 14, "left", Color.Gray.copy(alpha = 0.6f))
             drawPathArrow(0, 11, "up", Color.Gray.copy(alpha = 0.6f))
         }
