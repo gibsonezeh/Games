@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
@@ -40,67 +41,32 @@ fun LudoGameScreen(onExit: () -> Unit) {
             drawRect(Color.White, topLeft = Offset(squareSize * 6, squareSize * 6), size = androidx.compose.ui.geometry.Size(squareSize * 3, squareSize * 3))
 
             // Center triangle paths
-            val trianglePath = Path().apply {
-                moveTo(squareSize * 6, squareSize * 6)
-                lineTo(squareSize * 7.5f, squareSize * 7.5f)
-                lineTo(squareSize * 9, squareSize * 6)
-                close()
-            }
-            drawPath(trianglePath, red)
+            val center = Offset(squareSize * 7.5f, squareSize * 7.5f)
+            drawTriangle(center, Offset(squareSize * 6, squareSize * 6), Offset(squareSize * 9, squareSize * 6), red)
+            drawTriangle(center, Offset(squareSize * 9, squareSize * 6), Offset(squareSize * 9, squareSize * 9), blue)
+            drawTriangle(center, Offset(squareSize * 9, squareSize * 9), Offset(squareSize * 6, squareSize * 9), yellow)
+            drawTriangle(center, Offset(squareSize * 6, squareSize * 9), Offset(squareSize * 6, squareSize * 6), green)
 
-            trianglePath.reset()
-            trianglePath.moveTo(squareSize * 9, squareSize * 6)
-            trianglePath.lineTo(squareSize * 7.5f, squareSize * 7.5f)
-            trianglePath.lineTo(squareSize * 9, squareSize * 9)
-            trianglePath.close()
-            drawPath(trianglePath, blue)
-
-            trianglePath.reset()
-            trianglePath.moveTo(squareSize * 9, squareSize * 9)
-            trianglePath.lineTo(squareSize * 7.5f, squareSize * 7.5f)
-            trianglePath.lineTo(squareSize * 6, squareSize * 9)
-            trianglePath.close()
-            drawPath(trianglePath, yellow)
-
-            trianglePath.reset()
-            trianglePath.moveTo(squareSize * 6, squareSize * 9)
-            trianglePath.lineTo(squareSize * 7.5f, squareSize * 7.5f)
-            trianglePath.lineTo(squareSize * 6, squareSize * 6)
-            trianglePath.close()
-            drawPath(trianglePath, green)
-
-            // Function to draw player tokens (4 per home)
+            // Draw player tokens (2x2 layout)
             fun drawTokens(color: Color, topLeftX: Float, topLeftY: Float) {
                 val radius = squareSize * 0.6f
                 val spacing = squareSize * 1.5f
-
                 for (i in 0..1) {
                     for (j in 0..1) {
                         val centerX = topLeftX + j * spacing + squareSize
                         val centerY = topLeftY + i * spacing + squareSize
-                        drawCircle(
-                            color = color,
-                            radius = radius,
-                            center = Offset(centerX, centerY),
-                            style = Fill
-                        )
-                        drawCircle( // outline
-                            color = Color.Black,
-                            radius = radius,
-                            center = Offset(centerX, centerY),
-                            style = Stroke(width = 2f)
-                        )
+                        drawCircle(color, radius = radius, center = Offset(centerX, centerY), style = Fill)
+                        drawCircle(Color.Black, radius = radius, center = Offset(centerX, centerY), style = Stroke(2f))
                     }
                 }
             }
 
-            // Draw tokens
             drawTokens(green, 0f, 0f)
             drawTokens(red, squareSize * 9, 0f)
             drawTokens(yellow, 0f, squareSize * 9)
             drawTokens(blue, squareSize * 9, squareSize * 9)
 
-            // Draw path squares (main track)
+            // Draw main path
             fun drawPathRow(startX: Int, startY: Int, dx: Int, dy: Int, count: Int, colorIndex: Int? = null) {
                 repeat(count) {
                     val x = (startX + dx * it) * squareSize
@@ -121,25 +87,72 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 }
             }
 
-            // Green side
+            // Green path
             drawPathRow(6, 0, 0, 1, 5)
             drawPathRow(6, 6, -1, 0, 5)
             drawPathRow(1, 6, 0, 1, 1, 0)
 
-            // Red side
+            // Red path
             drawPathRow(8, 0, 0, 1, 5)
             drawPathRow(9, 6, 1, 0, 5)
             drawPathRow(13, 6, 0, 1, 1, 1)
 
-            // Yellow side
+            // Yellow path
             drawPathRow(6, 14, 0, -1, 5)
             drawPathRow(6, 8, -1, 0, 5)
             drawPathRow(1, 8, 0, -1, 1, 2)
 
-            // Blue side
+            // Blue path
             drawPathRow(8, 14, 0, -1, 5)
             drawPathRow(9, 8, 1, 0, 5)
             drawPathRow(13, 8, 0, -1, 1, 3)
+
+            // Draw arrows on paths
+            fun drawArrow(fromX: Int, fromY: Int, dx: Int, dy: Int, color: Color) {
+                val cx = (fromX + 0.5f) * squareSize
+                val cy = (fromY + 0.5f) * squareSize
+                val arrowLength = squareSize * 0.4f
+                val headSize = squareSize * 0.2f
+
+                val tip = Offset(cx + dx * arrowLength, cy + dy * arrowLength)
+                val base1 = Offset(cx + dy * headSize - dx * headSize, cy - dx * headSize - dy * headSize)
+                val base2 = Offset(cx - dy * headSize - dx * headSize, cy + dx * headSize - dy * headSize)
+
+                drawLine(color, Offset(cx, cy), tip, strokeWidth = 4f)
+                drawPath(Path().apply {
+                    moveTo(tip.x, tip.y)
+                    lineTo(base1.x, base1.y)
+                    lineTo(base2.x, base2.y)
+                    close()
+                }, color)
+            }
+
+            // Arrow examples (can be extended)
+            drawArrow(6, 0, 0, 1, green)
+            drawArrow(6, 5, -1, 0, green)
+            drawArrow(1, 6, 0, 1, green)
+
+            drawArrow(8, 0, 0, 1, red)
+            drawArrow(9, 5, 1, 0, red)
+            drawArrow(13, 6, 0, 1, red)
+
+            drawArrow(6, 14, 0, -1, yellow)
+            drawArrow(6, 9, -1, 0, yellow)
+            drawArrow(1, 8, 0, -1, yellow)
+
+            drawArrow(8, 14, 0, -1, blue)
+            drawArrow(9, 9, 1, 0, blue)
+            drawArrow(13, 8, 0, -1, blue)
         }
     }
+}
+
+fun DrawScope.drawTriangle(center: Offset, p1: Offset, p2: Offset, color: Color) {
+    val path = Path().apply {
+        moveTo(center.x, center.y)
+        lineTo(p1.x, p1.y)
+        lineTo(p2.x, p2.y)
+        close()
+    }
+    drawPath(path = path, color = color)
 }
