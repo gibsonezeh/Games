@@ -1,13 +1,15 @@
-// commonMain/com/gibson/games/ludo/LudoGameScreen.kt
-
 package com.gibson.games.ludo
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
@@ -16,42 +18,40 @@ fun LudoGameScreen(onExit: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = androidx.compose.ui.Alignment.Center
+            .padding(16.dp)
     ) {
-        Canvas(modifier = Modifier.size(300.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val boardSize = size.minDimension
-            val cellSize = boardSize / 15f
+            val squareSize = boardSize / 15f
 
-            // Draw grid
-            for (i in 0..15) {
-                drawLine(
-                    color = Color.Black,
-                    start = androidx.compose.ui.geometry.Offset(i * cellSize, 0f),
-                    end = androidx.compose.ui.geometry.Offset(i * cellSize, boardSize),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = Color.Black,
-                    start = androidx.compose.ui.geometry.Offset(0f, i * cellSize),
-                    end = androidx.compose.ui.geometry.Offset(boardSize, i * cellSize),
-                    strokeWidth = 1f
-                )
-            }
+            // Define colors
+            val red = Color.Red
+            val green = Color(0xFF388E3C)
+            val blue = Color(0xFF1976D2)
+            val yellow = Color(0xFFFFEB3B)
 
-            // Home zones
-            val colors = listOf(Color.Red, Color.Green, Color.Blue, Color.Yellow)
-            val positions = listOf(
-                Rect(0f, 0f, cellSize * 6, cellSize * 6),                 // Red (Top-left)
-                Rect(cellSize * 9, 0f, cellSize * 15, cellSize * 6),      // Green (Top-right)
-                Rect(0f, cellSize * 9, cellSize * 6, cellSize * 15),      // Yellow (Bottom-left)
-                Rect(cellSize * 9, cellSize * 9, cellSize * 15, cellSize * 15) // Blue (Bottom-right)
+            // Draw base squares (home areas)
+            drawRect(green, topLeft = androidx.compose.ui.geometry.Offset(0f, 0f), size = androidx.compose.ui.geometry.Size(squareSize * 6, squareSize * 6))
+            drawRect(red, topLeft = androidx.compose.ui.geometry.Offset(squareSize * 9, 0f), size = androidx.compose.ui.geometry.Size(squareSize * 6, squareSize * 6))
+            drawRect(yellow, topLeft = androidx.compose.ui.geometry.Offset(0f, squareSize * 9), size = androidx.compose.ui.geometry.Size(squareSize * 6, squareSize * 6))
+            drawRect(blue, topLeft = androidx.compose.ui.geometry.Offset(squareSize * 9, squareSize * 9), size = androidx.compose.ui.geometry.Size(squareSize * 6, squareSize * 6))
+
+            // Draw center goal area
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(squareSize * 6, squareSize * 6)
+                    lineTo(squareSize * 9, squareSize * 6)
+                    lineTo(squareSize * 9, squareSize * 9)
+                    lineTo(squareSize * 6, squareSize * 9)
+                    close()
+                },
+                color = Color.White
             )
 
-            colors.zip(positions).forEach { (color, rect) ->
-                drawRect(color, topLeft = rect.topLeft, size = rect.size)
-                drawRect(Color.Black, topLeft = rect.topLeft, size = rect.size, style = Stroke(2f))
-            }
+            drawLine(red, start = androidx.compose.ui.geometry.Offset(squareSize * 6, squareSize * 6), end = androidx.compose.ui.geometry.Offset(squareSize * 9, squareSize * 9), strokeWidth = 4f)
+            drawLine(green, start = androidx.compose.ui.geometry.Offset(squareSize * 9, squareSize * 6), end = androidx.compose.ui.geometry.Offset(squareSize * 6, squareSize * 9), strokeWidth = 4f)
+
+            // TODO: Add player positions (circles), arrow paths, and actual player images if needed
         }
     }
 }
