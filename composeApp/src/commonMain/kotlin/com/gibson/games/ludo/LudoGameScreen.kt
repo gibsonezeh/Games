@@ -51,7 +51,35 @@ fun LudoGameScreen(onExit: () -> Unit) {
             drawLine(red, start = androidx.compose.ui.geometry.Offset(squareSize * 6, squareSize * 6), end = androidx.compose.ui.geometry.Offset(squareSize * 9, squareSize * 9), strokeWidth = 4f)
             drawLine(green, start = androidx.compose.ui.geometry.Offset(squareSize * 9, squareSize * 6), end = androidx.compose.ui.geometry.Offset(squareSize * 6, squareSize * 9), strokeWidth = 4f)
 
-            // TODO: Add player positions (circles), arrow paths, and actual player images if needed
+            // === Add player token positions ===
+            fun drawTokens(color: Color, topLeftX: Float, topLeftY: Float) {
+                val radius = squareSize * 0.6f
+                val spacing = squareSize * 1.5f
+
+                for (i in 0..1) {
+                    for (j in 0..1) {
+                        val centerX = topLeftX + j * spacing + squareSize
+                        val centerY = topLeftY + i * spacing + squareSize
+                        drawCircle(
+                            color = color,
+                            radius = radius,
+                            center = androidx.compose.ui.geometry.Offset(centerX, centerY),
+                            style = Fill
+                        )
+                        drawCircle( // optional black outline
+                            color = Color.Black,
+                            radius = radius,
+                            center = androidx.compose.ui.geometry.Offset(centerX, centerY),
+                            style = Stroke(width = 2f)
+                        )
+                    }
+                }
+            }
+
+            drawTokens(green, topLeftX = 0f, topLeftY = 0f) // Green Home
+            drawTokens(red, topLeftX = squareSize * 9, topLeftY = 0f) // Red Home
+            drawTokens(yellow, topLeftX = 0f, topLeftY = squareSize * 9) // Yellow Home
+            drawTokens(blue, topLeftX = squareSize * 9, topLeftY = squareSize * 9) // Blue Home
         }
     }
 }
