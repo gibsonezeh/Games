@@ -29,7 +29,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 .padding(padding),
             contentAlignment = Alignment.Center
         ){
-            Text("Ludo Game", style = MaterialTheme.typography.headlineMedium)
+            Text("ludo game", style = MaterialTheme.typography.headlineMedium)
         }
     }
 }

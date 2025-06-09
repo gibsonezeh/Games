@@ -2,7 +2,7 @@
 
 package com.gibson.games
 
-enum class Game{
-    Ludo
+enum class Game(val displayName: String){
+    Ludo("Ludo Game"),
     // Add future games here
 }

@@ -21,12 +21,17 @@ fun GameMenu(onGameSelected: (Game) -> Unit) {
         Text("🎮 Select Game", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))
         Game.values().forEach { game ->
+
             Button(
+
                 onClick = { onGameSelected(game) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
+                 Text(text = game.displayName)
 
             }
+
         }
+
     }
 }
