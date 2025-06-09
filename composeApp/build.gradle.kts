@@ -27,6 +27,7 @@ kotlin {
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation("com.stevdza-san:sprite:1.1.0")
             implementation(compose.material)
             implementation(compose.ui)
             implementation(compose.components.resources)
