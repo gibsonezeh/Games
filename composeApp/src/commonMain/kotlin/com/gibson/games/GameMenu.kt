@@ -25,7 +25,7 @@ fun GameMenu(onGameSelected: (Game) -> Unit) {
                 onClick = { onGameSelected(game) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
-                Text(game.displayName)
+
             }
         }
     }
