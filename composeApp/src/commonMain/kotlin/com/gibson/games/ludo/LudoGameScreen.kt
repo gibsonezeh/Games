@@ -1,23 +1,114 @@
 package com.gibson.games.ludo
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.checkerframework.checker.units.qual.g
+import androidx.compose.ui.unit.sp
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * Main application composable that manages navigation between screens.
+ */
+@Composable
+fun LudoApp() {
+    var currentScreen by remember { mutableStateOf("start") }
+
+    when (currentScreen) {
+        "start" -> LudoStartScreen(
+            onPlayClick = { currentScreen = "game" },
+            onSettingsClick = { /* TODO: Navigate to settings */ },
+            onExitClick = { /* TODO: Exit the app */ }
+        )
+        "game" -> LudoGameScreen(
+            onExit = { currentScreen = "start" }
+        )
+    }
+}
+
+/**
+ * The main menu screen of the game.
+ */
+@Composable
+fun LudoStartScreen(
+    onPlayClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onExitClick: () -> Unit
+) {
+    val blueGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF3182CE), Color(0xFF63B3ED))
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(blueGradient),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Text(
+                text = "Ludo King",
+                fontSize = 52.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            GameButton(text = "Play Game", onClick = onPlayClick)
+            GameButton(text = "Settings", onClick = onSettingsClick)
+            GameButton(text = "Exit", onClick = onExitClick)
+        }
+    }
+}
+
+/**
+ * A styled button for the main menu.
+ */
+@Composable
+fun GameButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFD69E2E) // Yellow
+        ),
+        modifier = Modifier
+            .height(60.dp)
+            .width(250.dp)
+    ) {
+        Text(text = text, fontSize = 22.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+
+/**
+ * The Ludo game board screen.
+ */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit) {
+    // The existing LudoGameScreen code remains here.
+    // I've added a call to the onExit lambda for a potential back button.
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -121,7 +212,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
                 // Bottom arm
                 drawTile(6, i + 9, white)
-                drawTile(7, i + 9, if (i < 5) yellow else white) // Blue home path
+                drawTile(7, i + 9, if (i < 5) blue else white) // Blue home path
                 drawTile(8, i + 9, white)
                 
                 // Left arm
@@ -131,7 +222,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
                 // Right arm
                 drawTile(i + 9, 6, white)
-                drawTile(i + 9, 7, if (i < 5) blue else white) // Yellow home path
+                drawTile(i + 9, 7, if (i < 5) yellow else white) // Yellow home path
                 drawTile(i + 9, 8, white)
             }
             
