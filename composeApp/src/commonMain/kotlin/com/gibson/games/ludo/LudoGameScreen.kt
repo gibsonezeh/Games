@@ -121,7 +121,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
                 // Bottom arm
                 drawTile(6, i + 9, white)
-                drawTile(7, i + 9, if (i < 5) blue else white) // Blue home path
+                drawTile(7, i + 9, if (i < 5) yellow else white) // Blue home path
                 drawTile(8, i + 9, white)
                 
                 // Left arm
@@ -131,7 +131,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
                 // Right arm
                 drawTile(i + 9, 6, white)
-                drawTile(i + 9, 7, if (i < 5) yellow else white) // Yellow home path
+                drawTile(i + 9, 7, if (i < 5) blue else white) // Yellow home path
                 drawTile(i + 9, 8, white)
             }
             
