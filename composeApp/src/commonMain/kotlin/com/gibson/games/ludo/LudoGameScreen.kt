@@ -135,68 +135,63 @@ fun LudoGameScreen(onExit: () -> Unit) {
                     style = Stroke(width = 1.5f)
                 )
                 
-                // Special square marker
-                if (isSpecial && !isStart) {
-                    drawCircle(
-                        color = Color.Gray,
-                        radius = squareSize * 0.1f,
-                        center = Offset(squareX + squareSize/2, squareY + squareSize/2)
-                    )
-                }
+                // Special square marker (handled by drawSafeZone separately)
+                // if (isSpecial && !isStart) {
+                //     drawCircle(
+                //         color = Color.Gray,
+                //         radius = squareSize * 0.1f,
+                //         center = Offset(squareX + squareSize/2, squareY + squareSize/2)
+                //     )
+                // }
             }
 
             // Draw the main path (52 squares total in Ludo)
             val mainPathCoordinates = listOf(
                 // Yellow's path (from home to main path, then clockwise)
-                Pair(1, 6), Pair(2, 6), Pair(3, 6), Pair(4, 6), Pair(5, 6), // 5 squares
-                Pair(6, 6), // Yellow's entry square on main path (also part of main path)
+                Pair(6, 1), // Yellow's start square (first square after home)
+                Pair(6, 2), Pair(6, 3), Pair(6, 4), Pair(6, 5), // 4 squares
+                Pair(5, 6), // Yellow's entry square on main path (also part of main path)
 
-                Pair(6, 5), Pair(6, 4), Pair(6, 3), Pair(6, 2), Pair(6, 1), // 5 squares
-                Pair(6, 0), // Corner
-
-                Pair(7, 0), // Corner
-                Pair(8, 0), // Red's entry square on main path
-
-                Pair(8, 1), Pair(8, 2), Pair(8, 3), Pair(8, 4), Pair(8, 5), // 5 squares
-                Pair(8, 6), // Red's entry square on main path (also part of main path)
-
-                Pair(9, 6), Pair(10, 6), Pair(11, 6), Pair(12, 6), Pair(13, 6), // 5 squares
-                Pair(14, 6), // Corner
-
-                Pair(14, 7), // Corner
-                Pair(14, 8), // Blue's entry square on main path
-
-                Pair(13, 8), Pair(12, 8), Pair(11, 8), Pair(10, 8), Pair(9, 8), // 5 squares
-                Pair(8, 8), // Blue's entry square on main path (also part of main path)
-
-                Pair(8, 9), Pair(8, 10), Pair(8, 11), Pair(8, 12), Pair(8, 13), // 5 squares
-                Pair(8, 14), // Corner
-
-                Pair(7, 14), // Corner
-                Pair(6, 14), // Green's entry square on main path
-
-                Pair(6, 13), Pair(6, 12), Pair(6, 11), Pair(6, 10), Pair(6, 9), // 5 squares
-                Pair(6, 8), // Green's entry square on main path (also part of main path)
-
-                Pair(5, 8), Pair(4, 8), Pair(3, 8), Pair(2, 8), Pair(1, 8), // 5 squares
-                Pair(0, 8), // Corner
-
+                Pair(4, 6), Pair(3, 6), Pair(2, 6), Pair(1, 6), Pair(0, 6), // 5 squares
                 Pair(0, 7), // Corner
-                Pair(0, 6) // Corner
+
+                Pair(0, 8), // Corner
+                Pair(1, 8), Pair(2, 8), Pair(3, 8), Pair(4, 8), Pair(5, 8), // 5 squares
+                Pair(6, 9), // Green's entry square on main path
+
+                Pair(6, 10), Pair(6, 11), Pair(6, 12), Pair(6, 13), Pair(6, 14), // 5 squares
+                Pair(7, 14), // Corner
+
+                Pair(8, 14), // Corner
+                Pair(8, 13), Pair(8, 12), Pair(8, 11), Pair(8, 10), Pair(8, 9), // 5 squares
+                Pair(9, 8), // Blue's entry square on main path
+
+                Pair(10, 8), Pair(11, 8), Pair(12, 8), Pair(13, 8), Pair(14, 8), // 5 squares
+                Pair(14, 7), // Corner
+
+                Pair(14, 6), // Corner
+                Pair(13, 6), Pair(12, 6), Pair(11, 6), Pair(10, 6), Pair(9, 6), // 5 squares
+                Pair(8, 5), // Red's entry square on main path
+
+                Pair(8, 4), Pair(8, 3), Pair(8, 2), Pair(8, 1), Pair(8, 0), // 5 squares
+                Pair(7, 0), // Corner
+
+                Pair(6, 0), // Corner
+                Pair(6, 1) // This is the yellow's start square, completing the loop
             )
 
             val startSquares = setOf(
-                Pair(1, 6), // Yellow
-                Pair(8, 0), // Red
-                Pair(14, 8), // Blue
-                Pair(6, 14)  // Green
+                Pair(6, 1), // Yellow
+                Pair(1, 8), // Green
+                Pair(8, 13), // Blue
+                Pair(13, 6)  // Red
             )
 
             val safeSquares = setOf(
-                Pair(1, 6), Pair(8, 0), Pair(14, 8), Pair(6, 14), // Player start squares
-                Pair(6, 6), Pair(13, 6), Pair(8, 8), Pair(6, 8), // Safe squares after 5 steps
-                Pair(6, 0), Pair(14, 6), Pair(8, 14), Pair(0, 8), // Corner squares
-                Pair(7, 0), Pair(14, 7), Pair(7, 14), Pair(0, 7)  // Other corner squares
+                Pair(6, 1), Pair(1, 8), Pair(8, 13), Pair(13, 6), // Player start squares
+                Pair(5, 6), Pair(6, 9), Pair(9, 8), Pair(8, 5), // Safe squares after 5 steps (these are the star squares in the image)
+                Pair(0, 6), Pair(0, 8), Pair(6, 0), Pair(8, 0), Pair(14, 6), Pair(14, 8), Pair(6, 14), Pair(8, 14), // Corner squares
+                Pair(0, 7), Pair(7, 0), Pair(7, 14), Pair(14, 7)  // Other corner squares
             )
 
             for (coord in mainPathCoordinates) {
@@ -204,10 +199,10 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 val isStart = startSquares.contains(coord)
                 val isSpecial = safeSquares.contains(coord)
                 val colorForStart = when (coord) {
-                    Pair(1, 6) -> yellow
-                    Pair(8, 0) -> red
-                    Pair(14, 8) -> blue
-                    Pair(6, 14) -> green
+                    Pair(6, 1) -> yellow
+                    Pair(1, 8) -> green
+                    Pair(8, 13) -> blue
+                    Pair(13, 6) -> red
                     else -> lightGray
                 }
                 drawGameSquare(x, y, colorForStart, isSpecial, isStart)
