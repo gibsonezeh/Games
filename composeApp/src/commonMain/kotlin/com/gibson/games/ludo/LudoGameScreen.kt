@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import org.checkerframework.checker.units.qual.g
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -83,10 +84,10 @@ fun LudoGameScreen(onExit: () -> Unit) {
             
             // Draw the triangular home entries
             val center = Offset(boardSize / 2, boardSize / 2)
-            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), green)
-            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), red)
-            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), blue)
-            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y), yellow)
+            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), red)
+            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), blue)
+            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), yellow)
+            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y), green)
             
             // Draw the border for the center goal area
              drawRect(
@@ -145,8 +146,9 @@ fun LudoGameScreen(onExit: () -> Unit) {
             val safeZones = listOf(
                 Offset(1f, 6f), Offset(6f, 1f), // Green & Top Safe
                 Offset(8f, 1f), Offset(13f, 6f), // Red & Right Safe
-                Offset(13f, 8f), Offset(8f, 13f), // Blue & Bottom Safe
-                Offset(6f, 13f), Offset(1f, 8f)  // Yellow & Left Safe
+                Offset(6f, 13f), Offset(1f, 8f) , // Yellow & Left Safe
+                Offset(13f, 8f), Offset(8f, 13f) // Blue & Bottom Safe
+
             )
             
             safeZones.forEach { (gridX, gridY) ->
