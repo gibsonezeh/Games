@@ -1,4 +1,9 @@
+package com.gibson.games.ui
 
+import androidx.compose.runtime.Composable
+import com.gibson.games.Game
+import androidx.activity.compose.BackHandler
+import com.gibson.games.*
 /**
  * A wrapper screen for the selected game. It handles the top-level back navigation.
  */
