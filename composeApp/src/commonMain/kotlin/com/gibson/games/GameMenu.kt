@@ -11,6 +11,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 
+/**
+ * A simple menu to select a game to play.
+ */
 @Composable
 fun GameMenu(onGameSelected: (Game) -> Unit) {
     Column(
@@ -18,20 +21,15 @@ fun GameMenu(onGameSelected: (Game) -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("🎮 Select Game", style = MaterialTheme.typography.headlineMedium)
+        Text("Select a Game", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))
         Game.values().forEach { game ->
-
             Button(
-
                 onClick = { onGameSelected(game) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
                  Text(text = game.displayName)
-
             }
-
         }
-
     }
 }
