@@ -1,9 +1,9 @@
 package com.gibson.games.ui
 
 import androidx.compose.runtime.Composable
-import com.gibson.games.Game
 import androidx.activity.compose.BackHandler
-import com.gibson.games.*
+import com.gibson.games.ludo.LudoGameScreen
+import com.gibson.games.Game
 /**
  * A wrapper screen for the selected game. It handles the top-level back navigation.
  */
@@ -16,7 +16,7 @@ fun GameScreen(game: Game, onExit: () -> Unit) {
     }
 
     when (game) {
-        Game.Ludo -> LudoApp(onExit = onExit)
+        Game.Ludo -> LudoGameScreen(onExit = onExit)
         // Add other games here
     }
 }

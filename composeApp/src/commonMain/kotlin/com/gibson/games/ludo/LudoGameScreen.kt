@@ -28,7 +28,7 @@ import kotlin.math.sin
  * The Ludo game board screen.
  */
 @Composable
-fun LudoGameScreen() {
+fun LudoGameScreen(onExit: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
