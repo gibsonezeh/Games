@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,14 +22,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * The Ludo game board screen.
+ * The Ludo game board screen with exit confirmation dialog
  */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit) {
+    var showExitDialog by remember { mutableStateOf(false) }
+    
+    // Handle back navigation with confirmation dialog
+    BackHandler {
+        showExitDialog = true
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,13 +111,68 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 drawCircle(color = white.copy(alpha = 0.5f), radius = tokenRadius * 0.25f, center = center.copy(x = center.x - tokenRadius * 0.2f, y = center.y - tokenRadius * 0.2f))
             }
             fun drawHomeTokens(homeColor: Color, homeGridTopLeft: Offset) {
-                val positions = listOf(homeGridTopLeft + Offset(2.5f, 2.5f), homeGridTopLeft + Offset(4.5f, 2.5f), homeGridTopLeft + Offset(2.5f, 4.5f), homeGridTopLeft + Offset(4.5f, 4.5f))
+                val positions = listOf(
+                    homeGridTopLeft + Offset(2.5f, 2.5f), homeGridTopLeft + Offset(4.5f, 2.5f),
+                    homeGridTopLeft + Offset(2.5f, 4.5f), homeGridTopLeft + Offset(4.5f, 4.5f)
+                )
                 positions.forEach { gridPos -> drawPlayerToken(center = Offset(gridPos.x * squareSize, gridPos.y * squareSize), color = homeColor) }
             }
             drawHomeTokens(green, Offset(0f, 0f)); drawHomeTokens(red, Offset(8f, 0f)); drawHomeTokens(blue, Offset(8f, 8f)); drawHomeTokens(yellow, Offset(0f, 8f))
         }
+        
+        // Exit Confirmation Dialog
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitDialog = false },
+                title = {
+                    Text(
+                        text = "Exit Game",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Do you want to exit the game?",
+                        fontSize = 16.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showExitDialog = false
+                            onExit()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEF4444)
+                        )
+                    ) {
+                        Text(
+                            text = "Yes",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showExitDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6B7280)
+                        )
+                    ) {
+                        Text(
+                            text = "No",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
+        }
     }
 }
+
 
 // --- Drawing Helpers ---
 
@@ -132,3 +196,4 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
     drawPath(path = path, color = color)
     drawPath(path = path, color = Color.Black.copy(alpha = 0.8f), style = Stroke(width = 2f))
 }
+
