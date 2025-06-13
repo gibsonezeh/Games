@@ -1,5 +1,3 @@
-// commonMain/com/gibson/games/GameMenu.kt
-
 package com.gibson.games
 
 import androidx.compose.foundation.clickable
@@ -33,3 +31,4 @@ fun GameMenu(onGameSelected: (Game) -> Unit) {
         }
     }
 }
+
