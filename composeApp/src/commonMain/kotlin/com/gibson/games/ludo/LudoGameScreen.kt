@@ -196,4 +196,3 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
     drawPath(path = path, color = color)
     drawPath(path = path, color = Color.Black.copy(alpha = 0.8f), style = Stroke(width = 2f))
 }
-
