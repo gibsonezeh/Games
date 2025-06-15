@@ -21,6 +21,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +56,8 @@ fun LudoGameScreen(onExit: () -> Unit) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val boardSize = min(this.size.width, this.size.height)
             val squareSize = boardSize / 15f
+
+            val textMeasurer = rememberTextMeasurer()
 
             // Define colors
             val green = Color(0xFF00B04F)
@@ -292,6 +301,34 @@ fun LudoGameScreen(onExit: () -> Unit) {
             tokenPositions.forEach { pos ->
                 drawToken((pos.x + 9.5f) * squareSize, (pos.y + 9.5f) * squareSize, blue)
             }
+
+            // --- Draw Bird Emojis ---
+            fun DrawScope.drawEmoji(emoji: String, x: Float, y: Float, fontSize: TextUnit, color: Color = Color.Black) {
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = emoji,
+                    topLeft = Offset(x, y),
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = fontSize,
+                        color = color
+                    )
+                )
+            }
+
+            // Center emoji
+            drawEmoji("🕊️", squareSize * 6.5f, squareSize * 6.5f, squareSize * 1.5f)
+
+            // Green emoji (top-left)
+            drawEmoji("🦜", squareSize * 2.5f, squareSize * 2.5f, squareSize * 2f)
+
+            // Red emoji (top-right)
+            drawEmoji("🐦", squareSize * 11.5f, squareSize * 2.5f, squareSize * 2f)
+
+            // Yellow emoji (bottom-left)
+            drawEmoji("🐥", squareSize * 2.5f, squareSize * 11.5f, squareSize * 2f)
+
+            // Blue emoji (bottom-right)
+            drawEmoji("🦅", squareSize * 11.5f, squareSize * 11.5f, squareSize * 2f)
         }
         
         // Exit Confirmation Dialog
