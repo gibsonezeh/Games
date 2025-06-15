@@ -3,6 +3,6 @@
 package com.gibson.games
 
 enum class Game(val displayName: String){
-    Ludo("Ludo Game"),
+    LUDO("Ludo Game"),
     // Add future games here
 }
