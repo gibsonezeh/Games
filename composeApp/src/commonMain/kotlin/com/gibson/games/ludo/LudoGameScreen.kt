@@ -42,6 +42,7 @@ import kotlin.math.sin
 @Composable
 fun LudoGameScreen(onExit: () -> Unit) {
     var showExitDialog by remember { mutableStateOf(false) }
+      val textMeasurer = rememberTextMeasurer()
     
     // Handle back navigation with confirmation dialog
     BackHandler {
@@ -57,7 +58,6 @@ fun LudoGameScreen(onExit: () -> Unit) {
             val boardSize = min(this.size.width, this.size.height)
             val squareSize = boardSize / 15f
 
-            val textMeasurer = rememberTextMeasurer()
 
             // Define colors
             val green = Color(0xFF00B04F)
@@ -316,19 +316,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 6.5f, squareSize * 6.5f, squareSize * 1.5f)
+            drawEmoji("🕊️", squareSize * 6.5f, squareSize * 6.5f,(squareSize * 1.5f).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 2.5f, squareSize * 2.5f, squareSize * 2f)
+            drawEmoji("🦜", squareSize * 2.5f, squareSize * 2.5f, (squareSize * 2f).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 11.5f, squareSize * 2.5f, squareSize * 2f)
+            drawEmoji("🐦", squareSize * 11.5f, squareSize * 2.5f,( squareSize * 2f).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 2.5f, squareSize * 11.5f, squareSize * 2f)
+            drawEmoji("🐥", squareSize * 2.5f, squareSize * 11.5f, (squareSize * 2f).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 11.5f, squareSize * 11.5f, squareSize * 2f)
+            drawEmoji("🦅", squareSize * 11.5f, squareSize * 11.5f, (squareSize * 2f).sp)
         }
         
         // Exit Confirmation Dialog
