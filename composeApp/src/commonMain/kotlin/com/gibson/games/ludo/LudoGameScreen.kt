@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import kotlin.math.min
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -49,7 +50,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
             .padding(16.dp)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val boardSize = size.minDimension
+            val boardSize = min(this.size.width, this.size.height)
             val squareSize = boardSize / 15f
 
             // Define colors
@@ -297,8 +298,8 @@ fun LudoGameScreen(onExit: () -> Unit) {
         }
         
         // Overlay bird images on the board
-        val boardSize = size.minDimension
-        val squareSize = boardSize / 15f
+        val imageBoardSize = min(size.width, size.height)
+        val squareSize = imageBoardSize / 15f
         
         // Center white bird
         Image(
