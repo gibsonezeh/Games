@@ -1,8 +1,10 @@
 package com.gibson.games.ludo
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -11,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -19,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +32,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Liverpool FC themed Ludo game board screen with exit confirmation dialog
+ * Bird-themed Ludo game board screen with exit confirmation dialog
  */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit) {
@@ -47,12 +52,11 @@ fun LudoGameScreen(onExit: () -> Unit) {
             val boardSize = size.minDimension
             val squareSize = boardSize / 15f
 
-            // Define Liverpool FC colors
-            val liverpoolRed = Color(0xFFC8102E)
-            val liverpoolGold = Color(0xFFF6EB61)
+            // Define colors
             val green = Color(0xFF00B04F)
             val blue = Color(0xFF0066CC)
             val yellow = Color(0xFFFFD700)
+            val red = Color(0xFFC8102E)
             val white = Color.White
             val black = Color.Black
             val lightGray = Color(0xFFF5F5F5)
@@ -76,7 +80,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
             // --- Draw Corner Player Areas ---
             
-            // Top-left: Roberto Firmino (Green)
+            // Top-left: Green area
             drawRect(
                 color = green,
                 topLeft = Offset(0f, 0f),
@@ -88,16 +92,10 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 size = Size(squareSize * 6, squareSize * 6),
                 style = Stroke(width = 3f)
             )
-            // Player name text area
-            drawRect(
-                color = green,
-                topLeft = Offset(squareSize * 0.2f, squareSize * 4.5f),
-                size = Size(squareSize * 5.6f, squareSize * 1.3f)
-            )
             
-            // Top-right: Player 2 (Red)
+            // Top-right: Red area
             drawRect(
-                color = liverpoolRed,
+                color = red,
                 topLeft = Offset(squareSize * 9, 0f),
                 size = Size(squareSize * 6, squareSize * 6)
             )
@@ -108,7 +106,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 style = Stroke(width = 3f)
             )
             
-            // Bottom-left: Sadio Mané (Yellow)
+            // Bottom-left: Yellow area
             drawRect(
                 color = yellow,
                 topLeft = Offset(0f, squareSize * 9),
@@ -120,14 +118,8 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 size = Size(squareSize * 6, squareSize * 6),
                 style = Stroke(width = 3f)
             )
-            // Player name text area
-            drawRect(
-                color = yellow,
-                topLeft = Offset(squareSize * 0.2f, squareSize * 9.2f),
-                size = Size(squareSize * 5.6f, squareSize * 1.3f)
-            )
             
-            // Bottom-right: Mohamed Salah (Blue)
+            // Bottom-right: Blue area
             drawRect(
                 color = blue,
                 topLeft = Offset(squareSize * 9, squareSize * 9),
@@ -138,21 +130,15 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 topLeft = Offset(squareSize * 9, squareSize * 9),
                 size = Size(squareSize * 6, squareSize * 6),
                 style = Stroke(width = 3f)
-            )
-            // Player name text area
-            drawRect(
-                color = blue,
-                topLeft = Offset(squareSize * 9.2f, squareSize * 13.5f),
-                size = Size(squareSize * 5.6f, squareSize * 1.3f)
             )
 
-            // --- Draw Center Logo Area ---
+            // --- Draw Center Area ---
             val centerTopLeft = Offset(squareSize * 6, squareSize * 6)
             val centerSize = Size(squareSize * 3, squareSize * 3)
             
-            // Liverpool FC logo background (gold/yellow)
+            // Center background
             drawRoundRect(
-                color = liverpoolGold,
+                color = white,
                 topLeft = centerTopLeft,
                 size = centerSize,
                 cornerRadius = CornerRadius(squareSize * 0.3f)
@@ -163,14 +149,6 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 size = centerSize,
                 cornerRadius = CornerRadius(squareSize * 0.3f),
                 style = Stroke(width = 3f)
-            )
-            
-            // Draw "ORIGINAL LUDO GAME" text area simulation
-            drawRoundRect(
-                color = liverpoolRed,
-                topLeft = Offset(centerTopLeft.x + squareSize * 0.3f, centerTopLeft.y + squareSize * 0.3f),
-                size = Size(centerSize.width - squareSize * 0.6f, centerSize.height - squareSize * 0.6f),
-                cornerRadius = CornerRadius(squareSize * 0.2f)
             )
 
             // --- Draw Game Path ---
@@ -194,7 +172,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
             for (i in 0 until 6) {
                 // Left side
                 drawGameSquare(6, i, white)
-                drawGameSquare(7, i, if (i == 1) liverpoolRed else white)
+                drawGameSquare(7, i, if (i == 1) red else white)
                 drawGameSquare(8, i, white)
                 
                 // Right side  
@@ -218,7 +196,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
             // Draw starting positions (colored squares)
             drawGameSquare(1, 6, green)  // Green start
-            drawGameSquare(8, 1, liverpoolRed)  // Red start  
+            drawGameSquare(8, 1, red)  // Red start  
             drawGameSquare(13, 8, blue)  // Blue start
             drawGameSquare(6, 13, yellow)  // Yellow start
 
@@ -255,10 +233,10 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
             // Draw arrows in colored home paths
             for (i in 1..5) {
-                if (i < 6) drawArrow(7.5f * squareSize, (i + 0.5f) * squareSize, liverpoolRed, "up")
-                if (i < 6) drawArrow(7.5f * squareSize, (i + 8.5f) * squareSize, blue, "down")
+                if (i < 6) drawArrow(7.5f * squareSize, (i + 0.5f) * squareSize, red, "up")
+                if (i < 6) drawArrow(7.5f * squareSize, (i + 8.5f) * squareSize, yellow, "down")
                 if (i < 6) drawArrow((i + 0.5f) * squareSize, 7.5f * squareSize, green, "left")
-                if (i < 6) drawArrow((i + 8.5f) * squareSize, 7.5f * squareSize, yellow, "right")
+                if (i < 6) drawArrow((i + 8.5f) * squareSize, 7.5f * squareSize, blue, "right")
             }
 
             // --- Draw Player Tokens ---
@@ -304,7 +282,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
             // Red tokens (top-right)
             tokenPositions.forEach { pos ->
-                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 0.5f) * squareSize, liverpoolRed)
+                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 0.5f) * squareSize, red)
             }
 
             // Yellow tokens (bottom-left)
@@ -317,6 +295,80 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 drawToken((pos.x + 9.5f) * squareSize, (pos.y + 9.5f) * squareSize, blue)
             }
         }
+        
+        // Overlay bird images on the board
+        val boardSize = size.minDimension
+        val squareSize = boardSize / 15f
+        
+        // Center white bird
+        Image(
+            painter = painterResource(id = R.drawable.white_bird), // You'll need to add this to res/drawable
+            contentDescription = "White Bird",
+            modifier = Modifier
+                .size((squareSize * 2.5f).dp)
+                .offset(
+                    x = (squareSize * 6.25f).dp,
+                    y = (squareSize * 6.25f).dp
+                )
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+        
+        // Green bird (top-left)
+        Image(
+            painter = painterResource(id = R.drawable.green_bird), // You'll need to add this to res/drawable
+            contentDescription = "Green Bird",
+            modifier = Modifier
+                .size((squareSize * 3f).dp)
+                .offset(
+                    x = (squareSize * 1.5f).dp,
+                    y = (squareSize * 1.5f).dp
+                )
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+        
+        // Red bird (top-right)
+        Image(
+            painter = painterResource(id = R.drawable.red_bird), // You'll need to add this to res/drawable
+            contentDescription = "Red Bird",
+            modifier = Modifier
+                .size((squareSize * 3f).dp)
+                .offset(
+                    x = (squareSize * 10.5f).dp,
+                    y = (squareSize * 1.5f).dp
+                )
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+        
+        // Yellow bird (bottom-left)
+        Image(
+            painter = painterResource(id = R.drawable.yellow_bird), // You'll need to add this to res/drawable
+            contentDescription = "Yellow Bird",
+            modifier = Modifier
+                .size((squareSize * 3f).dp)
+                .offset(
+                    x = (squareSize * 1.5f).dp,
+                    y = (squareSize * 10.5f).dp
+                )
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+        
+        // Blue bird (bottom-right)
+        Image(
+            painter = painterResource(id = R.drawable.blue_bird), // You'll need to add this to res/drawable
+            contentDescription = "Blue Bird",
+            modifier = Modifier
+                .size((squareSize * 3f).dp)
+                .offset(
+                    x = (squareSize * 10.5f).dp,
+                    y = (squareSize * 10.5f).dp
+                )
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
         
         // Exit Confirmation Dialog
         if (showExitDialog) {
