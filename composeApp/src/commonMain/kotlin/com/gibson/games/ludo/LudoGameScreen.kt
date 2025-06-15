@@ -27,7 +27,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * The Ludo game board screen with exit confirmation dialog
+ * Liverpool FC themed Ludo game board screen with exit confirmation dialog
  */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit) {
@@ -47,77 +47,275 @@ fun LudoGameScreen(onExit: () -> Unit) {
             val boardSize = size.minDimension
             val squareSize = boardSize / 15f
 
-            // Define enhanced colors
-            val red = Color(0xFFE53E3E)
-            val green = Color(0xFF38A169)
-            val blue = Color(0xFF3182CE)
-            val yellow = Color(0xFFD69E2E)
-            val lightGray = Color(0xFFF7FAFC)
-            val darkGray = Color(0xFF2D3748)
+            // Define Liverpool FC colors
+            val liverpoolRed = Color(0xFFC8102E)
+            val liverpoolGold = Color(0xFFF6EB61)
+            val green = Color(0xFF00B04F)
+            val blue = Color(0xFF0066CC)
+            val yellow = Color(0xFFFFD700)
             val white = Color.White
-            val starGold = Color(0xFFFFD700)
+            val black = Color.Black
+            val lightGray = Color(0xFFF5F5F5)
+            val darkGray = Color(0xFF333333)
 
-            // --- 1. Draw Board Background ---
-            drawRect(color = lightGray, size = Size(boardSize, boardSize))
-            drawRect(color = darkGray, size = Size(boardSize, boardSize), style = Stroke(width = 4f))
+            // Draw outer border (silver/gray frame)
+            drawRect(
+                color = Color(0xFFE0E0E0),
+                topLeft = Offset(-squareSize * 0.5f, -squareSize * 0.5f),
+                size = Size(boardSize + squareSize, boardSize + squareSize)
+            )
+            drawRect(
+                color = darkGray,
+                topLeft = Offset(-squareSize * 0.5f, -squareSize * 0.5f),
+                size = Size(boardSize + squareSize, boardSize + squareSize),
+                style = Stroke(width = 8f)
+            )
 
-            // --- 2. Draw Home Areas ---
-            fun drawHomeArea(color: Color, topLeftX: Float, topLeftY: Float) {
-                val homeAreaSize = squareSize * 6
-                drawRect(color = color.copy(alpha = 0.3f), topLeft = Offset(topLeftX, topLeftY), size = Size(homeAreaSize, homeAreaSize))
-                drawRect(color = darkGray, topLeft = Offset(topLeftX, topLeftY), size = Size(homeAreaSize, homeAreaSize), style = Stroke(width = 3f))
-                drawRoundRect(color = white, topLeft = Offset(topLeftX + squareSize, topLeftY + squareSize), size = Size(squareSize * 4, squareSize * 4), cornerRadius = CornerRadius(squareSize * 0.2f))
-            }
-            drawHomeArea(green, 0f, 0f)
-            drawHomeArea(red, squareSize * 9, 0f)
-            drawHomeArea(yellow, 0f, squareSize * 9)
-            drawHomeArea(blue, squareSize * 9, squareSize * 9)
+            // Draw main board background
+            drawRect(color = white, size = Size(boardSize, boardSize))
 
-            // --- 3. Draw Center Goal Area ---
+            // --- Draw Corner Player Areas ---
+            
+            // Top-left: Roberto Firmino (Green)
+            drawRect(
+                color = green,
+                topLeft = Offset(0f, 0f),
+                size = Size(squareSize * 6, squareSize * 6)
+            )
+            drawRect(
+                color = black,
+                topLeft = Offset(0f, 0f),
+                size = Size(squareSize * 6, squareSize * 6),
+                style = Stroke(width = 3f)
+            )
+            // Player name text area
+            drawRect(
+                color = green,
+                topLeft = Offset(squareSize * 0.2f, squareSize * 4.5f),
+                size = Size(squareSize * 5.6f, squareSize * 1.3f)
+            )
+            
+            // Top-right: Player 2 (Red)
+            drawRect(
+                color = liverpoolRed,
+                topLeft = Offset(squareSize * 9, 0f),
+                size = Size(squareSize * 6, squareSize * 6)
+            )
+            drawRect(
+                color = black,
+                topLeft = Offset(squareSize * 9, 0f),
+                size = Size(squareSize * 6, squareSize * 6),
+                style = Stroke(width = 3f)
+            )
+            
+            // Bottom-left: Sadio Mané (Yellow)
+            drawRect(
+                color = yellow,
+                topLeft = Offset(0f, squareSize * 9),
+                size = Size(squareSize * 6, squareSize * 6)
+            )
+            drawRect(
+                color = black,
+                topLeft = Offset(0f, squareSize * 9),
+                size = Size(squareSize * 6, squareSize * 6),
+                style = Stroke(width = 3f)
+            )
+            // Player name text area
+            drawRect(
+                color = yellow,
+                topLeft = Offset(squareSize * 0.2f, squareSize * 9.2f),
+                size = Size(squareSize * 5.6f, squareSize * 1.3f)
+            )
+            
+            // Bottom-right: Mohamed Salah (Blue)
+            drawRect(
+                color = blue,
+                topLeft = Offset(squareSize * 9, squareSize * 9),
+                size = Size(squareSize * 6, squareSize * 6)
+            )
+            drawRect(
+                color = black,
+                topLeft = Offset(squareSize * 9, squareSize * 9),
+                size = Size(squareSize * 6, squareSize * 6),
+                style = Stroke(width = 3f)
+            )
+            // Player name text area
+            drawRect(
+                color = blue,
+                topLeft = Offset(squareSize * 9.2f, squareSize * 13.5f),
+                size = Size(squareSize * 5.6f, squareSize * 1.3f)
+            )
+
+            // --- Draw Center Logo Area ---
             val centerTopLeft = Offset(squareSize * 6, squareSize * 6)
             val centerSize = Size(squareSize * 3, squareSize * 3)
-            val center = Offset(boardSize / 2, boardSize / 2)
-            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), red)
-            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y), Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), blue)
-            drawTriangle(center, Offset(centerTopLeft.x + centerSize.width, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), yellow)
-            drawTriangle(center, Offset(centerTopLeft.x, centerTopLeft.y + centerSize.height), Offset(centerTopLeft.x, centerTopLeft.y), green)
-            drawRect(color = darkGray, topLeft = centerTopLeft, size = centerSize, style = Stroke(width = 3f))
-
-            // --- 4. Draw Game Path Tiles ---
-            fun drawTile(gridX: Int, gridY: Int, color: Color) {
-                drawRect(color = color, topLeft = Offset(gridX * squareSize, gridY * squareSize), size = Size(squareSize, squareSize))
-                drawRect(color = darkGray, topLeft = Offset(gridX * squareSize, gridY * squareSize), size = Size(squareSize, squareSize), style = Stroke(width = 1.5f))
-            }
-            for (i in 0 until 6) {
-                drawTile(6, i, white); drawTile(7, i, if (i > 0) red else white); drawTile(8, i, white)
-                drawTile(6, i + 9, white); drawTile(7, i + 9, if (i < 5) blue else white); drawTile(8, i + 9, white)
-                drawTile(i, 6, white); drawTile(i, 7, if (i > 0) green else white); drawTile(i, 8, white)
-                drawTile(i + 9, 6, white); drawTile(i + 9, 7, if (i < 5) yellow else white); drawTile(i + 9, 8, white)
-            }
-            drawTile(1, 6, green); drawTile(8, 1, red); drawTile(13, 8, blue); drawTile(6, 13, yellow)
-
-            // --- 5. Draw Safe Zone Stars ---
-            val safeZones = listOf(Offset(1f, 6f), Offset(6f, 1f), Offset(8f, 1f), Offset(13f, 6f), Offset(6f, 13f), Offset(1f, 8f) , Offset(13f, 8f), Offset(8f, 13f))
-            safeZones.forEach { (gridX, gridY) ->
-                drawStar(center = Offset(gridX * squareSize + squareSize / 2, gridY * squareSize + squareSize / 2), radius = squareSize * 0.3f, color = starGold)
-            }
             
-            // --- 6. Draw Player Tokens in Home ---
-            fun drawPlayerToken(center: Offset, color: Color) {
-                val tokenRadius = squareSize * 0.4f
-                drawCircle(color = Color.Black.copy(alpha = 0.2f), radius = tokenRadius, center = center.copy(x = center.x + 3f, y = center.y + 3f))
-                drawCircle(color = color, radius = tokenRadius, center = center)
-                drawCircle(color = darkGray, radius = tokenRadius, center = center, style = Stroke(2f))
-                drawCircle(color = white.copy(alpha = 0.5f), radius = tokenRadius * 0.25f, center = center.copy(x = center.x - tokenRadius * 0.2f, y = center.y - tokenRadius * 0.2f))
-            }
-            fun drawHomeTokens(homeColor: Color, homeGridTopLeft: Offset) {
-                val positions = listOf(
-                    homeGridTopLeft + Offset(2.5f, 2.5f), homeGridTopLeft + Offset(4.5f, 2.5f),
-                    homeGridTopLeft + Offset(2.5f, 4.5f), homeGridTopLeft + Offset(4.5f, 4.5f)
+            // Liverpool FC logo background (gold/yellow)
+            drawRoundRect(
+                color = liverpoolGold,
+                topLeft = centerTopLeft,
+                size = centerSize,
+                cornerRadius = CornerRadius(squareSize * 0.3f)
+            )
+            drawRoundRect(
+                color = black,
+                topLeft = centerTopLeft,
+                size = centerSize,
+                cornerRadius = CornerRadius(squareSize * 0.3f),
+                style = Stroke(width = 3f)
+            )
+            
+            // Draw "ORIGINAL LUDO GAME" text area simulation
+            drawRoundRect(
+                color = liverpoolRed,
+                topLeft = Offset(centerTopLeft.x + squareSize * 0.3f, centerTopLeft.y + squareSize * 0.3f),
+                size = Size(centerSize.width - squareSize * 0.6f, centerSize.height - squareSize * 0.6f),
+                cornerRadius = CornerRadius(squareSize * 0.2f)
+            )
+
+            // --- Draw Game Path ---
+            fun drawGameSquare(x: Int, y: Int, color: Color, hasBorder: Boolean = true) {
+                drawRect(
+                    color = color,
+                    topLeft = Offset(x * squareSize, y * squareSize),
+                    size = Size(squareSize, squareSize)
                 )
-                positions.forEach { gridPos -> drawPlayerToken(center = Offset(gridPos.x * squareSize, gridPos.y * squareSize), color = homeColor) }
+                if (hasBorder) {
+                    drawRect(
+                        color = black,
+                        topLeft = Offset(x * squareSize, y * squareSize),
+                        size = Size(squareSize, squareSize),
+                        style = Stroke(width = 2f)
+                    )
+                }
             }
-            drawHomeTokens(green, Offset(0f, 0f)); drawHomeTokens(red, Offset(8f, 0f)); drawHomeTokens(blue, Offset(8f, 8f)); drawHomeTokens(yellow, Offset(0f, 8f))
+
+            // Vertical paths (left and right sides)
+            for (i in 0 until 6) {
+                // Left side
+                drawGameSquare(6, i, white)
+                drawGameSquare(7, i, if (i == 1) liverpoolRed else white)
+                drawGameSquare(8, i, white)
+                
+                // Right side  
+                drawGameSquare(6, i + 9, white)
+                drawGameSquare(7, i + 9, if (i == 4) blue else white)
+                drawGameSquare(8, i + 9, white)
+            }
+
+            // Horizontal paths (top and bottom)
+            for (i in 0 until 6) {
+                // Top side
+                drawGameSquare(i, 6, white)
+                drawGameSquare(i, 7, if (i == 1) green else white)
+                drawGameSquare(i, 8, white)
+                
+                // Bottom side
+                drawGameSquare(i + 9, 6, white)
+                drawGameSquare(i + 9, 7, if (i == 4) yellow else white)
+                drawGameSquare(i + 9, 8, white)
+            }
+
+            // Draw starting positions (colored squares)
+            drawGameSquare(1, 6, green)  // Green start
+            drawGameSquare(8, 1, liverpoolRed)  // Red start  
+            drawGameSquare(13, 8, blue)  // Blue start
+            drawGameSquare(6, 13, yellow)  // Yellow start
+
+            // Draw safe zone arrows/triangles
+            fun drawArrow(centerX: Float, centerY: Float, color: Color, direction: String) {
+                val arrowSize = squareSize * 0.3f
+                val path = Path()
+                
+                when (direction) {
+                    "up" -> {
+                        path.moveTo(centerX, centerY - arrowSize)
+                        path.lineTo(centerX - arrowSize * 0.5f, centerY + arrowSize * 0.5f)
+                        path.lineTo(centerX + arrowSize * 0.5f, centerY + arrowSize * 0.5f)
+                    }
+                    "down" -> {
+                        path.moveTo(centerX, centerY + arrowSize)
+                        path.lineTo(centerX - arrowSize * 0.5f, centerY - arrowSize * 0.5f)
+                        path.lineTo(centerX + arrowSize * 0.5f, centerY - arrowSize * 0.5f)
+                    }
+                    "left" -> {
+                        path.moveTo(centerX - arrowSize, centerY)
+                        path.lineTo(centerX + arrowSize * 0.5f, centerY - arrowSize * 0.5f)
+                        path.lineTo(centerX + arrowSize * 0.5f, centerY + arrowSize * 0.5f)
+                    }
+                    "right" -> {
+                        path.moveTo(centerX + arrowSize, centerY)
+                        path.lineTo(centerX - arrowSize * 0.5f, centerY - arrowSize * 0.5f)
+                        path.lineTo(centerX - arrowSize * 0.5f, centerY + arrowSize * 0.5f)
+                    }
+                }
+                path.close()
+                drawPath(path, color = color)
+            }
+
+            // Draw arrows in colored home paths
+            for (i in 1..5) {
+                if (i < 6) drawArrow(7.5f * squareSize, (i + 0.5f) * squareSize, liverpoolRed, "up")
+                if (i < 6) drawArrow(7.5f * squareSize, (i + 8.5f) * squareSize, blue, "down")
+                if (i < 6) drawArrow((i + 0.5f) * squareSize, 7.5f * squareSize, green, "left")
+                if (i < 6) drawArrow((i + 8.5f) * squareSize, 7.5f * squareSize, yellow, "right")
+            }
+
+            // --- Draw Player Tokens ---
+            fun drawToken(centerX: Float, centerY: Float, color: Color) {
+                val tokenRadius = squareSize * 0.35f
+                // Shadow
+                drawCircle(
+                    color = Color.Black.copy(alpha = 0.3f),
+                    radius = tokenRadius,
+                    center = Offset(centerX + 2f, centerY + 2f)
+                )
+                // Main token
+                drawCircle(
+                    color = color,
+                    radius = tokenRadius,
+                    center = Offset(centerX, centerY)
+                )
+                // Border
+                drawCircle(
+                    color = black,
+                    radius = tokenRadius,
+                    center = Offset(centerX, centerY),
+                    style = Stroke(width = 2f)
+                )
+                // Highlight
+                drawCircle(
+                    color = white.copy(alpha = 0.6f),
+                    radius = tokenRadius * 0.3f,
+                    center = Offset(centerX - tokenRadius * 0.3f, centerY - tokenRadius * 0.3f)
+                )
+            }
+
+            // Draw tokens in home areas (4 tokens per player)
+            val tokenPositions = listOf(
+                Offset(2f, 2f), Offset(4f, 2f),
+                Offset(2f, 4f), Offset(4f, 4f)
+            )
+
+            // Green tokens (top-left)
+            tokenPositions.forEach { pos ->
+                drawToken((pos.x + 0.5f) * squareSize, (pos.y + 0.5f) * squareSize, green)
+            }
+
+            // Red tokens (top-right)
+            tokenPositions.forEach { pos ->
+                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 0.5f) * squareSize, liverpoolRed)
+            }
+
+            // Yellow tokens (bottom-left)
+            tokenPositions.forEach { pos ->
+                drawToken((pos.x + 0.5f) * squareSize, (pos.y + 9.5f) * squareSize, yellow)
+            }
+
+            // Blue tokens (bottom-right)
+            tokenPositions.forEach { pos ->
+                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 9.5f) * squareSize, blue)
+            }
         }
         
         // Exit Confirmation Dialog
@@ -173,11 +371,15 @@ fun LudoGameScreen(onExit: () -> Unit) {
     }
 }
 
-
 // --- Drawing Helpers ---
 
 fun DrawScope.drawTriangle(p1: Offset, p2: Offset, p3: Offset, color: Color) {
-    drawPath(path = Path().apply { moveTo(p1.x, p1.y); lineTo(p2.x, p2.y); lineTo(p3.x, p3.y); close() }, color = color)
+    drawPath(path = Path().apply { 
+        moveTo(p1.x, p1.y)
+        lineTo(p2.x, p2.y)
+        lineTo(p3.x, p3.y)
+        close() 
+    }, color = color)
 }
 
 fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
@@ -196,3 +398,4 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
     drawPath(path = path, color = color)
     drawPath(path = path, color = Color.Black.copy(alpha = 0.8f), style = Stroke(width = 2f))
 }
+
