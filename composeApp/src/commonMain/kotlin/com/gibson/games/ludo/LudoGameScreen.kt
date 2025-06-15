@@ -17,7 +17,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -42,16 +41,6 @@ fun LudoGameScreen(onExit: () -> Unit) {
         showExitDialog = true
     }
     
-    // Placeholder for ImageBitmap loading. 
-    // In a real Compose Multiplatform project, you would load these using
-    // `org.jetbrains.compose.resources.painterResource` or a custom image loader.
-    // For demonstration, we'll assume these are loaded and available.
-    val whiteBirdImage: ImageBitmap? = null // TODO: Load white_bird.jpg as ImageBitmap
-    val greenBirdImage: ImageBitmap? = null // TODO: Load green_bird.jpg as ImageBitmap
-    val redBirdImage: ImageBitmap? = null    // TODO: Load red_bird.jpg as ImageBitmap
-    val yellowBirdImage: ImageBitmap? = null // TODO: Load yellow_bird.jpg as ImageBitmap
-    val blueBirdImage: ImageBitmap? = null   // TODO: Load blue_bird.jpg as ImageBitmap
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -302,67 +291,6 @@ fun LudoGameScreen(onExit: () -> Unit) {
             // Blue tokens (bottom-right)
             tokenPositions.forEach { pos ->
                 drawToken((pos.x + 9.5f) * squareSize, (pos.y + 9.5f) * squareSize, blue)
-            }
-
-            // --- Draw Bird Images ---
-            // Center white bird
-            whiteBirdImage?.let { image ->
-                val imageSize = squareSize * 2.5f
-                val imageOffset = Offset(squareSize * 6.25f, squareSize * 6.25f)
-                val clipPath = Path().apply {
-                    addOval(androidx.compose.ui.geometry.Rect(imageOffset, Size(imageSize, imageSize)))
-                }
-                clipPath(clipPath) {
-                    drawImage(image, topLeft = imageOffset, dstSize = IntSize(imageSize.toInt(), imageSize.toInt()))
-                }
-            }
-
-            // Green bird (top-left)
-            greenBirdImage?.let { image ->
-                val imageSize = squareSize * 3f
-                val imageOffset = Offset(squareSize * 1.5f, squareSize * 1.5f)
-                val clipPath = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(imageOffset, Size(imageSize, imageSize)), CornerRadius(8.dp.toPx())))
-                }
-                clipPath(clipPath) {
-                    drawImage(image, topLeft = imageOffset, dstSize = IntSize(imageSize.toInt(), imageSize.toInt()))
-                }
-            }
-
-            // Red bird (top-right)
-            redBirdImage?.let { image ->
-                val imageSize = squareSize * 3f
-                val imageOffset = Offset(squareSize * 10.5f, squareSize * 1.5f)
-                val clipPath = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(imageOffset, Size(imageSize, imageSize)), CornerRadius(8.dp.toPx())))
-                }
-                clipPath(clipPath) {
-                    drawImage(image, topLeft = imageOffset, dstSize = IntSize(imageSize.toInt(), imageSize.toInt()))
-                }
-            }
-
-            // Yellow bird (bottom-left)
-            yellowBirdImage?.let { image ->
-                val imageSize = squareSize * 3f
-                val imageOffset = Offset(squareSize * 1.5f, squareSize * 10.5f)
-                val clipPath = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(imageOffset, Size(imageSize, imageSize)), CornerRadius(8.dp.toPx())))
-                }
-                clipPath(clipPath) {
-                    drawImage(image, topLeft = imageOffset, dstSize = IntSize(imageSize.toInt(), imageSize.toInt()))
-                }
-            }
-
-            // Blue bird (bottom-right)
-            blueBirdImage?.let { image ->
-                val imageSize = squareSize * 3f
-                val imageOffset = Offset(squareSize * 10.5f, squareSize * 10.5f)
-                val clipPath = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(imageOffset, Size(imageSize, imageSize)), CornerRadius(8.dp.toPx())))
-                }
-                clipPath(clipPath) {
-                    drawImage(image, topLeft = imageOffset, dstSize = IntSize(imageSize.toInt(), imageSize.toInt()))
-                }
             }
         }
         
