@@ -199,7 +199,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 
                 // Right side  
                 drawGameSquare(6, i + 9, white)
-                drawGameSquare(7, i + 9, if (i == 4) blue else white)
+                drawGameSquare(7, i + 9, if (i == 4) yellow else white)
                 drawGameSquare(8, i + 9, white)
             }
 
@@ -212,7 +212,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 
                 // Bottom side
                 drawGameSquare(i + 9, 6, white)
-                drawGameSquare(i + 9, 7, if (i == 4) yellow else white)
+                drawGameSquare(i + 9, 7, if (i == 4) blue else white)
                 drawGameSquare(i + 9, 8, white)
             }
 
