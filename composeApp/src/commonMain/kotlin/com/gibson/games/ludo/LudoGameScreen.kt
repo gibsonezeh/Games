@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import org.jetbrains.compose.resources.painterResource // Correct import for Compose Multiplatform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -302,7 +302,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
         
         // Center white bird
         Image(
-            painter = painterResource(id = R.drawable.white_bird), // You'll need to add this to res/drawable
+            painter = painterResource("white_bird.jpg"),
             contentDescription = "White Bird",
             modifier = Modifier
                 .size((squareSize * 2.5f).dp)
@@ -316,7 +316,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
         
         // Green bird (top-left)
         Image(
-            painter = painterResource(id = R.drawable.green_bird), // You'll need to add this to res/drawable
+            painter = painterResource("green_bird.jpg"),
             contentDescription = "Green Bird",
             modifier = Modifier
                 .size((squareSize * 3f).dp)
@@ -330,7 +330,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
         
         // Red bird (top-right)
         Image(
-            painter = painterResource(id = R.drawable.red_bird), // You'll need to add this to res/drawable
+            painter = painterResource("red_bird.jpg"),
             contentDescription = "Red Bird",
             modifier = Modifier
                 .size((squareSize * 3f).dp)
@@ -344,7 +344,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
         
         // Yellow bird (bottom-left)
         Image(
-            painter = painterResource(id = R.drawable.yellow_bird), // You'll need to add this to res/drawable
+            painter = painterResource("yellow_bird.jpg"),
             contentDescription = "Yellow Bird",
             modifier = Modifier
                 .size((squareSize * 3f).dp)
@@ -358,7 +358,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
         
         // Blue bird (bottom-right)
         Image(
-            painter = painterResource(id = R.drawable.blue_bird), // You'll need to add this to res/drawable
+            painter = painterResource("blue_bird.jpg"),
             contentDescription = "Blue Bird",
             modifier = Modifier
                 .size((squareSize * 3f).dp)
