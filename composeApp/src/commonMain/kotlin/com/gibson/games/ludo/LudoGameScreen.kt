@@ -315,19 +315,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 6.5f, squareSize * 6.5f, (squareSize * 1.5f).sp)
+            drawEmoji("🕊️", squareSize * 7.5f - (squareSize * 1.5f / 2), squareSize * 7.5f - (squareSize * 1.5f / 2), (squareSize * 1.5f).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 2.5f, squareSize * 2.5f, (squareSize * 2f).sp)
+            drawEmoji("🦜", squareSize * 3f - (squareSize * 2f / 2), squareSize * 3f - (squareSize * 2f / 2), (squareSize * 2f).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 11.5f, squareSize * 2.5f, (squareSize * 2f).sp)
+            drawEmoji("🐦", squareSize * 12f - (squareSize * 2f / 2), squareSize * 3f - (squareSize * 2f / 2), (squareSize * 2f).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 2.5f, squareSize * 11.5f, (squareSize * 2f).sp)
+            drawEmoji("🐥", squareSize * 3f - (squareSize * 2f / 2), squareSize * 12f - (squareSize * 2f / 2), (squareSize * 2f).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 11.5f, squareSize * 11.5f, (squareSize * 2f).sp)
+            drawEmoji("🦅", squareSize * 12f - (squareSize * 2f / 2), squareSize * 12f - (squareSize * 2f / 2), (squareSize * 2f).sp)
         }
         
         // Exit Confirmation Dialog
