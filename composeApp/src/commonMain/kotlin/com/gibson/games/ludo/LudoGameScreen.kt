@@ -206,43 +206,14 @@ fun LudoGameScreen(onExit: () -> Unit) {
             drawGameSquare(13, 8, blue)  // Blue start
             drawGameSquare(6, 13, yellow)  // Yellow start
 
-            // Draw safe zone arrows/triangles
-            fun drawArrow(centerX: Float, centerY: Float, color: Color, direction: String) {
-                val arrowSize = squareSize * 0.3f
-                val path = Path()
-                
-                when (direction) {
-                    "up" -> {
-                        path.moveTo(centerX, centerY - arrowSize)
-                        path.lineTo(centerX - arrowSize * 0.5f, centerY + arrowSize * 0.5f)
-                        path.lineTo(centerX + arrowSize * 0.5f, centerY + arrowSize * 0.5f)
-                    }
-                    "down" -> {
-                        path.moveTo(centerX, centerY + arrowSize)
-                        path.lineTo(centerX - arrowSize * 0.5f, centerY - arrowSize * 0.5f)
-                        path.lineTo(centerX + arrowSize * 0.5f, centerY - arrowSize * 0.5f)
-                    }
-                    "left" -> {
-                        path.moveTo(centerX - arrowSize, centerY)
-                        path.lineTo(centerX + arrowSize * 0.5f, centerY - arrowSize * 0.5f)
-                        path.lineTo(centerX + arrowSize * 0.5f, centerY + arrowSize * 0.5f)
-                    }
-                    "right" -> {
-                        path.moveTo(centerX + arrowSize, centerY)
-                        path.lineTo(centerX - arrowSize * 0.5f, centerY - arrowSize * 0.5f)
-                        path.lineTo(centerX - arrowSize * 0.5f, centerY + arrowSize * 0.5f)
-                    }
-                }
-                path.close()
-                drawPath(path, color = color)
-            }
+
 
             // Draw arrows in colored home paths
             for (i in 1..5) {
-                if (i < 6) drawArrow(7.5f * squareSize, (i + 0.5f) * squareSize, red, "up")
-                if (i < 6) drawArrow(7.5f * squareSize, (i + 8.5f) * squareSize, yellow, "down")
-                if (i < 6) drawArrow((i + 0.5f) * squareSize, 7.5f * squareSize, green, "left")
-                if (i < 6) drawArrow((i + 8.5f) * squareSize, 7.5f * squareSize, blue, "right")
+                drawStar(Offset(7.5f * squareSize, (i + 0.5f) * squareSize), squareSize * 0.3f, red)
+                drawStar(Offset(7.5f * squareSize, (i + 8.5f) * squareSize), squareSize * 0.3f, yellow)
+                drawStar(Offset((i + 0.5f) * squareSize, 7.5f * squareSize), squareSize * 0.3f, green)
+                drawStar(Offset((i + 8.5f) * squareSize, 7.5f * squareSize), squareSize * 0.3f, blue)
             }
 
             // --- Draw Player Tokens ---
@@ -324,19 +295,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 1.5f).sp)
+            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2.5f).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 2f).sp)
+            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 5f).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 2f).sp)
+            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 5f).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 2f).sp)
+            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 5f).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 2f).sp)
+            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 5f).sp)
         }
         
         // Exit Confirmation Dialog
