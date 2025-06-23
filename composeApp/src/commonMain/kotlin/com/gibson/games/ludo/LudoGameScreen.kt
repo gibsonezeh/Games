@@ -295,19 +295,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2.5f / 4 - 1).sp)
+            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2f).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
+            drawEmoji("🦚", squareSize * 3f, squareSize * 3f, (squareSize * 3.5f).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
+            drawEmoji("🦜", squareSize * 12f, squareSize * 3f, (squareSize * 3.5f).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
+            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 3.5f).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
+            drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
         }
         
         // Exit Confirmation Dialog
