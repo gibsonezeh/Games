@@ -302,11 +302,20 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // --- Draw Bird Emojis ---
-            fun DrawScope.drawEmoji(emoji: String, x: Float, y: Float, fontSize: TextUnit, color: Color = Color.Black) {
+            fun DrawScope.drawEmoji(emoji: String, centerX: Float, centerY: Float, fontSize: TextUnit, color: Color = Color.Black) {
+                val textLayoutResult = textMeasurer.measure(
+                    text = AnnotatedString(emoji),
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = fontSize,
+                        color = color
+                    )
+                )
+                val textWidth = textLayoutResult.size.width.toFloat()
+                val textHeight = textLayoutResult.size.height.toFloat()
                 drawText(
                     textMeasurer = textMeasurer,
                     text = emoji,
-                    topLeft = Offset(x, y),
+                    topLeft = Offset(centerX - textWidth / 2, centerY - textHeight / 2),
                     style = androidx.compose.ui.text.TextStyle(
                         fontSize = fontSize,
                         color = color
@@ -315,19 +324,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 7.5f - (squareSize * 1.5f / 2), squareSize * 7.5f - (squareSize * 1.5f / 2), (squareSize * 1.5f).sp)
+            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 1.5f).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 3f - (squareSize * 2f / 2), squareSize * 3f - (squareSize * 2f / 2), (squareSize * 2f).sp)
+            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 2f).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 12f - (squareSize * 2f / 2), squareSize * 3f - (squareSize * 2f / 2), (squareSize * 2f).sp)
+            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 2f).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 3f - (squareSize * 2f / 2), squareSize * 12f - (squareSize * 2f / 2), (squareSize * 2f).sp)
+            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 2f).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 12f - (squareSize * 2f / 2), squareSize * 12f - (squareSize * 2f / 2), (squareSize * 2f).sp)
+            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 2f).sp)
         }
         
         // Exit Confirmation Dialog
