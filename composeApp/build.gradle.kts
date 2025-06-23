@@ -20,25 +20,6 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        moduleName = "composeApp"
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
     
     sourceSets {
         
@@ -92,7 +73,7 @@ dependencies {
        // debugImplementation("androidx.compose.ui:ui-tooling")
 
         // Material
-        //implementation("androidx.compose.material:material")
+        implementation("androidx.compose.material:material")
        implementation("androidx.compose.material3:material3:1.3.2") // Optional for Material 3
 
         // Runtime & animation

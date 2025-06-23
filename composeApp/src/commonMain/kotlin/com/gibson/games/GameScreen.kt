@@ -1,11 +1,10 @@
 package com.gibson.games
 
-import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
 import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
 import com.gibson.games.ludo.LudoSettingsScreen
-import com.gibson.games.Game
 import androidx.compose.runtime.*
 
 /**
@@ -16,6 +15,11 @@ fun GameScreen(game: Game, onExit: () -> Unit) {
     when (game) {
         Game.LUDO -> LudoNavigationScreen(onExit = onExit)
         // Add other games here
+    }
+
+    // Handle back navigation
+    BackHandler {
+        onExit()
     }
 }
 
@@ -28,9 +32,7 @@ fun LudoNavigationScreen(onExit: () -> Unit) {
     
     // BackHandler for returning from Ludo main menu to game selection
     if (currentScreen == "main_menu") {
-        BackHandler {
-            onExit()
-        }
+
     }
     
     when (currentScreen) {
