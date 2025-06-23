@@ -202,9 +202,13 @@ fun LudoGameScreen(onExit: () -> Unit) {
 
             // Draw starting positions (colored squares)
             drawGameSquare(1, 6, green)  // Green start
+            drawStar(Offset(1.5f * squareSize, 6.5f * squareSize), squareSize * 0.3f, Color.White)
             drawGameSquare(8, 1, red)  // Red start  
+            drawStar(Offset(8.5f * squareSize, 1.5f * squareSize), squareSize * 0.3f, Color.White)  
             drawGameSquare(13, 8, blue)  // Blue start
+            drawStar(Offset(13.5f * squareSize, 8.5f * squareSize), squareSize * 0.3f, Color.White)
             drawGameSquare(6, 13, yellow)  // Yellow start
+            drawStar(Offset(6.5f * squareSize, 13.5f * squareSize), squareSize * 0.3f, Color.White)
 
 
 
@@ -253,24 +257,28 @@ fun LudoGameScreen(onExit: () -> Unit) {
             )
 
             // Green tokens (top-left)
-            tokenPositions.forEach { pos ->
-                drawToken((pos.x + 0.5f) * squareSize, (pos.y + 0.5f) * squareSize, green)
-            }
+            drawToken(squareSize * 1.5f, squareSize * 1.5f, green)
+            drawToken(squareSize * 4.5f, squareSize * 1.5f, green)
+            drawToken(squareSize * 1.5f, squareSize * 4.5f, green)
+            drawToken(squareSize * 4.5f, squareSize * 4.5f, green)
 
             // Red tokens (top-right)
-            tokenPositions.forEach { pos ->
-                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 0.5f) * squareSize, red)
-            }
+            drawToken(squareSize * 10.5f, squareSize * 1.5f, red)
+            drawToken(squareSize * 13.5f, squareSize * 1.5f, red)
+            drawToken(squareSize * 10.5f, squareSize * 4.5f, red)
+            drawToken(squareSize * 13.5f, squareSize * 4.5f, red)
 
             // Yellow tokens (bottom-left)
-            tokenPositions.forEach { pos ->
-                drawToken((pos.x + 0.5f) * squareSize, (pos.y + 9.5f) * squareSize, yellow)
-            }
+            drawToken(squareSize * 1.5f, squareSize * 10.5f, yellow)
+            drawToken(squareSize * 4.5f, squareSize * 10.5f, yellow)
+            drawToken(squareSize * 1.5f, squareSize * 13.5f, yellow)
+            drawToken(squareSize * 4.5f, squareSize * 13.5f, yellow)
 
             // Blue tokens (bottom-right)
-            tokenPositions.forEach { pos ->
-                drawToken((pos.x + 9.5f) * squareSize, (pos.y + 9.5f) * squareSize, blue)
-            }
+            drawToken(squareSize * 10.5f, squareSize * 10.5f, blue)
+            drawToken(squareSize * 13.5f, squareSize * 10.5f, blue)
+            drawToken(squareSize * 10.5f, squareSize * 13.5f, blue)
+            drawToken(squareSize * 13.5f, squareSize * 13.5f, blue)
 
             // --- Draw Bird Emojis ---
             fun DrawScope.drawEmoji(emoji: String, centerX: Float, centerY: Float, fontSize: TextUnit, color: Color = Color.Black) {
@@ -295,19 +303,19 @@ fun LudoGameScreen(onExit: () -> Unit) {
             }
 
             // Center emoji
-            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2f).sp)
+            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2.5f / 4 - 1).sp)
 
             // Green emoji (top-left)
-            drawEmoji("🦚", squareSize * 3f, squareSize * 3f, (squareSize * 3.5f).sp)
+            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
 
             // Red emoji (top-right)
-            drawEmoji("🦜", squareSize * 12f, squareSize * 3f, (squareSize * 3.5f).sp)
+            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
 
             // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 3.5f).sp)
+            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
 
             // Blue emoji (bottom-right)
-            drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
+            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
         }
         
         // Exit Confirmation Dialog
