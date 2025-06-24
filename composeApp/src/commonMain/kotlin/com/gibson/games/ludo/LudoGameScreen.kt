@@ -220,6 +220,43 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 drawStar(Offset((i + 8.5f) * squareSize, 7.5f * squareSize), squareSize * 0.3f, blue)
             }
 
+            // --- Draw Bird Emojis ---
+            fun DrawScope.drawEmoji(emoji: String, centerX: Float, centerY: Float, fontSize: TextUnit, color: Color = Color.Black) {
+                val textLayoutResult = textMeasurer.measure(
+                    text = AnnotatedString(emoji),
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = fontSize,
+                        color = color
+                    )
+                )
+                val textWidth = textLayoutResult.size.width.toFloat()
+                val textHeight = textLayoutResult.size.height.toFloat()
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = emoji,
+                    topLeft = Offset(centerX - textWidth / 2, centerY - textHeight / 2),
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = fontSize,
+                        color = color
+                    )
+                )
+            }
+
+            // Center emoji
+            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2.5f / 4 - 1).sp)
+
+            // Green emoji (top-left)
+            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
+
+            // Red emoji (top-right)
+            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 5f / 4 - 1).sp)
+
+            // Yellow emoji (bottom-left)
+            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
+
+            // Blue emoji (bottom-right)
+            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 5f / 4 - 1).sp)
+
             // --- Draw Player Tokens ---
             fun drawToken(centerX: Float, centerY: Float, color: Color) {
                 val tokenRadius = squareSize * 0.35f
@@ -279,43 +316,6 @@ fun LudoGameScreen(onExit: () -> Unit) {
             drawToken(squareSize * 13.5f, squareSize * 10.5f, blue)
             drawToken(squareSize * 10.5f, squareSize * 13.5f, blue)
             drawToken(squareSize * 13.5f, squareSize * 13.5f, blue)
-
-            // --- Draw Bird Emojis ---
-            fun DrawScope.drawEmoji(emoji: String, centerX: Float, centerY: Float, fontSize: TextUnit, color: Color = Color.Black) {
-                val textLayoutResult = textMeasurer.measure(
-                    text = AnnotatedString(emoji),
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontSize = fontSize,
-                        color = color
-                    )
-                )
-                val textWidth = textLayoutResult.size.width.toFloat()
-                val textHeight = textLayoutResult.size.height.toFloat()
-                drawText(
-                    textMeasurer = textMeasurer,
-                    text = emoji,
-                    topLeft = Offset(centerX - textWidth / 2, centerY - textHeight / 2),
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontSize = fontSize,
-                        color = color
-                    )
-                )
-            }
-
-            // Center emoji
-            drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2f).sp)
-
-            // Green emoji (top-left)
-            drawEmoji("🦜", squareSize * 3f, squareSize * 3f, (squareSize * 3.5f).sp)
-
-            // Red emoji (top-right)
-            drawEmoji("🐦", squareSize * 12f, squareSize * 3f, (squareSize * 3.5f).sp)
-
-            // Yellow emoji (bottom-left)
-            drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 3.5f).sp)
-
-            // Blue emoji (bottom-right)
-            drawEmoji("🦅", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
         }
         
         // Exit Confirmation Dialog
