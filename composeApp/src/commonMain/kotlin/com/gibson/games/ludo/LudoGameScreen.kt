@@ -297,7 +297,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
             // Draw tokens dynamically based on boardState
             boardState.players.forEach { player ->
                 player.tokens.forEach { token ->
-                    val (tokenX, tokenY) = when (token.position) {
+                    val tokenCoords = when (token.position) {
                         -1 -> { // In home base
                             when (token.color) {
                                 PlayerColor.GREEN -> when (token.id) {
@@ -387,7 +387,7 @@ fun LudoGameScreen(onExit: () -> Unit) {
                         }
                         else -> Offset.Zero // Should not happen
                     }
-                    drawToken(tokenX.x, tokenX.y, when (token.color) {
+                    drawToken(tokenCoords.x, tokenCoords.y, when (token.color) {
                         PlayerColor.GREEN -> green
                         PlayerColor.RED -> red
                         PlayerColor.YELLOW -> yellow
