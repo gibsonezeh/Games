@@ -32,6 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import com.gibson.games.ludo.BoardState
+import com.gibson.games.ludo.initializeGameState
+import com.gibson.games.ludo.rollDice
+import com.gibson.games.ludo.PlayerColor
+import com.gibson.games.ludo.Token
+import com.gibson.games.ludo.Player
 import kotlin.math.min
 import kotlin.math.cos
 import kotlin.math.sin
@@ -43,12 +49,13 @@ import kotlin.math.sin
 fun LudoGameScreen(onExit: () -> Unit) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
-    
+    var boardState by remember { mutableStateOf(initializeGameState()) }
+
     // Handle back navigation with confirmation dialog
     BackHandler {
         showExitDialog = true
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -287,35 +294,107 @@ fun LudoGameScreen(onExit: () -> Unit) {
                 )
             }
 
-            // Draw tokens in home areas (4 tokens per player)
-            val tokenPositions = listOf(
-                Offset(2f, 2f), Offset(4f, 2f),
-                Offset(2f, 4f), Offset(4f, 4f)
-            )
-
-            // Green tokens (top-left)
-            drawToken(squareSize * 1.5f, squareSize * 1.5f, green)
-            drawToken(squareSize * 4.5f, squareSize * 1.5f, green)
-            drawToken(squareSize * 1.5f, squareSize * 4.5f, green)
-            drawToken(squareSize * 4.5f, squareSize * 4.5f, green)
-
-            // Red tokens (top-right)
-            drawToken(squareSize * 10.5f, squareSize * 1.5f, red)
-            drawToken(squareSize * 13.5f, squareSize * 1.5f, red)
-            drawToken(squareSize * 10.5f, squareSize * 4.5f, red)
-            drawToken(squareSize * 13.5f, squareSize * 4.5f, red)
-
-            // Yellow tokens (bottom-left)
-            drawToken(squareSize * 1.5f, squareSize * 10.5f, yellow)
-            drawToken(squareSize * 4.5f, squareSize * 10.5f, yellow)
-            drawToken(squareSize * 1.5f, squareSize * 13.5f, yellow)
-            drawToken(squareSize * 4.5f, squareSize * 13.5f, yellow)
-
-            // Blue tokens (bottom-right)
-            drawToken(squareSize * 10.5f, squareSize * 10.5f, blue)
-            drawToken(squareSize * 13.5f, squareSize * 10.5f, blue)
-            drawToken(squareSize * 10.5f, squareSize * 13.5f, blue)
-            drawToken(squareSize * 13.5f, squareSize * 13.5f, blue)
+            // Draw tokens dynamically based on boardState
+            boardState.players.forEach { player ->
+                player.tokens.forEach { token ->
+                    val (tokenX, tokenY) = when (token.position) {
+                        -1 -> { // In home base
+                            when (token.color) {
+                                PlayerColor.GREEN -> when (token.id) {
+                                    1 -> Offset(squareSize * 1.5f, squareSize * 1.5f)
+                                    2 -> Offset(squareSize * 4.5f, squareSize * 1.5f)
+                                    3 -> Offset(squareSize * 1.5f, squareSize * 4.5f)
+                                    4 -> Offset(squareSize * 4.5f, squareSize * 4.5f)
+                                    else -> Offset.Zero
+                                }
+                                PlayerColor.RED -> when (token.id) {
+                                    1 -> Offset(squareSize * 10.5f, squareSize * 1.5f)
+                                    2 -> Offset(squareSize * 13.5f, squareSize * 1.5f)
+                                    3 -> Offset(squareSize * 10.5f, squareSize * 4.5f)
+                                    4 -> Offset(squareSize * 13.5f, squareSize * 4.5f)
+                                    else -> Offset.Zero
+                                }
+                                PlayerColor.YELLOW -> when (token.id) {
+                                    1 -> Offset(squareSize * 1.5f, squareSize * 10.5f)
+                                    2 -> Offset(squareSize * 4.5f, squareSize * 10.5f)
+                                    3 -> Offset(squareSize * 1.5f, squareSize * 13.5f)
+                                    4 -> Offset(squareSize * 4.5f, squareSize * 13.5f)
+                                    else -> Offset.Zero
+                                }
+                                PlayerColor.BLUE -> when (token.id) {
+                                    1 -> Offset(squareSize * 10.5f, squareSize * 10.5f)
+                                    2 -> Offset(squareSize * 13.5f, squareSize * 10.5f)
+                                    3 -> Offset(squareSize * 10.5f, squareSize * 13.5f)
+                                    4 -> Offset(squareSize * 13.5f, squareSize * 13.5f)
+                                    else -> Offset.Zero
+                                }
+                            }
+                        }
+                        in 0..51 -> { // Main path
+                            val x = when (token.position) {
+                                in 0..4 -> 6
+                                5 -> 5
+                                in 6..10 -> 5 - (token.position - 6)
+                                11 -> 0
+                                in 12..16 -> 0
+                                17 -> 1
+                                in 18..22 -> 1 + (token.position - 18)
+                                23 -> 6
+                                in 24..28 -> 6
+                                29 -> 7
+                                in 30..34 -> 7 + (token.position - 30)
+                                35 -> 12
+                                in 36..40 -> 12
+                                41 -> 13
+                                in 42..46 -> 13 - (token.position - 42)
+                                47 -> 8
+                                in 48..51 -> 8
+                                else -> 0 // Should not happen
+                            }
+                            val y = when (token.position) {
+                                in 0..4 -> 14 - token.position
+                                5 -> 9
+                                in 6..10 -> 9
+                                11 -> 8
+                                in 12..16 -> 8 - (token.position - 12)
+                                17 -> 6
+                                in 18..22 -> 6
+                                23 -> 5
+                                in 24..28 -> 5 - (token.position - 24)
+                                29 -> 0
+                                in 30..34 -> 0
+                                35 -> 1
+                                in 36..40 -> 1 + (token.position - 36)
+                                41 -> 6
+                                in 42..46 -> 6
+                                47 -> 7
+                                in 48..51 -> 7 + (token.position - 48)
+                                else -> 0 // Should not happen
+                            }
+                            Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
+                        }
+                        in 100..105 -> { // Home path
+                            val homePathIndex = token.position - 100
+                            when (token.color) {
+                                PlayerColor.GREEN -> Offset((1 + homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
+                                PlayerColor.RED -> Offset((7 + 0.5f) * squareSize, (1 + homePathIndex + 0.5f) * squareSize)
+                                PlayerColor.YELLOW -> Offset((7 + 0.5f) * squareSize, (13 - homePathIndex + 0.5f) * squareSize)
+                                PlayerColor.BLUE -> Offset((13 - homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
+                            }
+                        }
+                        200 -> { // Finished
+                            Offset(squareSize * 7.5f, squareSize * 7.5f) // Center of the board
+                        }
+                        else -> Offset.Zero // Should not happen
+                    }
+                    drawToken(tokenX.x, tokenX.y, when (token.color) {
+                        PlayerColor.GREEN -> green
+                        PlayerColor.RED -> red
+                        PlayerColor.YELLOW -> yellow
+                        PlayerColor.BLUE -> blue
+                    })
+                }
+            }
         }
         
         // Exit Confirmation Dialog
@@ -367,6 +446,27 @@ fun LudoGameScreen(onExit: () -> Unit) {
                     }
                 }
             )
+        }
+
+        // Dice Roll Button
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    boardState = handleTurn(boardState)
+                },
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text("Roll Dice")
+            }
+            boardState.diceRoll?.let {
+                Text("Dice Roll: $it", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
