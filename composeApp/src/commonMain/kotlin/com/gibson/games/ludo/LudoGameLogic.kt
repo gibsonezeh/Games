@@ -2,6 +2,9 @@ package com.gibson.games.ludo
 
 // This file will contain the core game logic for Ludo.
 
+import kotlin.random.Random
+
+
 
 
 enum class PlayerColor {
@@ -40,8 +43,6 @@ fun initializeGameState(rules: GameRules = GameRules()): BoardState {
 
 
 
-
-import kotlin.random.Random
 
 fun rollDice(): Int {
     val die1 = Random.nextInt(1, 7)
@@ -99,7 +100,8 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
 
 fun handleTurn(boardState: BoardState, rules: GameRules): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-    val diceRoll = rollDice()    val movableTokens = currentPlayer.tokens.filter { token ->
+    val diceRoll = rollDice()
+    val movableTokens = currentPlayer.tokens.filter { token ->
         val canMoveFromBase = (token.position == -1 && diceRoll == 6)
         val canMoveOnBoard = (token.position != -1 && (token.position + diceRoll <= 56)) // 56 is the end of the main path before home stretch
 

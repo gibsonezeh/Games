@@ -458,7 +458,7 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
         ) {
             Button(
                 onClick = {
-                    boardState = handleTurn(boardState)
+                    boardState = handleTurn(boardState , gameRules)
                 },
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
