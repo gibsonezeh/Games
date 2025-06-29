@@ -1,6 +1,5 @@
 package com.gibson.games.ludo
 
-import androidx.compose.foundation.gestures.snapping.SnapPosition.Center.position
 import kotlin.random.Random
 
 // This file contains the complete core game logic for Ludo.
@@ -143,11 +142,11 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
     })
 }
 
-// Main function to handle a player's turn after a dice roll
+// Main function to handle a player\'s turn after a dice roll
 fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
     
-    // Check available moves for each die individually and combined
+    // Get all possible moves for the current dice roll
     val availableMoves = getAvailableMovesForDiceRoll(currentPlayer, diceRoll, rules)
     
     var nextPlayer = boardState.currentPlayer
@@ -155,44 +154,43 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
     newDiceRolls.add(diceRoll.die1)
     newDiceRolls.add(diceRoll.die2)
 
-    // Determine next player based on rules
-    if (rules.getsExtraTurnOnSix && (diceRoll.die1 == 6 || diceRoll.die2 == 6)) {
-        // Player gets another turn if they rolled a 6 on either die
-        nextPlayer = boardState.currentPlayer
-        
-        // Special case: double 6s give another turn after playing both dice
-        if (diceRoll.die1 == 6 && diceRoll.die2 == 6) {
-            nextPlayer = boardState.currentPlayer
-        }
-    } else if (rules.getsExtraTurnOnThreeSixesForfeit && 
-               newDiceRolls.takeLast(6).count { it == 6 } >= 3) {
-        // Forfeit turn for three 6s in recent rolls
-        newDiceRolls.clear()
-        nextPlayer = getNextPlayer(boardState.currentPlayer)
-    } else if (availableMoves.isEmpty()) {
-        // No available moves, forfeit turn
-        nextPlayer = getNextPlayer(boardState.currentPlayer)
-    } else {
-        // Normal turn progression
-        nextPlayer = getNextPlayer(boardState.currentPlayer)
-    }
-
-    // Check for winner
-    val winner = checkForWinner(boardState)
-
-    return boardState.copy(
-        diceRoll = diceRoll,
-        currentPlayer = nextPlayer,
-        gamePhase = if (winner != null) GamePhase.GAME_OVER else GamePhase.MOVING,
-        winner = winner,
-        players = boardState.players.map { player ->
-            if (player.color == currentPlayer.color) {
-                player.copy(diceRolls = newDiceRolls)
-            } else {
-                player
+    // Determine next player based on rules and available moves
+    // If there are available moves, the game phase should be MOVING, and the current player remains.
+    // The next player logic will be handled after a token is moved.
+    if (availableMoves.isNotEmpty()) {
+        // Player has moves, so they remain the current player and game phase is MOVING
+        // Extra turn logic will be applied after the move is made.
+        // For now, just set the phase to MOVING.
+        return boardState.copy(
+            diceRoll = diceRoll,
+            currentPlayer = boardState.currentPlayer, // Current player remains to make a move
+            gamePhase = GamePhase.MOVING,
+            winner = null, // No winner yet
+            players = boardState.players.map { player ->
+                if (player.color == currentPlayer.color) {
+                    player.copy(diceRolls = newDiceRolls)
+                } else {
+                    player
+                }
             }
-        }
-    )
+        )
+    } else {
+        // No available moves, so turn is forfeited and next player takes over
+        nextPlayer = getNextPlayer(boardState.currentPlayer)
+        return boardState.copy(
+            diceRoll = diceRoll,
+            currentPlayer = nextPlayer,
+            gamePhase = GamePhase.ROLLING, // Next player rolls dice
+            winner = null, // No winner yet
+            players = boardState.players.map { player ->
+                if (player.color == currentPlayer.color) {
+                    player.copy(diceRolls = newDiceRolls)
+                } else {
+                    player
+                }
+            }
+        )
+    }
 }
 
 // Get tokens that can be moved with a specific dice roll
