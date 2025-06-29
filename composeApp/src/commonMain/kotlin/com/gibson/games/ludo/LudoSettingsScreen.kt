@@ -15,13 +15,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import com.gibson.games.ludo.GameRules
 
 /**
  * Settings screen for Ludo game
  */
 @Composable
 fun LudoSettingsScreen(onBackClicked: () -> Unit) {
-    // Handle back navigation
+    var gameRules by remember { mutableStateOf(GameRules()) }
     BackHandler {
         onBackClicked()
     }
@@ -56,74 +57,78 @@ fun LudoSettingsScreen(onBackClicked: () -> Unit) {
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        contentDescription = "Back"
                     )
                 }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
                 Text(
-                    text = "SETTINGS",
-                    fontSize = 28.sp,
+                    text = "Settings",
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    modifier = Modifier.padding(start = 16.dp)
                 )
             }
-            
-            // Settings Content
+
+            // Settings Sections
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Game Settings Section
-                SettingsSection(title = "Game Settings") {
-                    SettingsToggleItem(
-                        title = "Sound Effects",
-                        description = "Enable game sound effects",
-                        isChecked = true,
-                        onCheckedChange = { /* TODO: Implement sound toggle */ }
-                    )
-                    
-                    SettingsToggleItem(
-                        title = "Music",
-                        description = "Enable background music",
-                        isChecked = true,
-                        onCheckedChange = { /* TODO: Implement music toggle */ }
-                    )
-                    
-                    SettingsToggleItem(
-                        title = "Vibration",
-                        description = "Enable haptic feedback",
-                        isChecked = false,
-                        onCheckedChange = { /* TODO: Implement vibration toggle */ }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Display Settings Section
-                SettingsSection(title = "Display") {
-                    SettingsToggleItem(
-                        title = "Animations",
-                        description = "Enable smooth animations",
-                        isChecked = true,
-                        onCheckedChange = { /* TODO: Implement animation toggle */ }
-                    )
-                    
-                    SettingsToggleItem(
-                        title = "Dark Mode",
-                        description = "Use dark theme",
-                        isChecked = false,
-                        onCheckedChange = { /* TODO: Implement theme toggle */ }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 // Gameplay Settings Section
                 SettingsSection(title = "Gameplay") {
+                    SettingsToggleItem(
+                        title = "Require Six to Exit Base",
+                        description = "A 6 is required to move a token out of the home base.",
+                        isChecked = gameRules.requiresSixToExitBase,
+                        onCheckedChange = { gameRules = gameRules.copy(requiresSixToExitBase = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Extra Turn on Six",
+                        description = "Player gets an extra turn when rolling a 6.",
+                        isChecked = gameRules.getsExtraTurnOnSix,
+                        onCheckedChange = { gameRules = gameRules.copy(getsExtraTurnOnSix = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Three Sixes Forfeit Turn",
+                        description = "Rolling three consecutive 6s forfeits the turn.",
+                        isChecked = gameRules.getsExtraTurnOnThreeSixesForfeit,
+                        onCheckedChange = { gameRules = gameRules.copy(getsExtraTurnOnThreeSixesForfeit = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Must Play Rolled Numbers",
+                        description = "Player must move a token for each number rolled.",
+                        isChecked = gameRules.mustPlayRolledNumbers,
+                        onCheckedChange = { gameRules = gameRules.copy(mustPlayRolledNumbers = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Captured Token Returns to Base",
+                        description = "A captured token returns to its home base.",
+                        isChecked = gameRules.capturedTokenReturnsToBase,
+                        onCheckedChange = { gameRules = gameRules.copy(capturedTokenReturnsToBase = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Capture Gives Extra Turn",
+                        description = "Capturing an opponent's token grants an extra turn.",
+                        isChecked = gameRules.captureGivesExtraTurn,
+                        onCheckedChange = { gameRules = gameRules.copy(captureGivesExtraTurn = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Capture Sends to Home",
+                        description = "Captured token goes directly to home (finished).",
+                        isChecked = gameRules.captureSendsToHome,
+                        onCheckedChange = { gameRules = gameRules.copy(captureSendsToHome = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Starting Point is Safe Zone (Color Specific)",
+                        description = "Each player's starting point is a safe zone only for their color.",
+                        isChecked = gameRules.startingPointIsSafeZoneForColor,
+                        onCheckedChange = { gameRules = gameRules.copy(startingPointIsSafeZoneForColor = it) }
+                    )
+                    SettingsToggleItem(
+                        title = "Starting Point is Safe Zone (All Colors)",
+                        description = "All starting points are safe zones for all colors.",
+                        isChecked = gameRules.startingPointIsSafeZoneForAll,
+                        onCheckedChange = { gameRules = gameRules.copy(startingPointIsSafeZoneForAll = it) }
+                    )
                     SettingsItem(
                         title = "Game Speed",
                         description = "Normal",
@@ -136,55 +141,50 @@ fun LudoSettingsScreen(onBackClicked: () -> Unit) {
                         onClick = { /* TODO: Implement difficulty selection */ }
                     )
                 }
+
+                // Sound Settings Section
+                SettingsSection(title = "Sound") {
+                    SettingsToggleItem(
+                        title = "Sound Effects",
+                        description = "Enable or disable in-game sound effects.",
+                        isChecked = true, // TODO: Implement actual sound setting
+                        onCheckedChange = { /* TODO: Implement sound setting */ }
+                    )
+                    SettingsToggleItem(
+                        title = "Background Music",
+                        description = "Enable or disable background music.",
+                        isChecked = false, // TODO: Implement actual music setting
+                        onCheckedChange = { /* TODO: Implement music setting */ }
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Footer
-            Text(
-                text = "More settings coming soon!",
-                fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
         }
     }
 }
 
 /**
- * Settings section with title and content
+ * Composable for a settings section header.
  */
 @Composable
-fun SettingsSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column {
+fun SettingsSection(title: String, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    ) {
         Text(
             text = title,
             fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
-        
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.1f)
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                content = content
-            )
-        }
+        content()
     }
 }
 
 /**
- * Settings item with toggle switch
+ * Settings item with a toggle switch.
  */
 @Composable
 fun SettingsToggleItem(
@@ -210,10 +210,9 @@ fun SettingsToggleItem(
             Text(
                 text = description,
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.7f)
+                color = Color.Gray
             )
         }
-        
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,

@@ -46,10 +46,10 @@ import kotlin.math.sin
  * Bird-themed Ludo game board screen with exit confirmation dialog
  */
 @Composable
-fun LudoGameScreen(onExit: () -> Unit) {
+fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
-    var boardState by remember { mutableStateOf(initializeGameState()) }
+    var boardState by remember { mutableStateOf(initializeGameState(gameRules)) }
 
     // Handle back navigation with confirmation dialog
     BackHandler {
