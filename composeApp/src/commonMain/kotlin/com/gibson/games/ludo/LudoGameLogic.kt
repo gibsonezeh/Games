@@ -79,21 +79,10 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
         }
         token.position in 0..51 -> {
             // Token is on main path
-            val nextPos = (token.position + steps) % 52
-            
-            // Check if token should enter home path
-            val homeEntryPosition = getHomeEntryPosition(token.color)
-            val currentPos = token.position
-            val targetPos = currentPos + steps
-            
-            // If we pass or land on our home entry position, enter home path
-            if (shouldEnterHomePath(token.color, currentPos, targetPos)) {
-                val stepsIntoHome = targetPos - homeEntryPosition
-                if (stepsIntoHome <= 6) {
-                    100 + stepsIntoHome - 1 // Home path positions 100-105
-                } else {
-                    token.position // Can't move, would overshoot home
-                }
+            val nextPos = token.position + steps
+            if (nextPos > 51) {
+                // Move to home path
+                100 + (nextPos - 52)
             } else {
                 nextPos
             }
@@ -199,17 +188,8 @@ fun getMovableTokens(player: Player, diceRoll: Int, rules: GameRules): List<Toke
                 !rules.requiresSixToExitBase || diceRoll == 6
             }
             token.position in 0..51 -> {
-                // Token on main path - check if it can move without overshooting
-                val homeEntryPos = getHomeEntryPosition(token.color)
-                val targetPos = token.position + diceRoll
-                
-                // If we would enter home path, check if we can fit
-                if (shouldEnterHomePath(token.color, token.position, targetPos)) {
-                    val stepsIntoHome = targetPos - homeEntryPos
-                    stepsIntoHome <= 6 // Can't overshoot home
-                } else {
-                    true // Normal movement on main path
-                }
+                // Token on main path - can always move if not going past finish
+                token.position + diceRoll <= 57 // 52-57 is the home stretch
             }
             token.position in 100..105 -> {
                 // Token in home path - can move if not going past finish
@@ -224,35 +204,13 @@ fun getMovableTokens(player: Player, diceRoll: Int, rules: GameRules): List<Toke
     }
 }
 
-// Corrected starting positions based on the visual board layout
+// PRESERVING ORIGINAL STARTING POSITIONS FROM YOUR BOARD LAYOUT
 fun getStartingPosition(color: PlayerColor): Int {
     return when (color) {
-        PlayerColor.GREEN -> 0   // Green starts at position 0 (bottom-left of center cross)
-        PlayerColor.RED -> 13    // Red starts at position 13 (top-right of center cross)
-        PlayerColor.YELLOW -> 26 // Yellow starts at position 26 (top-left of center cross)
-        PlayerColor.BLUE -> 39   // Blue starts at position 39 (bottom-right of center cross)
-    }
-}
-
-// Get the position where each color enters their home path
-fun getHomeEntryPosition(color: PlayerColor): Int {
-    return when (color) {
-        PlayerColor.GREEN -> 50  // Green enters home at position 50
-        PlayerColor.RED -> 11    // Red enters home at position 11  
-        PlayerColor.YELLOW -> 24 // Yellow enters home at position 24
-        PlayerColor.BLUE -> 37   // Blue enters home at position 37
-    }
-}
-
-// Check if a token should enter home path based on movement
-fun shouldEnterHomePath(color: PlayerColor, currentPos: Int, targetPos: Int): Boolean {
-    val homeEntryPos = getHomeEntryPosition(color)
-    
-    // Check if we cross or land on home entry position
-    return when {
-        currentPos < homeEntryPos && targetPos >= homeEntryPos -> true
-        currentPos > homeEntryPos && targetPos >= (homeEntryPos + 52) -> true // Wrapped around
-        else -> false
+        PlayerColor.GREEN -> 1   // Green starts at position 1 (matches visual position 1,6)
+        PlayerColor.RED -> 14    // Red starts at position 14 (matches visual position 8,1)
+        PlayerColor.YELLOW -> 27 // Yellow starts at position 27 (matches visual position 6,13)
+        PlayerColor.BLUE -> 40   // Blue starts at position 40 (matches visual position 13,8)
     }
 }
 
@@ -266,15 +224,15 @@ fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
 }
 
 fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
-    // Main path safe zones (stars on the board) - corrected positions
-    val mainPathSafeZones = listOf(0, 8, 13, 21, 26, 34, 39, 47) // Starting positions and star positions
+    // Main path safe zones (stars on the board) - PRESERVING ORIGINAL SAFE ZONES
+    val mainPathSafeZones = listOf(1, 9, 14, 22, 27, 35, 40, 48)
 
     // Starting points are safe zones
     val startingPoints = mapOf(
-        PlayerColor.GREEN to 0,
-        PlayerColor.RED to 13,
-        PlayerColor.YELLOW to 26,
-        PlayerColor.BLUE to 39
+        PlayerColor.GREEN to 1,
+        PlayerColor.RED to 14,
+        PlayerColor.YELLOW to 27,
+        PlayerColor.BLUE to 40
     )
 
     return when {
@@ -331,16 +289,8 @@ fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
             !rules.requiresSixToExitBase || steps == 6
         }
         token.position in 0..51 -> {
-            // Token on main path - check home entry logic
-            val homeEntryPos = getHomeEntryPosition(token.color)
-            val targetPos = token.position + steps
-            
-            if (shouldEnterHomePath(token.color, token.position, targetPos)) {
-                val stepsIntoHome = targetPos - homeEntryPos
-                stepsIntoHome <= 6
-            } else {
-                true
-            }
+            // Token on main path
+            token.position + steps <= 57
         }
         token.position in 100..105 -> {
             // Token in home path

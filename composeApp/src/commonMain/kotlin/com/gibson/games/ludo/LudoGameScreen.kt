@@ -233,15 +233,15 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
                 drawGameSquare(i + 9, 8, white)
             }
 
-            // Draw starting positions (colored squares)
-            drawGameSquare(6, 8, green)  // Green start (corrected position)
-            drawStar(Offset(6.5f * squareSize, 8.5f * squareSize), squareSize * 0.3f, Color.White)
-            drawGameSquare(8, 6, red)  // Red start (corrected position)
-            drawStar(Offset(8.5f * squareSize, 6.5f * squareSize), squareSize * 0.3f, Color.White)  
-            drawGameSquare(8, 8, blue)  // Blue start (corrected position)
-            drawStar(Offset(8.5f * squareSize, 8.5f * squareSize), squareSize * 0.3f, Color.White)
-            drawGameSquare(6, 6, yellow)  // Yellow start (corrected position)
-            drawStar(Offset(6.5f * squareSize, 6.5f * squareSize), squareSize * 0.3f, Color.White)
+            // Draw starting positions (colored squares) - ORIGINAL POSITIONS PRESERVED
+            drawGameSquare(1, 6, green)  // Green start
+            drawStar(Offset(1.5f * squareSize, 6.5f * squareSize), squareSize * 0.3f, Color.White)
+            drawGameSquare(8, 1, red)  // Red start  
+            drawStar(Offset(8.5f * squareSize, 1.5f * squareSize), squareSize * 0.3f, Color.White)  
+            drawGameSquare(13, 8, blue)  // Blue start
+            drawStar(Offset(13.5f * squareSize, 8.5f * squareSize), squareSize * 0.3f, Color.White)
+            drawGameSquare(6, 13, yellow)  // Yellow start
+            drawStar(Offset(6.5f * squareSize, 13.5f * squareSize), squareSize * 0.3f, Color.White)
 
             // Draw arrows in colored home paths
             for (i in 1..5) {
@@ -655,7 +655,7 @@ fun DiceCard(
     }
 }
 
-// Corrected helper function to get token coordinates based on proper Ludo board layout
+// Helper function to get token coordinates - PRESERVING ORIGINAL COORDINATE MAPPING
 fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
     return when (token.position) {
         -1 -> { // In home base
@@ -690,9 +690,48 @@ fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
                 }
             }
         }
-        in 0..51 -> { // Main path - corrected coordinate mapping for proper Ludo board
-            val coords = getMainPathCoordinates(token.position)
-            Offset((coords.first + 0.5f) * squareSize, (coords.second + 0.5f) * squareSize)
+        in 0..51 -> { // Main path - PRESERVING ORIGINAL COORDINATE MAPPING
+            val x = when (token.position) {
+                in 0..4 -> 6
+                5 -> 5
+                in 6..10 -> 5 - (token.position - 6)
+                11 -> 0
+                in 12..16 -> 0
+                17 -> 1
+                in 18..22 -> 1 + (token.position - 18)
+                23 -> 6
+                in 24..28 -> 6
+                29 -> 7
+                in 30..34 -> 7 + (token.position - 30)
+                35 -> 12
+                in 36..40 -> 12
+                41 -> 13
+                in 42..46 -> 13 - (token.position - 42)
+                47 -> 8
+                in 48..51 -> 8
+                else -> 0
+            }
+            val y = when (token.position) {
+                in 0..4 -> 14 - token.position
+                5 -> 9
+                in 6..10 -> 9
+                11 -> 8
+                in 12..16 -> 8 - (token.position - 12)
+                17 -> 6
+                in 18..22 -> 6
+                23 -> 5
+                in 24..28 -> 5 - (token.position - 24)
+                29 -> 0
+                in 30..34 -> 0
+                35 -> 1
+                in 36..40 -> 1 + (token.position - 36)
+                41 -> 6
+                in 42..46 -> 6
+                47 -> 7
+                in 48..51 -> 7 + (token.position - 48)
+                else -> 0
+            }
+            Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
         }
         in 100..105 -> { // Home path
             val homePathIndex = token.position - 100
@@ -707,81 +746,6 @@ fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
             Offset(squareSize * 7.5f, squareSize * 7.5f) // Center of the board
         }
         else -> Offset.Zero
-    }
-}
-
-// Helper function to get correct main path coordinates for a 52-square Ludo board
-fun getMainPathCoordinates(position: Int): Pair<Int, Int> {
-    return when (position) {
-        // Bottom row (Green starting area) - positions 0-5
-        0 -> Pair(6, 8)   // Green start
-        1 -> Pair(7, 8)
-        2 -> Pair(8, 8)
-        3 -> Pair(8, 9)
-        4 -> Pair(8, 10)
-        5 -> Pair(8, 11)
-        
-        // Right column going up - positions 6-12
-        6 -> Pair(8, 12)
-        7 -> Pair(8, 13)
-        8 -> Pair(8, 14)
-        9 -> Pair(9, 14)
-        10 -> Pair(10, 14)
-        11 -> Pair(11, 14)
-        12 -> Pair(12, 14)
-        
-        // Top row (Red starting area) - positions 13-18
-        13 -> Pair(8, 6)   // Red start
-        14 -> Pair(8, 5)
-        15 -> Pair(8, 4)
-        16 -> Pair(8, 3)
-        17 -> Pair(8, 2)
-        18 -> Pair(8, 1)
-        
-        // Top row going left - positions 19-25
-        19 -> Pair(7, 1)
-        20 -> Pair(6, 1)
-        21 -> Pair(5, 1)
-        22 -> Pair(4, 1)
-        23 -> Pair(3, 1)
-        24 -> Pair(2, 1)
-        25 -> Pair(1, 1)
-        
-        // Yellow starting area - positions 26-31
-        26 -> Pair(6, 6)   // Yellow start
-        27 -> Pair(5, 6)
-        28 -> Pair(4, 6)
-        29 -> Pair(3, 6)
-        30 -> Pair(2, 6)
-        31 -> Pair(1, 6)
-        
-        // Left column going down - positions 32-38
-        32 -> Pair(1, 7)
-        33 -> Pair(1, 8)
-        34 -> Pair(1, 9)
-        35 -> Pair(1, 10)
-        36 -> Pair(1, 11)
-        37 -> Pair(1, 12)
-        38 -> Pair(1, 13)
-        
-        // Blue starting area - positions 39-44
-        39 -> Pair(8, 8)   // Blue start
-        40 -> Pair(9, 8)
-        41 -> Pair(10, 8)
-        42 -> Pair(11, 8)
-        43 -> Pair(12, 8)
-        44 -> Pair(13, 8)
-        
-        // Bottom row going right - positions 45-51
-        45 -> Pair(13, 9)
-        46 -> Pair(13, 10)
-        47 -> Pair(13, 11)
-        48 -> Pair(13, 12)
-        49 -> Pair(13, 13)
-        50 -> Pair(12, 13)
-        51 -> Pair(11, 13)
-        
-        else -> Pair(7, 7) // Default to center
     }
 }
 
