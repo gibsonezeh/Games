@@ -142,12 +142,13 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
     })
 }
 
-// Main function to handle a player\'s turn after a dice roll
+// Main function to handle a player\"s turn after a dice roll
 fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
     
     // Get all possible moves for the current dice roll
     val availableMoves = getAvailableMovesForDiceRoll(currentPlayer, diceRoll, rules)
+    println("handleTurn: Player ${currentPlayer.color} rolled ${diceRoll.die1}, ${diceRoll.die2}. Available moves: ${availableMoves.size}")
     
     var nextPlayer = boardState.currentPlayer
     val newDiceRolls = currentPlayer.diceRolls.toMutableList()
@@ -155,12 +156,11 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
     newDiceRolls.add(diceRoll.die2)
 
     // Determine next player based on rules and available moves
-    // If there are available moves, the game phase should be MOVING, and the current player remains.
-    // The next player logic will be handled after a token is moved.
     if (availableMoves.isNotEmpty()) {
         // Player has moves, so they remain the current player and game phase is MOVING
         // Extra turn logic will be applied after the move is made.
         // For now, just set the phase to MOVING.
+        println("handleTurn: Setting game phase to MOVING for ${boardState.currentPlayer}")
         return boardState.copy(
             diceRoll = diceRoll,
             currentPlayer = boardState.currentPlayer, // Current player remains to make a move
@@ -177,6 +177,7 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
     } else {
         // No available moves, so turn is forfeited and next player takes over
         nextPlayer = getNextPlayer(boardState.currentPlayer)
+        println("handleTurn: No available moves. Passing turn to ${nextPlayer}")
         return boardState.copy(
             diceRoll = diceRoll,
             currentPlayer = nextPlayer,
@@ -195,11 +196,11 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
 
 // Get tokens that can be moved with a specific dice roll
 fun getMovableTokens(player: Player, diceRoll: Int, rules: GameRules): List<Token> {
-    return player.tokens.filter { token ->
-        when {
+    val movableTokens = player.tokens.filter { token ->
+        val canMove = when {
             token.position == -1 -> {
-                // Token in home base - can only move out with a 6 (individual die, not total)
-                !rules.requiresSixToExitBase || diceRoll == 6
+                // Token in home base - can only move out with a 6 (individual die)
+                rules.requiresSixToExitBase && diceRoll == 6
             }
             token.position in 0..51 -> {
                 // Token on main path - can always move if not going past finish
@@ -215,13 +216,19 @@ fun getMovableTokens(player: Player, diceRoll: Int, rules: GameRules): List<Toke
             }
             else -> false
         }
+        println("  getMovableTokens: Token ${token.id} (${token.color}) at position ${token.position} with dice ${diceRoll}. Can move: $canMove")
+        canMove
     }
+    println("  getMovableTokens: Found ${movableTokens.size} movable tokens for dice ${diceRoll}")
+    return movableTokens
 }
 
 // New function to get available moves for both dice
 fun getAvailableMovesForDiceRoll(player: Player, diceRoll: DiceRoll, rules: GameRules): List<TokenMove> {
     val moves = mutableListOf<TokenMove>()
     
+    println("getAvailableMovesForDiceRoll: Checking moves for ${player.color} with dice ${diceRoll.die1}, ${diceRoll.die2}")
+
     // Check moves for die1
     val movableWithDie1 = getMovableTokens(player, diceRoll.die1, rules)
     movableWithDie1.forEach { token ->
@@ -236,7 +243,7 @@ fun getAvailableMovesForDiceRoll(player: Player, diceRoll: DiceRoll, rules: Game
     
     // Special handling for double 6s - player can use either die for any valid move
     if (diceRoll.die1 == 6 && diceRoll.die2 == 6) {
-        // Add flexible moves for double 6s
+        println("getAvailableMovesForDiceRoll: Double 6s rolled. Adding flexible moves.")
         player.tokens.forEach { token ->
             if (isValidMove(token, 6, rules)) {
                 moves.add(TokenMove(token, 6, 0)) // 0 indicates flexible die choice
@@ -244,15 +251,16 @@ fun getAvailableMovesForDiceRoll(player: Player, diceRoll: DiceRoll, rules: Game
         }
     }
     
+    println("getAvailableMovesForDiceRoll: Total available moves: ${moves.size}")
     return moves
 }
 
 // Checks if a token can make a specific move
 fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
-    return when {
+    val canMove = when {
         token.position == -1 -> {
             // Token in home base - can only move out with a 6 (individual die)
-            !rules.requiresSixToExitBase || steps == 6
+            rules.requiresSixToExitBase && steps == 6
         }
         token.position in 0..51 -> {
             // Token on main path
@@ -268,6 +276,8 @@ fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
         }
         else -> false
     }
+    println("  isValidMove: Token ${token.id} (${token.color}) at position ${token.position} with steps ${steps}. Can move: $canMove")
+    return canMove
 }
 
 // Utility functions for board positions and player turns
