@@ -1,385 +1,90 @@
-package com.gibson.games.ludo
+package com.example.ludo
 
 import kotlin.random.Random
 
-// This file contains the complete core game logic for Ludo.
+enum class PlayerColor { GREEN, RED, YELLOW, BLUE }
 
-enum class PlayerColor {
-    GREEN, RED, YELLOW, BLUE
-}
+enum class GamePhase { ROLLING, MOVING, GAME_OVER }
 
-data class Token(
-    val id: Int,
-    val color: PlayerColor,
-    var position: Int // -1 for home, 0-51 for main path, 100+ for home path, 200 for finished
-)
+data class Token(val id: Int, 
+                 val color: PlayerColor,
+                 val position: Int = -1)
 
-data class Player(
-    val color: PlayerColor,
-    val tokens: List<Token>,
-    var hasRolled: Boolean = false,
-    val diceRolls: MutableList<Int> = mutableListOf() // To track recent rolls for three 6s rule
-)
+data class Player( val color: PlayerColor,
+                  val tokens: List<Token> = List(4) { Token(it, color) },
+                  val diceRolls: MutableList<Int> = mutableListOf() )
 
-data class BoardState(
-    val players: List<Player>,
-    val currentPlayer: PlayerColor,
-    val diceRoll: DiceRoll? = null,
-    val gamePhase: GamePhase = GamePhase.ROLLING,
-    val winner: PlayerColor? = null
-)
+data class DiceRoll(val die1: Int,
+                    val die2: Int) { 
+    val total: Int get() = die1 + die2 
+    val isDoubleSix: Boolean get() = die1 == 6 && die2 == 6
+    val isTripleSix: Boolean get() = false // track outside if needed }
 
-data class DiceRoll(
-    val die1: Int,
-    val die2: Int,
-    val total: Int = die1 + die2
-)
+data class GameRules( val requiresSixToExitBase: Boolean = true,
+                     val getsExtraTurnOnSix: Boolean = true,
+                     val getsExtraTurnOnCapture: Boolean = true, 
+                     val threeSixesForfeitTurn: Boolean = true,
+                     val captureReturnsToBase: Boolean = true,
+                     val safeZones: List<Int> = listOf(1, 9, 14, 22, 27, 35, 40, 48) )
 
-enum class GamePhase {
-    ROLLING,
-    MOVING,
-    GAME_OVER
-}
+data class BoardState( val players: List<Player>, 
+                      val currentPlayer: PlayerColor,
+                      val gamePhase: GamePhase = GamePhase.ROLLING, 
+                      val diceRoll: DiceRoll? = null, 
+                      val winner: PlayerColor? = null )
 
-data class GameRules(
-    val requiresSixToExitBase: Boolean = true,
-    val getsExtraTurnOnSix: Boolean = true,
-    val getsExtraTurnOnThreeSixesForfeit: Boolean = true,
-    val mustPlayRolledNumbers: Boolean = true,
-    val capturedTokenReturnsToBase: Boolean = true,
-    val captureGivesExtraTurn: Boolean = true,
-    val captureSendsToHome: Boolean = false,
-    val startingPointIsSafeZoneForColor: Boolean = true,
-    val startingPointIsSafeZoneForAll: Boolean = false
-)
+fun initializeGame(): BoardState { val players = PlayerColor.values().map { Player(it) }
+    return BoardState(players = players, currentPlayer = PlayerColor.GREEN) }
 
-// Data class to represent a possible move for a token, including which die was used
-data class TokenMove(
-    val token: Token,
-    val steps: Int,
-    val dieUsed: Int // 1 for die1, 2 for die2, 0 for flexible (double 6s)
-)
+fun rollDice(): DiceRoll = DiceRoll(Random.nextInt(1, 7), Random.nextInt(1, 7))
 
-fun initializeGameState(rules: GameRules = GameRules()): BoardState {
-    val players = PlayerColor.values().map { color ->
-        val tokens = (1..4).map { id -> Token(id, color, -1) } // -1 indicates token is in home base
-        Player(color, tokens)
-    }
-    return BoardState(players, PlayerColor.GREEN) // Green starts first
-}
+fun moveToken(token: Token, steps: Int, boardState: BoardState, rules: GameRules): Token { 
+    if (token.position == -1 && steps == 6 && rules.requiresSixToExitBase) {
+        return token.copy(position = getStartPosition(token.color)) } 
+    if (token.position in 0..51) { val homeEntry = getHomeEntryPosition(token.color)
+        val distToEntry = if (token.position <= homeEntry) homeEntry - token.position 
+        else 52 - token.position + homeEntry 
+        return if (steps > distToEntry) { token.copy(position = 100 + (steps - distToEntry - 1)) } 
+        else { token.copy(position = (token.position + steps) % 52) } }
+    if (token.position in 100..105 && token.position + steps <= 105) { 
+        return token.copy(position = token.position + steps) }
+    return token }
 
-fun rollDice(): Int {
-    return Random.nextInt(1, 7)
-}
+fun getStartPosition(color: PlayerColor): Int = when (color) { PlayerColor.GREEN -> 1 PlayerColor.RED -> 14 PlayerColor.YELLOW -> 27 PlayerColor.BLUE -> 40 }
 
-fun rollTwoDice(): DiceRoll {
-    val die1 = Random.nextInt(1, 7)
-    val die2 = Random.nextInt(1, 7)
-    return DiceRoll(die1, die2)
-}
+fun getHomeEntryPosition(color: PlayerColor): Int = when (color) { PlayerColor.GREEN -> 51 PlayerColor.RED -> 12 PlayerColor.YELLOW -> 25 PlayerColor.BLUE -> 38 }
 
-// Function to move a token on the board
-fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules): BoardState {
-    val newPosition = when {
-        token.position == -1 -> {
-            // Token is in home base, move to starting position
-            getStartingPosition(token.color)
-        }
-        token.position in 0..51 -> {
-            // Token is on main path
-            val nextPos = token.position + steps
-            if (nextPos > 51) {
-                // Move to home path
-                100 + (nextPos - 52)
-            } else {
-                nextPos
-            }
-        }
-        token.position in 100..105 -> {
-            // Token is in home path
-            val homePathPos = token.position - 100 + steps
-            if (homePathPos >= 6) {
-                200 // Finished
-            } else {
-                100 + homePathPos
-            }
-        }
-        else -> token.position // Already finished or invalid position
-    }
+fun isSafeZone(position: Int, rules: GameRules): Boolean = position in rules.safeZones || position in 100..105 || position == 200
 
-    var updatedBoardState = boardState.copy()
+fun checkCapture(movedToken: Token, boardState: BoardState, rules: GameRules): Pair<BoardState, Boolean> {
+    if (movedToken.position in 0..51 && rules.captureReturnsToBase) { 
+    val opponents = boardState.players.filter { it.color != movedToken.color } opponents.forEach { opponent -> opponent.tokens.find { it.position == movedToken.position && !isSafeZone(it.position, rules) }?.let { captured ->
+    val updatedPlayers = boardState.players.map { 
+        if (it.color == opponent.color) { it.copy(tokens = it.tokens.map { t -> 
+        if (t.id == captured.id) t.copy(position = -1) 
+        else t }) } 
+        else it }
+        return boardState.copy(players = updatedPlayers) to true } } }
+    return boardState to false }
 
-    // Check for capture (only on main path, not in home areas or home path)
-    if (newPosition in 0..51) {
-        val capturedToken = updatedBoardState.players.flatMap { it.tokens }
-            .firstOrNull { 
-                it.position == newPosition && 
-                it.color != token.color && 
-                !isSafeZone(newPosition, it.color, rules) 
-            }
+fun checkWin(player: Player): Boolean = player.tokens.all { it.position == 200 }
 
-        if (capturedToken != null && rules.capturedTokenReturnsToBase) {
-            capturedToken.position = -1 // Send captured token back to base
-            updatedBoardState = updatedBoardState.copy(players = updatedBoardState.players.map { player ->
-                if (player.color == capturedToken.color) {
-                    player.copy(tokens = player.tokens.map { if (it.id == capturedToken.id) capturedToken else it })
-                } else {
-                    player
-                }
-            })
-        }
-    }
+fun applyMove(token: Token, diceRoll: DiceRoll, state: BoardState, rules: GameRules): BoardState { 
+    val totalSteps = diceRoll.total
+    val movedToken = moveToken(token, totalSteps, state, rules) 
+    val updatedPlayers = state.players.map { 
+        if (it.color == token.color) { it.copy(tokens = it.tokens.map { t -> 
+            if (t.id == token.id) movedToken
+            else t }) }
+        else it }
+    val updatedState = state.copy(players = updatedPlayers)
+    val (finalState, didCapture) = checkCapture(movedToken, updatedState, rules) 
+    val currentPlayer = finalState.players.first { it.color == token.color }
+    return if (checkWin(currentPlayer)) { finalState.copy(gamePhase = GamePhase.GAME_OVER, winner = token.color) } 
+    else { 
+        val keepTurn = (diceRoll.die1 == 6 || diceRoll.die2 == 6) && rules.getsExtraTurnOnSix || (didCapture && rules.getsExtraTurnOnCapture) finalState.copy( currentPlayer = 
+                if (keepTurn) token.color 
+                                 else getNextPlayer(token.color), gamePhase = GamePhase.ROLLING ) } }
 
-    // Update token position
-    token.position = newPosition
-
-    return updatedBoardState.copy(players = updatedBoardState.players.map { player ->
-        if (player.color == token.color) {
-            player.copy(tokens = player.tokens.map { if (it.id == token.id) token else it })
-        } else {
-            player
-        }
-    })
-}
-
-// Main function to handle a player\"s turn after a dice roll
-fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
-    val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-    
-    // Get all possible moves for the current dice roll
-    val availableMoves = getAvailableMovesForDiceRoll(currentPlayer, diceRoll, rules)
-    println("handleTurn: Player ${currentPlayer.color} rolled ${diceRoll.die1}, ${diceRoll.die2}. Available moves: ${availableMoves.size}")
-    
-    var nextPlayer = boardState.currentPlayer
-    val newDiceRolls = currentPlayer.diceRolls.toMutableList()
-    newDiceRolls.add(diceRoll.die1)
-    newDiceRolls.add(diceRoll.die2)
-
-    // Determine next player based on rules and available moves
-    if (availableMoves.isNotEmpty()) {
-        // Player has moves, so they remain the current player and game phase is MOVING
-        // Extra turn logic will be applied after the move is made.
-        // For now, just set the phase to MOVING.
-        println("handleTurn: Setting game phase to MOVING for ${boardState.currentPlayer}")
-        return boardState.copy(
-            diceRoll = diceRoll,
-            currentPlayer = boardState.currentPlayer, // Current player remains to make a move
-            gamePhase = GamePhase.MOVING,
-            winner = null, // No winner yet
-            players = boardState.players.map { player ->
-                if (player.color == currentPlayer.color) {
-                    player.copy(diceRolls = newDiceRolls)
-                } else {
-                    player
-                }
-            }
-        )
-    } else {
-        // No available moves, so turn is forfeited and next player takes over
-        nextPlayer = getNextPlayer(boardState.currentPlayer)
-        println("handleTurn: No available moves. Passing turn to ${nextPlayer}")
-        return boardState.copy(
-            diceRoll = diceRoll,
-            currentPlayer = nextPlayer,
-            gamePhase = GamePhase.ROLLING, // Next player rolls dice
-            winner = null, // No winner yet
-            players = boardState.players.map { player ->
-                if (player.color == currentPlayer.color) {
-                    player.copy(diceRolls = newDiceRolls)
-                } else {
-                    player
-                }
-            }
-        )
-    }
-}
-
-// Get tokens that can be moved with a specific dice roll
-fun getMovableTokens(player: Player, diceRoll: Int, rules: GameRules): List<Token> {
-    val movableTokens = player.tokens.filter { token ->
-        val canMove = when {
-            token.position == -1 -> {
-                // Token in home base - can only move out with a 6 (individual die)
-                rules.requiresSixToExitBase && diceRoll == 6
-            }
-            token.position in 0..51 -> {
-                // Token on main path - can always move if not going past finish
-                token.position + diceRoll <= 57 // 52-57 is the home stretch
-            }
-            token.position in 100..105 -> {
-                // Token in home path - can move if not going past finish
-                (token.position - 100) + diceRoll <= 6
-            }
-            token.position == 200 -> {
-                // Token already finished
-                false
-            }
-            else -> false
-        }
-        println("  getMovableTokens: Token ${token.id} (${token.color}) at position ${token.position} with dice ${diceRoll}. Can move: $canMove")
-        canMove
-    }
-    println("  getMovableTokens: Found ${movableTokens.size} movable tokens for dice ${diceRoll}")
-    return movableTokens
-}
-
-// New function to get available moves for both dice
-fun getAvailableMovesForDiceRoll(player: Player, diceRoll: DiceRoll, rules: GameRules): List<TokenMove> {
-    val moves = mutableListOf<TokenMove>()
-    
-    println("getAvailableMovesForDiceRoll: Checking moves for ${player.color} with dice ${diceRoll.die1}, ${diceRoll.die2}")
-
-    // Check moves for die1
-    val movableWithDie1 = getMovableTokens(player, diceRoll.die1, rules)
-    movableWithDie1.forEach { token ->
-        moves.add(TokenMove(token, diceRoll.die1, 1))
-    }
-    
-    // Check moves for die2
-    val movableWithDie2 = getMovableTokens(player, diceRoll.die2, rules)
-    movableWithDie2.forEach { token ->
-        moves.add(TokenMove(token, diceRoll.die2, 2))
-    }
-    
-    // Special handling for double 6s - player can use either die for any valid move
-    if (diceRoll.die1 == 6 && diceRoll.die2 == 6) {
-        println("getAvailableMovesForDiceRoll: Double 6s rolled. Adding flexible moves.")
-        player.tokens.forEach { token ->
-            if (isValidMove(token, 6, rules)) {
-                moves.add(TokenMove(token, 6, 0)) // 0 indicates flexible die choice
-            }
-        }
-    }
-    
-    println("getAvailableMovesForDiceRoll: Total available moves: ${moves.size}")
-    return moves
-}
-
-// Checks if a token can make a specific move
-fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
-    val canMove = when {
-        token.position == -1 -> {
-            // Token in home base - can only move out with a 6 (individual die)
-            rules.requiresSixToExitBase && steps == 6
-        }
-        token.position in 0..51 -> {
-            // Token on main path
-            token.position + steps <= 57
-        }
-        token.position in 100..105 -> {
-            // Token in home path
-            (token.position - 100) + steps <= 6
-        }
-        token.position == 200 -> {
-            // Token already finished
-            false
-        }
-        else -> false
-    }
-    println("  isValidMove: Token ${token.id} (${token.color}) at position ${token.position} with steps ${steps}. Can move: $canMove")
-    return canMove
-}
-
-// Utility functions for board positions and player turns
-fun getStartingPosition(color: PlayerColor): Int {
-    return when (color) {
-        PlayerColor.GREEN -> 1   // Green starts at position 1 (matches visual position 1,6)
-        PlayerColor.RED -> 14    // Red starts at position 14 (matches visual position 8,1)
-        PlayerColor.YELLOW -> 27 // Yellow starts at position 27 (matches visual position 6,13)
-        PlayerColor.BLUE -> 40   // Blue starts at position 40 (matches visual position 13,8)
-    }
-}
-
-fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
-    return when (currentPlayer) {
-        PlayerColor.GREEN -> PlayerColor.RED
-        PlayerColor.RED -> PlayerColor.YELLOW
-        PlayerColor.YELLOW -> PlayerColor.BLUE
-        PlayerColor.BLUE -> PlayerColor.GREEN
-    }
-}
-
-fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
-    // Main path safe zones (stars on the board) - PRESERVING ORIGINAL SAFE ZONES
-    val mainPathSafeZones = listOf(1, 9, 14, 22, 27, 35, 40, 48)
-
-    // Starting points are safe zones
-    val startingPoints = mapOf(
-        PlayerColor.GREEN to 1,
-        PlayerColor.RED to 14,
-        PlayerColor.YELLOW to 27,
-        PlayerColor.BLUE to 40
-    )
-
-    return when {
-        rules.startingPointIsSafeZoneForAll && startingPoints.values.contains(position) -> true
-        rules.startingPointIsSafeZoneForColor && startingPoints[color] == position -> true
-        mainPathSafeZones.contains(position) -> true
-        position in 100..105 -> true // Home path is always safe
-        position == 200 -> true // Finished position is safe
-        else -> false
-    }
-}
-
-fun checkForWinner(boardState: BoardState): PlayerColor? {
-    return boardState.players.find { player ->
-        player.tokens.all { it.position == 200 }
-    }?.color
-}
-
-// New function to handle complex dice moves (e.g., using one 6 to get out and other number to move)
-fun executeComplexMove(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll, 
-                      firstMove: TokenMove?, secondMove: TokenMove?): BoardState {
-    var updatedState = boardState
-    
-    // Execute first move if provided
-    if (firstMove != null) {
-        updatedState = moveToken(updatedState, firstMove.token, firstMove.steps, rules)
-    }
-    
-    // Execute second move if provided
-    if (secondMove != null) {
-        updatedState = moveToken(updatedState, secondMove.token, secondMove.steps, rules)
-    }
-    
-    return updatedState
-}
-
-fun getTokensAtPosition(boardState: BoardState, position: Int): List<Token> {
-    return boardState.players.flatMap { it.tokens }.filter { it.position == position }
-}
-
-fun canCaptureAt(position: Int, attackingColor: PlayerColor, rules: GameRules, boardState: BoardState): Boolean {
-    val tokensAtPosition = getTokensAtPosition(boardState, position)
-    return tokensAtPosition.any { 
-        it.color != attackingColor && 
-        !isSafeZone(position, it.color, rules) 
-    }
-}
-
-fun getPlayerScore(player: Player): Int {
-    return player.tokens.sumOf { token ->
-        when {
-            token.position == 200 -> 100 // Finished token
-            token.position in 100..105 -> 50 + (token.position - 100) * 5 // Home path
-            token.position in 0..51 -> token.position // Main path
-            else -> 0 // In base
-        }
-    }
-}
-
-fun getGameProgress(boardState: BoardState): Map<PlayerColor, Float> {
-    return boardState.players.associate { player ->
-        val totalProgress = player.tokens.sumOf { token ->
-            when {
-                token.position == 200 -> 57 // Finished
-                token.position in 100..105 -> 52 + (token.position - 100) // Home path
-                token.position in 0..51 -> token.position // Main path
-                else -> 0 // In base
-            }
-        }
-        player.color to (totalProgress / (57f * 4)) // Normalize to 0-1
-    }
-}
-
+fun getNextPlayer(current: PlayerColor): PlayerColor = when (current) { PlayerColor.GREEN -> PlayerColor.RED PlayerColor.RED -> PlayerColor.YELLOW PlayerColor.YELLOW -> PlayerColor.BLUE PlayerColor.BLUE -> PlayerColor.GREEN }
 
