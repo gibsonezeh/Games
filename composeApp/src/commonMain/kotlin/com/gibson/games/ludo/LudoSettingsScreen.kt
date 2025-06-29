@@ -15,15 +15,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
-import com.gibson.games.ludo.GameRules
 
 /**
- * Settings screen for Ludo game
+ * Settings screen for Ludo game with proper game rules handling
  */
 @Composable
-fun LudoSettingsScreen(onBackClicked: () -> Unit) {
-    var gameRules by remember { mutableStateOf(GameRules()) }
+fun LudoSettingsScreen(
+    onBackClicked: () -> Unit,
+    gameRules: GameRules = GameRules(),
+    onRulesChanged: (GameRules) -> Unit = {}
+) {
+    var currentGameRules by remember { mutableStateOf(gameRules) }
+    
     BackHandler {
+        onRulesChanged(currentGameRules)
         onBackClicked()
     }
     
@@ -53,15 +58,19 @@ fun LudoSettingsScreen(onBackClicked: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = onBackClicked
+                    onClick = {
+                        onRulesChanged(currentGameRules)
+                        onBackClicked()
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        tint = Color.White
                     )
                 }
                 Text(
-                    text = "Settings",
+                    text = "Game Settings",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -74,87 +83,105 @@ fun LudoSettingsScreen(onBackClicked: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Gameplay Settings Section
-                SettingsSection(title = "Gameplay") {
+                SettingsSection(title = "Gameplay Rules") {
                     SettingsToggleItem(
                         title = "Require Six to Exit Base",
                         description = "A 6 is required to move a token out of the home base.",
-                        isChecked = gameRules.requiresSixToExitBase,
-                        onCheckedChange = { gameRules = gameRules.copy(requiresSixToExitBase = it) }
+                        isChecked = currentGameRules.requiresSixToExitBase,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(requiresSixToExitBase = it) 
+                        }
                     )
                     SettingsToggleItem(
                         title = "Extra Turn on Six",
                         description = "Player gets an extra turn when rolling a 6.",
-                        isChecked = gameRules.getsExtraTurnOnSix,
-                        onCheckedChange = { gameRules = gameRules.copy(getsExtraTurnOnSix = it) }
+                        isChecked = currentGameRules.getsExtraTurnOnSix,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(getsExtraTurnOnSix = it) 
+                        }
                     )
                     SettingsToggleItem(
                         title = "Three Sixes Forfeit Turn",
                         description = "Rolling three consecutive 6s forfeits the turn.",
-                        isChecked = gameRules.getsExtraTurnOnThreeSixesForfeit,
-                        onCheckedChange = { gameRules = gameRules.copy(getsExtraTurnOnThreeSixesForfeit = it) }
+                        isChecked = currentGameRules.getsExtraTurnOnThreeSixesForfeit,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(getsExtraTurnOnThreeSixesForfeit = it) 
+                        }
                     )
                     SettingsToggleItem(
                         title = "Must Play Rolled Numbers",
                         description = "Player must move a token for each number rolled.",
-                        isChecked = gameRules.mustPlayRolledNumbers,
-                        onCheckedChange = { gameRules = gameRules.copy(mustPlayRolledNumbers = it) }
+                        isChecked = currentGameRules.mustPlayRolledNumbers,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(mustPlayRolledNumbers = it) 
+                        }
                     )
                     SettingsToggleItem(
                         title = "Captured Token Returns to Base",
                         description = "A captured token returns to its home base.",
-                        isChecked = gameRules.capturedTokenReturnsToBase,
-                        onCheckedChange = { gameRules = gameRules.copy(capturedTokenReturnsToBase = it) }
+                        isChecked = currentGameRules.capturedTokenReturnsToBase,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(capturedTokenReturnsToBase = it) 
+                        }
                     )
                     SettingsToggleItem(
                         title = "Capture Gives Extra Turn",
                         description = "Capturing an opponent's token grants an extra turn.",
-                        isChecked = gameRules.captureGivesExtraTurn,
-                        onCheckedChange = { gameRules = gameRules.copy(captureGivesExtraTurn = it) }
+                        isChecked = currentGameRules.captureGivesExtraTurn,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(captureGivesExtraTurn = it) 
+                        }
                     )
                     SettingsToggleItem(
-                        title = "Capture Sends to Home",
-                        description = "Captured token goes directly to home (finished).",
-                        isChecked = gameRules.captureSendsToHome,
-                        onCheckedChange = { gameRules = gameRules.copy(captureSendsToHome = it) }
-                    )
-                    SettingsToggleItem(
-                        title = "Starting Point is Safe Zone (Color Specific)",
+                        title = "Starting Point Safe Zone (Own Color)",
                         description = "Each player's starting point is a safe zone only for their color.",
-                        isChecked = gameRules.startingPointIsSafeZoneForColor,
-                        onCheckedChange = { gameRules = gameRules.copy(startingPointIsSafeZoneForColor = it) }
+                        isChecked = currentGameRules.startingPointIsSafeZoneForColor,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(startingPointIsSafeZoneForColor = it) 
+                        }
                     )
                     SettingsToggleItem(
-                        title = "Starting Point is Safe Zone (All Colors)",
+                        title = "Starting Point Safe Zone (All Colors)",
                         description = "All starting points are safe zones for all colors.",
-                        isChecked = gameRules.startingPointIsSafeZoneForAll,
-                        onCheckedChange = { gameRules = gameRules.copy(startingPointIsSafeZoneForAll = it) }
-                    )
-                    SettingsItem(
-                        title = "Game Speed",
-                        description = "Normal",
-                        onClick = { /* TODO: Implement speed selection */ }
-                    )
-                    
-                    SettingsItem(
-                        title = "Difficulty",
-                        description = "Medium",
-                        onClick = { /* TODO: Implement difficulty selection */ }
+                        isChecked = currentGameRules.startingPointIsSafeZoneForAll,
+                        onCheckedChange = { 
+                            currentGameRules = currentGameRules.copy(startingPointIsSafeZoneForAll = it) 
+                        }
                     )
                 }
 
-                // Sound Settings Section
-                SettingsSection(title = "Sound") {
-                    SettingsToggleItem(
-                        title = "Sound Effects",
-                        description = "Enable or disable in-game sound effects.",
-                        isChecked = true, // TODO: Implement actual sound setting
-                        onCheckedChange = { /* TODO: Implement sound setting */ }
+                // Game Info Section
+                SettingsSection(title = "Game Information") {
+                    InfoCard(
+                        title = "How to Play",
+                        description = "• Roll dice to move your bird tokens\n• Get all 4 tokens to the center to win\n• Capture opponents by landing on them\n• Use safe zones to protect your tokens"
                     )
-                    SettingsToggleItem(
-                        title = "Background Music",
-                        description = "Enable or disable background music.",
-                        isChecked = false, // TODO: Implement actual music setting
-                        onCheckedChange = { /* TODO: Implement music setting */ }
+                    InfoCard(
+                        title = "Bird Teams",
+                        description = "🦚 Green Peacock\n🦜 Red Parrot\n🐥 Yellow Chick\n🐦 Blue Bird"
+                    )
+                }
+
+                // Save Button
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = {
+                        onRulesChanged(currentGameRules)
+                        onBackClicked()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF10B981)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Save Settings",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
@@ -177,7 +204,7 @@ fun SettingsSection(title: String, content: @Composable () -> Unit) {
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 12.dp)
         )
         content()
     }
@@ -193,71 +220,84 @@ fun SettingsToggleItem(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-            Text(
-                text = description,
-                fontSize = 14.sp,
-                color = Color.Gray
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            Switch(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color(0xFF10B981),
+                    checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f),
+                    uncheckedThumbColor = Color.Gray,
+                    uncheckedTrackColor = Color.Gray.copy(alpha = 0.3f)
+                )
             )
         }
-        Switch(
-            checked = isChecked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color(0xFF10B981),
-                checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f)
-            )
-        )
     }
 }
 
 /**
- * Settings item without toggle (for selection items)
+ * Information card for game rules and instructions
  */
 @Composable
-fun SettingsItem(
+fun InfoCard(
     title: String,
-    description: String,
-    onClick: () -> Unit
+    description: String
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF3B82F6).copy(alpha = 0.2f)
+        ),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Text(
                 text = title,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
                 text = description,
                 fontSize = 14.sp,
-                color = Color(0xFF60A5FA)
-            )
-        }
-        
-        TextButton(onClick = onClick) {
-            Text(
-                text = "Change",
-                color = Color(0xFF60A5FA)
+                color = Color.White.copy(alpha = 0.9f),
+                lineHeight = 20.sp
             )
         }
     }

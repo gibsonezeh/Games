@@ -2,15 +2,21 @@ package com.gibson.games.ludo
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -32,28 +38,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
-import com.gibson.games.ludo.BoardState
-import com.gibson.games.ludo.initializeGameState
-import com.gibson.games.ludo.rollDice
-import com.gibson.games.ludo.PlayerColor
-import com.gibson.games.ludo.Token
-import com.gibson.games.ludo.Player
 import kotlin.math.min
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Bird-themed Ludo game board screen with exit confirmation dialog
+ * Bird-themed Ludo game board screen with dice placeholders and complete functionality
  */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
     var boardState by remember { mutableStateOf(initializeGameState(gameRules)) }
+    var diceRoll by remember { mutableStateOf<DiceRoll?>(null) }
+    var isRolling by remember { mutableStateOf(false) }
+    var selectedToken by remember { mutableStateOf<Token?>(null) }
+    var movableTokens by remember { mutableStateOf<List<Token>>(emptyList()) }
+    var gameMessage by remember { mutableStateOf("") }
 
     // Handle back navigation with confirmation dialog
     BackHandler {
         showExitDialog = true
+    }
+
+    // Update movable tokens when dice is rolled
+    LaunchedEffect(diceRoll, boardState.currentPlayer) {
+        if (diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
+            val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
+            movableTokens = getMovableTokens(currentPlayer, diceRoll!!.total, gameRules)
+            
+            if (movableTokens.isEmpty()) {
+                gameMessage = "No valid moves available!"
+                delay(2000)
+                // Auto-advance to next player
+                boardState = handleTurn(boardState, gameRules, diceRoll!!)
+                diceRoll = null
+                gameMessage = ""
+            } else {
+                gameMessage = "Select a token to move"
+            }
+        }
     }
 
     Box(
@@ -217,8 +241,6 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             drawGameSquare(6, 13, yellow)  // Yellow start
             drawStar(Offset(6.5f * squareSize, 13.5f * squareSize), squareSize * 0.3f, Color.White)
 
-
-
             // Draw arrows in colored home paths
             for (i in 1..5) {
                 drawStar(Offset(7.5f * squareSize, (i + 0.5f) * squareSize), squareSize * 0.3f, red)
@@ -265,8 +287,27 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
 
             // --- Draw Player Tokens ---
-            fun drawToken(centerX: Float, centerY: Float, color: Color) {
+            fun drawToken(centerX: Float, centerY: Float, color: Color, isSelected: Boolean = false, isMovable: Boolean = false) {
                 val tokenRadius = squareSize * 0.35f
+                
+                // Highlight for movable tokens
+                if (isMovable) {
+                    drawCircle(
+                        color = Color.Yellow.copy(alpha = 0.5f),
+                        radius = tokenRadius * 1.3f,
+                        center = Offset(centerX, centerY)
+                    )
+                }
+                
+                // Selection highlight
+                if (isSelected) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = tokenRadius * 1.2f,
+                        center = Offset(centerX, centerY)
+                    )
+                }
+                
                 // Shadow
                 drawCircle(
                     color = Color.Black.copy(alpha = 0.3f),
@@ -297,102 +338,22 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             // Draw tokens dynamically based on boardState
             boardState.players.forEach { player ->
                 player.tokens.forEach { token ->
-                    val tokenCoords = when (token.position) {
-                        -1 -> { // In home base
-                            when (token.color) {
-                                PlayerColor.GREEN -> when (token.id) {
-                                    1 -> Offset(squareSize * 1.5f, squareSize * 1.5f)
-                                    2 -> Offset(squareSize * 4.5f, squareSize * 1.5f)
-                                    3 -> Offset(squareSize * 1.5f, squareSize * 4.5f)
-                                    4 -> Offset(squareSize * 4.5f, squareSize * 4.5f)
-                                    else -> Offset.Zero
-                                }
-                                PlayerColor.RED -> when (token.id) {
-                                    1 -> Offset(squareSize * 10.5f, squareSize * 1.5f)
-                                    2 -> Offset(squareSize * 13.5f, squareSize * 1.5f)
-                                    3 -> Offset(squareSize * 10.5f, squareSize * 4.5f)
-                                    4 -> Offset(squareSize * 13.5f, squareSize * 4.5f)
-                                    else -> Offset.Zero
-                                }
-                                PlayerColor.YELLOW -> when (token.id) {
-                                    1 -> Offset(squareSize * 1.5f, squareSize * 10.5f)
-                                    2 -> Offset(squareSize * 4.5f, squareSize * 10.5f)
-                                    3 -> Offset(squareSize * 1.5f, squareSize * 13.5f)
-                                    4 -> Offset(squareSize * 4.5f, squareSize * 13.5f)
-                                    else -> Offset.Zero
-                                }
-                                PlayerColor.BLUE -> when (token.id) {
-                                    1 -> Offset(squareSize * 10.5f, squareSize * 10.5f)
-                                    2 -> Offset(squareSize * 13.5f, squareSize * 10.5f)
-                                    3 -> Offset(squareSize * 10.5f, squareSize * 13.5f)
-                                    4 -> Offset(squareSize * 13.5f, squareSize * 13.5f)
-                                    else -> Offset.Zero
-                                }
-                            }
-                        }
-                        in 0..51 -> { // Main path
-                            val x = when (token.position) {
-                                in 0..4 -> 6
-                                5 -> 5
-                                in 6..10 -> 5 - (token.position - 6)
-                                11 -> 0
-                                in 12..16 -> 0
-                                17 -> 1
-                                in 18..22 -> 1 + (token.position - 18)
-                                23 -> 6
-                                in 24..28 -> 6
-                                29 -> 7
-                                in 30..34 -> 7 + (token.position - 30)
-                                35 -> 12
-                                in 36..40 -> 12
-                                41 -> 13
-                                in 42..46 -> 13 - (token.position - 42)
-                                47 -> 8
-                                in 48..51 -> 8
-                                else -> 0 // Should not happen
-                            }
-                            val y = when (token.position) {
-                                in 0..4 -> 14 - token.position
-                                5 -> 9
-                                in 6..10 -> 9
-                                11 -> 8
-                                in 12..16 -> 8 - (token.position - 12)
-                                17 -> 6
-                                in 18..22 -> 6
-                                23 -> 5
-                                in 24..28 -> 5 - (token.position - 24)
-                                29 -> 0
-                                in 30..34 -> 0
-                                35 -> 1
-                                in 36..40 -> 1 + (token.position - 36)
-                                41 -> 6
-                                in 42..46 -> 6
-                                47 -> 7
-                                in 48..51 -> 7 + (token.position - 48)
-                                else -> 0 // Should not happen
-                            }
-                            Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
-                        }
-                        in 100..105 -> { // Home path
-                            val homePathIndex = token.position - 100
-                            when (token.color) {
-                                PlayerColor.GREEN -> Offset((1 + homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
-                                PlayerColor.RED -> Offset((7 + 0.5f) * squareSize, (1 + homePathIndex + 0.5f) * squareSize)
-                                PlayerColor.YELLOW -> Offset((7 + 0.5f) * squareSize, (13 - homePathIndex + 0.5f) * squareSize)
-                                PlayerColor.BLUE -> Offset((13 - homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
-                            }
-                        }
-                        200 -> { // Finished
-                            Offset(squareSize * 7.5f, squareSize * 7.5f) // Center of the board
-                        }
-                        else -> Offset.Zero // Should not happen
-                    }
-                    drawToken(tokenCoords.x, tokenCoords.y, when (token.color) {
-                        PlayerColor.GREEN -> green
-                        PlayerColor.RED -> red
-                        PlayerColor.YELLOW -> yellow
-                        PlayerColor.BLUE -> blue
-                    })
+                    val tokenCoords = getTokenCoordinates(token, squareSize)
+                    val isSelected = selectedToken?.id == token.id && selectedToken?.color == token.color
+                    val isMovable = movableTokens.contains(token)
+                    
+                    drawToken(
+                        tokenCoords.x, 
+                        tokenCoords.y, 
+                        when (token.color) {
+                            PlayerColor.GREEN -> green
+                            PlayerColor.RED -> red
+                            PlayerColor.YELLOW -> yellow
+                            PlayerColor.BLUE -> blue
+                        },
+                        isSelected = isSelected,
+                        isMovable = isMovable
+                    )
                 }
             }
         }
@@ -448,7 +409,67 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             )
         }
 
-        // Dice Roll Button
+        // Winner Dialog
+        if (boardState.winner != null) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = {
+                    Text(
+                        text = "Game Over!",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
+                },
+                text = {
+                    Text(
+                        text = "${boardState.winner!!.name} wins!",
+                        fontSize = 18.sp,
+                        color = when (boardState.winner!!) {
+                            PlayerColor.GREEN -> Color(0xFF00B04F)
+                            PlayerColor.RED -> Color(0xFFC8102E)
+                            PlayerColor.YELLOW -> Color(0xFFFFD700)
+                            PlayerColor.BLUE -> Color(0xFF0066CC)
+                        }
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            boardState = initializeGameState(gameRules)
+                            diceRoll = null
+                            selectedToken = null
+                            movableTokens = emptyList()
+                            gameMessage = ""
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF10B981)
+                        )
+                    ) {
+                        Text(
+                            text = "New Game",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = onExit,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6B7280)
+                        )
+                    ) {
+                        Text(
+                            text = "Exit",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
+        }
+
+        // Game Controls and Dice Display
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -456,18 +477,246 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Game Message
+            if (gameMessage.isNotEmpty()) {
+                Text(
+                    text = gameMessage,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF10B981),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            // Current Player Indicator
+            Text(
+                text = "Current Player: ${boardState.currentPlayer.name}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = when (boardState.currentPlayer) {
+                    PlayerColor.GREEN -> Color(0xFF00B04F)
+                    PlayerColor.RED -> Color(0xFFC8102E)
+                    PlayerColor.YELLOW -> Color(0xFFFFD700)
+                    PlayerColor.BLUE -> Color(0xFF0066CC)
+                },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Dice Display Area - THREE PLACEHOLDERS AS REQUESTED
+            Row(
+                modifier = Modifier.padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Die 1 Placeholder
+                DiceCard(
+                    title = "Die 1",
+                    value = if (isRolling) "?" else (diceRoll?.die1?.toString() ?: "-"),
+                    isRolling = isRolling
+                )
+                
+                // Die 2 Placeholder
+                DiceCard(
+                    title = "Die 2", 
+                    value = if (isRolling) "?" else (diceRoll?.die2?.toString() ?: "-"),
+                    isRolling = isRolling
+                )
+                
+                // Total Placeholder
+                DiceCard(
+                    title = "Total",
+                    value = if (isRolling) "?" else (diceRoll?.total?.toString() ?: "-"),
+                    isRolling = isRolling,
+                    isTotal = true
+                )
+            }
+
+            // Roll Dice Button
             Button(
                 onClick = {
-                    boardState = handleTurn(boardState , gameRules)
+                    if (!isRolling && boardState.gamePhase == GamePhase.ROLLING) {
+                        isRolling = true
+                        // Simulate rolling animation delay
+                        GlobalScope.launch {
+                            delay(1000)
+                            val newDiceRoll = rollTwoDice()
+                            diceRoll = newDiceRoll
+                            boardState = boardState.copy(gamePhase = GamePhase.MOVING)
+                            isRolling = false
+                        }
+                    }
                 },
-                modifier = Modifier.padding(bottom = 8.dp)
+                enabled = !isRolling && boardState.gamePhase == GamePhase.ROLLING,
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+                    .size(width = 120.dp, height = 48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF10B981),
+                    disabledContainerColor = Color(0xFF6B7280)
+                )
             ) {
-                Text("Roll Dice")
+                Text(
+                    text = if (isRolling) "Rolling..." else "Roll Dice",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
-            boardState.diceRoll?.let {
-                Text("Dice Roll: $it", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+
+            // Auto Move Button (for testing and AI play)
+            if (boardState.gamePhase == GamePhase.MOVING && diceRoll != null && movableTokens.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        boardState = performAutomaticMove(boardState, gameRules, diceRoll!!)
+                        boardState = handleTurn(boardState, gameRules, diceRoll!!)
+                        selectedToken = null
+                        diceRoll = null
+                        movableTokens = emptyList()
+                        gameMessage = ""
+                    },
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .size(width = 120.dp, height = 40.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6366F1)
+                    )
+                ) {
+                    Text(
+                        text = "Auto Move",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+fun DiceCard(
+    title: String,
+    value: String,
+    isRolling: Boolean,
+    isTotal: Boolean = false
+) {
+    Card(
+        modifier = Modifier.size(80.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isTotal) Color(0xFF3B82F6) else Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (isTotal) Color.White else Color.Gray
+            )
+            Text(
+                text = value,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isTotal) Color.White else Color.Black
+            )
+        }
+    }
+}
+
+// Helper function to get token coordinates
+fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
+    return when (token.position) {
+        -1 -> { // In home base
+            when (token.color) {
+                PlayerColor.GREEN -> when (token.id) {
+                    1 -> Offset(squareSize * 1.5f, squareSize * 1.5f)
+                    2 -> Offset(squareSize * 4.5f, squareSize * 1.5f)
+                    3 -> Offset(squareSize * 1.5f, squareSize * 4.5f)
+                    4 -> Offset(squareSize * 4.5f, squareSize * 4.5f)
+                    else -> Offset.Zero
+                }
+                PlayerColor.RED -> when (token.id) {
+                    1 -> Offset(squareSize * 10.5f, squareSize * 1.5f)
+                    2 -> Offset(squareSize * 13.5f, squareSize * 1.5f)
+                    3 -> Offset(squareSize * 10.5f, squareSize * 4.5f)
+                    4 -> Offset(squareSize * 13.5f, squareSize * 4.5f)
+                    else -> Offset.Zero
+                }
+                PlayerColor.YELLOW -> when (token.id) {
+                    1 -> Offset(squareSize * 1.5f, squareSize * 10.5f)
+                    2 -> Offset(squareSize * 4.5f, squareSize * 10.5f)
+                    3 -> Offset(squareSize * 1.5f, squareSize * 13.5f)
+                    4 -> Offset(squareSize * 4.5f, squareSize * 13.5f)
+                    else -> Offset.Zero
+                }
+                PlayerColor.BLUE -> when (token.id) {
+                    1 -> Offset(squareSize * 10.5f, squareSize * 10.5f)
+                    2 -> Offset(squareSize * 13.5f, squareSize * 10.5f)
+                    3 -> Offset(squareSize * 10.5f, squareSize * 13.5f)
+                    4 -> Offset(squareSize * 13.5f, squareSize * 13.5f)
+                    else -> Offset.Zero
+                }
+            }
+        }
+        in 0..51 -> { // Main path
+            val x = when (token.position) {
+                in 0..4 -> 6
+                5 -> 5
+                in 6..10 -> 5 - (token.position - 6)
+                11 -> 0
+                in 12..16 -> 0
+                17 -> 1
+                in 18..22 -> 1 + (token.position - 18)
+                23 -> 6
+                in 24..28 -> 6
+                29 -> 7
+                in 30..34 -> 7 + (token.position - 30)
+                35 -> 12
+                in 36..40 -> 12
+                41 -> 13
+                in 42..46 -> 13 - (token.position - 42)
+                47 -> 8
+                in 48..51 -> 8
+                else -> 0
+            }
+            val y = when (token.position) {
+                in 0..4 -> 14 - token.position
+                5 -> 9
+                in 6..10 -> 9
+                11 -> 8
+                in 12..16 -> 8 - (token.position - 12)
+                17 -> 6
+                in 18..22 -> 6
+                23 -> 5
+                in 24..28 -> 5 - (token.position - 24)
+                29 -> 0
+                in 30..34 -> 0
+                35 -> 1
+                in 36..40 -> 1 + (token.position - 36)
+                41 -> 6
+                in 42..46 -> 6
+                47 -> 7
+                in 48..51 -> 7 + (token.position - 48)
+                else -> 0
+            }
+            Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
+        }
+        in 100..105 -> { // Home path
+            val homePathIndex = token.position - 100
+            when (token.color) {
+                PlayerColor.GREEN -> Offset((1 + homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
+                PlayerColor.RED -> Offset((7 + 0.5f) * squareSize, (1 + homePathIndex + 0.5f) * squareSize)
+                PlayerColor.YELLOW -> Offset((7 + 0.5f) * squareSize, (13 - homePathIndex + 0.5f) * squareSize)
+                PlayerColor.BLUE -> Offset((13 - homePathIndex + 0.5f) * squareSize, (7 + 0.5f) * squareSize)
+            }
+        }
+        200 -> { // Finished
+            Offset(squareSize * 7.5f, squareSize * 7.5f) // Center of the board
+        }
+        else -> Offset.Zero
     }
 }
 
