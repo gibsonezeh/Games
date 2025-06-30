@@ -43,42 +43,42 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Bird-themed Ludo game board screen with dice placeholders and complete functionality
+ * Bird-themed Ludo game board screen with advanced dice rules
  */
 @Composable
 fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
     var boardState by remember { mutableStateOf(initializeGameState(gameRules)) }
-    var diceRoll by remember { mutableStateOf<DiceRoll?>(null) }
     var isRolling by remember { mutableStateOf(false) }
     var selectedToken by remember { mutableStateOf<Token?>(null) }
     var movableTokens by remember { mutableStateOf<List<Token>>(emptyList()) }
     var gameMessage by remember { mutableStateOf("") }
     var selectedMoveValue by remember { mutableStateOf<Int?>(null) }
+    var usedDiceValues by remember { mutableStateOf<List<Int>>(emptyList()) }
 
     // Handle back navigation with confirmation dialog
     BackHandler {
         showExitDialog = true
     }
 
-    // Update movable tokens when dice is rolled
-    LaunchedEffect(diceRoll, boardState.currentPlayer) {
-        if (diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
+    // Update movable tokens when dice is rolled or move value is selected
+    LaunchedEffect(boardState.diceRoll, selectedMoveValue, boardState.currentPlayer) {
+        if (boardState.diceRoll != null && boardState.gamePhase == GamePhase.MOVING && selectedMoveValue != null) {
             val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-            // Initially, movable tokens are based on the total. User will then select how to use the dice.
-            movableTokens = getMovableTokens(currentPlayer, diceRoll!!.total, gameRules)
+            movableTokens = getMovableTokens(currentPlayer, selectedMoveValue!!, gameRules)
             
             if (movableTokens.isEmpty()) {
-                gameMessage = "No valid moves available!"
+                gameMessage = "No valid moves with selected dice value!"
                 delay(2000)
-                // Auto-advance to next player if no moves possible
-                boardState = handleTurn(boardState, gameRules, diceRoll!!)
-                diceRoll = null
-                gameMessage = ""
+                // Reset selection to allow choosing another dice value
+                selectedMoveValue = null
+                gameMessage = "Choose a different dice value"
             } else {
-                gameMessage = "Choose a dice value and select a token to move"
+                gameMessage = "Select a token to move with ${selectedMoveValue}"
             }
+        } else if (boardState.diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
+            gameMessage = "Choose a dice value to use for movement"
         }
     }
 
@@ -438,10 +438,11 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
                     Button(
                         onClick = {
                             boardState = initializeGameState(gameRules)
-                            diceRoll = null
                             selectedToken = null
                             movableTokens = emptyList()
                             gameMessage = ""
+                            selectedMoveValue = null
+                            usedDiceValues = emptyList()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF10B981)
@@ -504,56 +505,63 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Dice Display Area - THREE PLACEHOLDERS AS REQUESTED
-            Row(
-                modifier = Modifier.padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Die 1 Placeholder
-                DiceCard(
-                    title = "Die 1",
-                    value = if (isRolling) "?" else (diceRoll?.die1?.toString() ?: "-"),
-                    isRolling = isRolling,
-                    onClick = { 
-                        if (diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
-                            selectedMoveValue = diceRoll!!.die1
-                            gameMessage = "Selected Die 1 (${diceRoll!!.die1}). Now select a token."
-                            movableTokens = getMovableTokens(boardState.players.first { it.color == boardState.currentPlayer }, diceRoll!!.die1, gameRules)
-                        }
-                    },
-                    isEnabled = diceRoll != null && boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
-                )
-                
-                // Die 2 Placeholder
-                DiceCard(
-                    title = "Die 2", 
-                    value = if (isRolling) "?" else (diceRoll?.die2?.toString() ?: "-"),
-                    isRolling = isRolling,
-                    onClick = { 
-                        if (diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
-                            selectedMoveValue = diceRoll!!.die2
-                            gameMessage = "Selected Die 2 (${diceRoll!!.die2}). Now select a token."
-                            movableTokens = getMovableTokens(boardState.players.first { it.color == boardState.currentPlayer }, diceRoll!!.die2, gameRules)
-                        }
-                    },
-                    isEnabled = diceRoll != null && boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
-                )
-                
-                // Total Placeholder
-                DiceCard(
-                    title = "Total",
-                    value = if (isRolling) "?" else (diceRoll?.total?.toString() ?: "-"),
-                    isRolling = isRolling,
-                    isTotal = true,
-                    onClick = { 
-                        if (diceRoll != null && boardState.gamePhase == GamePhase.MOVING) {
-                            selectedMoveValue = diceRoll!!.total
-                            gameMessage = "Selected Total (${diceRoll!!.total}). Now select a token."
-                            movableTokens = getMovableTokens(boardState.players.first { it.color == boardState.currentPlayer }, diceRoll!!.total, gameRules)
-                        }
-                    },
-                    isEnabled = diceRoll != null && boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
-                )
+            // Dice Display Area - Show available dice values based on new rules
+            if (boardState.diceRoll != null) {
+                Row(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val diceRoll = boardState.diceRoll!!
+                    
+                    // Show Die 1 if it's a 6 or if neither die is a 6
+                    if (diceRoll.die1 == 6 || (diceRoll.die1 != 6 && diceRoll.die2 != 6)) {
+                        DiceCard(
+                            title = "Die 1",
+                            value = diceRoll.die1.toString(),
+                            isRolling = false,
+                            isSelected = selectedMoveValue == diceRoll.die1,
+                            onClick = { 
+                                if (boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null) {
+                                    selectedMoveValue = diceRoll.die1
+                                }
+                            },
+                            isEnabled = boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
+                        )
+                    }
+                    
+                    // Show Die 2 if it's a 6 or if neither die is a 6
+                    if (diceRoll.die2 == 6 || (diceRoll.die1 != 6 && diceRoll.die2 != 6)) {
+                        DiceCard(
+                            title = "Die 2", 
+                            value = diceRoll.die2.toString(),
+                            isRolling = false,
+                            isSelected = selectedMoveValue == diceRoll.die2,
+                            onClick = { 
+                                if (boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null) {
+                                    selectedMoveValue = diceRoll.die2
+                                }
+                            },
+                            isEnabled = boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
+                        )
+                    }
+                    
+                    // Show Total only if neither die is a 6
+                    if (diceRoll.die1 != 6 && diceRoll.die2 != 6) {
+                        DiceCard(
+                            title = "Total",
+                            value = diceRoll.total.toString(),
+                            isRolling = false,
+                            isTotal = true,
+                            isSelected = selectedMoveValue == diceRoll.total,
+                            onClick = { 
+                                if (boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null) {
+                                    selectedMoveValue = diceRoll.total
+                                }
+                            },
+                            isEnabled = boardState.gamePhase == GamePhase.MOVING && selectedMoveValue == null
+                        )
+                    }
+                }
             }
 
             // Roll Dice Button
@@ -561,12 +569,12 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
                 onClick = {
                     if (!isRolling && boardState.gamePhase == GamePhase.ROLLING) {
                         isRolling = true
-                        selectedMoveValue = null // Reset selected move value
+                        selectedMoveValue = null
+                        usedDiceValues = emptyList()
                         GlobalScope.launch {
                             delay(1000)
                             val newDiceRoll = rollTwoDice()
-                            diceRoll = newDiceRoll
-                            boardState = boardState.copy(gamePhase = GamePhase.MOVING)
+                            boardState = handleTurn(boardState, gameRules, newDiceRoll)
                             isRolling = false
                         }
                     }
@@ -588,26 +596,47 @@ fun LudoGameScreen(onExit: () -> Unit, gameRules: GameRules = GameRules()) {
             }
 
             // Token Selection Overlay (Clickable tokens)
-            if (boardState.gamePhase == GamePhase.MOVING && diceRoll != null && selectedMoveValue != null) {
+            if (boardState.gamePhase == GamePhase.MOVING && boardState.diceRoll != null && selectedMoveValue != null) {
                 val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
                 val currentMovableTokens = getMovableTokens(currentPlayer, selectedMoveValue!!, gameRules)
 
                 currentMovableTokens.forEach { token ->
-                    val tokenCoords = getTokenCoordinates(token, 16.dp.value) // Using a fixed squareSize for click area
+                    val tokenCoords = getTokenCoordinates(token, 16.dp.value)
                     Box(modifier = Modifier
                         .offset(x = (tokenCoords.x - 20.dp.value).dp, y = (tokenCoords.y - 20.dp.value).dp)
                         .size(40.dp)
                         .clickable {
                             // Move the token with the selected dice value
                             boardState = moveToken(boardState, token, selectedMoveValue!!, gameRules)
-                            // Advance turn
-                            boardState = handleTurn(boardState, gameRules, diceRoll!!)
+                            
+                            // Check if player gets another turn (double 6s or single 6)
+                            val diceRoll = boardState.diceRoll!!
+                            val getsExtraTurn = (diceRoll.die1 == 6 && diceRoll.die2 == 6) || 
+                                              (diceRoll.die1 == 6 && selectedMoveValue == 6) ||
+                                              (diceRoll.die2 == 6 && selectedMoveValue == 6)
+                            
+                            if (getsExtraTurn) {
+                                // Player gets another turn, reset to rolling phase
+                                boardState = boardState.copy(
+                                    gamePhase = GamePhase.ROLLING,
+                                    diceRoll = null
+                                )
+                                gameMessage = "You get another turn!"
+                            } else {
+                                // Normal turn progression
+                                boardState = boardState.copy(
+                                    currentPlayer = getNextPlayer(boardState.currentPlayer),
+                                    gamePhase = GamePhase.ROLLING,
+                                    diceRoll = null
+                                )
+                                gameMessage = ""
+                            }
+                            
                             // Reset state
                             selectedToken = null
-                            diceRoll = null
                             movableTokens = emptyList()
-                            gameMessage = ""
                             selectedMoveValue = null
+                            usedDiceValues = emptyList()
                         }
                     )
                 }
@@ -622,6 +651,7 @@ fun DiceCard(
     value: String,
     isRolling: Boolean,
     isTotal: Boolean = false,
+    isSelected: Boolean = false,
     onClick: () -> Unit = {},
     isEnabled: Boolean = true
 ) {
@@ -630,9 +660,13 @@ fun DiceCard(
             .size(80.dp)
             .clickable(enabled = isEnabled && !isRolling, onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = if (isTotal) Color(0xFF3B82F6) else Color.White
+            containerColor = when {
+                isSelected -> Color(0xFF10B981)
+                isTotal -> Color(0xFF3B82F6)
+                else -> Color.White
+            }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 8.dp else 4.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -643,13 +677,13 @@ fun DiceCard(
                 text = title,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = if (isTotal) Color.White else Color.Gray
+                color = if (isSelected || isTotal) Color.White else Color.Gray
             )
             Text(
                 text = value,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isTotal) Color.White else Color.Black
+                color = if (isSelected || isTotal) Color.White else Color.Black
             )
         }
     }
