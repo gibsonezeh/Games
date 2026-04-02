@@ -14,7 +14,7 @@ fun AdMobBanner() {
                 setAdSize(AdSize.BANNER)
 
                 // 🔥 TEST AD UNIT (SAFE)
-                adUnitId = "ca-app-pub-3940256099942544/9214589741"
+                adUnitId = "ca-app-pub-8105096464664625/6118918264"
 
                 loadAd(AdRequest.Builder().build())
             }
