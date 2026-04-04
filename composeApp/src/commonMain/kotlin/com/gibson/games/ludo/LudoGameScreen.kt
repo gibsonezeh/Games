@@ -770,48 +770,62 @@ fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
         }
 
         in 0..51 -> {
-            val x = when (token.position) {
-                in 0..4 -> 6
-                5 -> 5
-                in 6..10 -> 5 - (token.position - 6)
-                11 -> 0
-                in 12..16 -> 0
-                17 -> 1
-                in 18..22 -> 1 + (token.position - 18)
-                23 -> 6
-                in 24..28 -> 6
-                29 -> 7
-                in 30..34 -> 7 + (token.position - 30)
-                35 -> 12
-                in 36..40 -> 12
-                41 -> 13
-                in 42..46 -> 13 - (token.position - 42)
-                47 -> 8
-                in 48..51 -> 8
-                else -> 0
-            }
+            val path = listOf(
+                1 to 6,
+                2 to 6,
+                3 to 6,
+                4 to 6,
+                5 to 6,
+                6 to 5,
+                6 to 4,
+                6 to 3,
+                6 to 2,
+                6 to 1,
+                6 to 0,
+                7 to 0,
+                8 to 0,
+                8 to 1,
+                8 to 2,
+                8 to 3,
+                8 to 4,
+                8 to 5,
+                9 to 6,
+                10 to 6,
+                11 to 6,
+                12 to 6,
+                13 to 6,
+                14 to 6,
+                14 to 7,
+                14 to 8,
+                13 to 8,
+                12 to 8,
+                11 to 8,
+                10 to 8,
+                9 to 8,
+                8 to 9,
+                8 to 10,
+                8 to 11,
+                8 to 12,
+                8 to 13,
+                8 to 14,
+                7 to 14,
+                6 to 14,
+                6 to 13,
+                6 to 12,
+                6 to 11,
+                6 to 10,
+                6 to 9,
+                5 to 8,
+                4 to 8,
+                3 to 8,
+                2 to 8,
+                1 to 8,
+                0 to 8,
+                0 to 7,
+                0 to 6
+            )
 
-            val y = when (token.position) {
-                in 0..4 -> 14 - token.position
-                5 -> 9
-                in 6..10 -> 9
-                11 -> 8
-                in 12..16 -> 8 - (token.position - 12)
-                17 -> 6
-                in 18..22 -> 6
-                23 -> 5
-                in 24..28 -> 5 - (token.position - 24)
-                29 -> 0
-                in 30..34 -> 0
-                35 -> 1
-                in 36..40 -> 1 + (token.position - 36)
-                41 -> 6
-                in 42..46 -> 6
-                47 -> 7
-                in 48..51 -> 7 + (token.position - 48)
-                else -> 0
-            }
-
+            val (x, y) = path[token.position]
             Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
         }
 
