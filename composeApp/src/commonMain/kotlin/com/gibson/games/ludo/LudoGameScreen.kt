@@ -1,5 +1,6 @@
 package com.gibson.games.ludo
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -51,6 +52,7 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
