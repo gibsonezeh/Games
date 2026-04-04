@@ -6,10 +6,6 @@ import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
 import com.gibson.games.ludo.LudoSettingsScreen
 
-/**
- * A wrapper screen for the selected game.
- * Each game manages its own internal navigation and back behavior.
- */
 @Composable
 fun GameScreen(
     game: Game,
@@ -20,21 +16,12 @@ fun GameScreen(
     }
 }
 
-/**
- * Internal navigation routes for Ludo.
- */
 private enum class LudoScreen {
     MAIN_MENU,
     GAME,
     SETTINGS
 }
 
-/**
- * Navigation controller for Ludo screens.
- *
- * Owns the shared Ludo state that must survive screen switches,
- * especially the selected game rules.
- */
 @Composable
 fun LudoNavigationScreen(
     onExit: () -> Unit
@@ -48,9 +35,7 @@ fun LudoNavigationScreen(
                 onPlayClicked = {
                     currentScreen = LudoScreen.GAME
                 },
-                onExitClicked = {
-                    onExit()
-                },
+                onExitClicked = onExit,
                 onSettingsClicked = {
                     currentScreen = LudoScreen.SETTINGS
                 }
