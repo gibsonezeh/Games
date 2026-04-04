@@ -1,9 +1,11 @@
 package com.gibson.games.ludo
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -15,11 +17,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.*
 
 /**
- * Settings screen for Ludo game with proper game rules handling
+ * Settings screen for Ludo game.
+ *
+ * This screen keeps a local editable copy of the rules, then commits
+ * them back to the parent when the user leaves the screen.
  */
 @Composable
 fun LudoSettingsScreen(
@@ -27,22 +30,26 @@ fun LudoSettingsScreen(
     gameRules: GameRules = GameRules(),
     onRulesChanged: (GameRules) -> Unit = {}
 ) {
-    var currentGameRules by remember { mutableStateOf(gameRules) }
-    
-    BackHandler {
+    var currentGameRules by remember(gameRules) { mutableStateOf(gameRules) }
+
+    fun saveAndGoBack() {
         onRulesChanged(currentGameRules)
         onBackClicked()
-    };
-    
+    }
+
+    BackHandler {
+        saveAndGoBack()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF374151), // Dark gray
-                        Color(0xFF4B5563), // Gray
-                        Color(0xFF6B7280)  // Light gray
+                        Color(0xFF374151),
+                        Color(0xFF4B5563),
+                        Color(0xFF6B7280)
                     )
                 )
             )
@@ -52,18 +59,14 @@ fun LudoSettingsScreen(
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
-            // Top Bar with Back Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                    .padding(bottom = 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = {
-                        onRulesChanged(currentGameRules)
-                        onBackClicked()
-                    }
+                    onClick = { saveAndGoBack() }
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
@@ -71,108 +74,133 @@ fun LudoSettingsScreen(
                         tint = Color.White
                     )
                 }
+
                 Text(
                     text = "Game Settings",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 12.dp)
                 )
             }
 
-            // Settings Sections
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Gameplay Settings Section
                 SettingsSection(title = "Gameplay Rules") {
                     SettingsToggleItem(
                         title = "Require Six to Exit Base",
                         description = "A 6 is required to move a token out of the home base.",
                         isChecked = currentGameRules.requiresSixToExitBase,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(requiresSixToExitBase = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                requiresSixToExitBase = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Extra Turn on Six",
                         description = "Player gets an extra turn when rolling a 6.",
                         isChecked = currentGameRules.getsExtraTurnOnSix,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(getsExtraTurnOnSix = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                getsExtraTurnOnSix = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Three Sixes Forfeit Turn",
                         description = "Rolling three consecutive 6s forfeits the turn.",
                         isChecked = currentGameRules.getsExtraTurnOnThreeSixesForfeit,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(getsExtraTurnOnThreeSixesForfeit = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                getsExtraTurnOnThreeSixesForfeit = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Must Play Rolled Numbers",
                         description = "Player must move a token for each number rolled.",
                         isChecked = currentGameRules.mustPlayRolledNumbers,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(mustPlayRolledNumbers = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                mustPlayRolledNumbers = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Captured Token Returns to Base",
                         description = "A captured token returns to its home base.",
                         isChecked = currentGameRules.capturedTokenReturnsToBase,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(capturedTokenReturnsToBase = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                capturedTokenReturnsToBase = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Capture Gives Extra Turn",
                         description = "Capturing an opponent's token grants an extra turn.",
                         isChecked = currentGameRules.captureGivesExtraTurn,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(captureGivesExtraTurn = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                captureGivesExtraTurn = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Starting Point Safe Zone (Own Color)",
-                        description = "Each player's starting point is a safe zone only for their color.",
+                        description = "A player's own starting point is safe for that color.",
                         isChecked = currentGameRules.startingPointIsSafeZoneForColor,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(startingPointIsSafeZoneForColor = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                startingPointIsSafeZoneForColor = it
+                            )
                         }
                     )
+
                     SettingsToggleItem(
                         title = "Starting Point Safe Zone (All Colors)",
-                        description = "All starting points are safe zones for all colors.",
+                        description = "All starting points are safe zones for every player.",
                         isChecked = currentGameRules.startingPointIsSafeZoneForAll,
-                        onCheckedChange = { 
-                            currentGameRules = currentGameRules.copy(startingPointIsSafeZoneForAll = it) 
+                        onCheckedChange = {
+                            currentGameRules = currentGameRules.copy(
+                                startingPointIsSafeZoneForAll = it
+                            )
                         }
                     )
                 }
 
-                // Game Info Section
                 SettingsSection(title = "Game Information") {
                     InfoCard(
                         title = "How to Play",
-                        description = "• Roll dice to move your bird tokens\n• Get all 4 tokens to the center to win\n• Capture opponents by landing on them\n• Use safe zones to protect your tokens"
+                        description = "• Roll the dice to move your bird tokens\n" +
+                            "• Get all 4 tokens to the center to win\n" +
+                            "• Capture opponents by landing on them\n" +
+                            "• Use safe zones to protect your tokens"
                     )
+
                     InfoCard(
                         title = "Bird Teams",
-                        description = "🦚 Green Peacock\n🦜 Red Parrot\n🐥 Yellow Chick\n🐦 Blue Bird"
+                        description = "🦚 Green Peacock\n" +
+                            "🦜 Red Parrot\n" +
+                            "🐥 Yellow Chick\n" +
+                            "🐦 Blue Bird"
                     )
                 }
 
-                // Save Button
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
                 Button(
-                    onClick = {
-                        onRulesChanged(currentGameRules)
-                        onBackClicked()
-                    },
+                    onClick = { saveAndGoBack() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -188,20 +216,22 @@ fun LudoSettingsScreen(
                         color = Color.White
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
 }
 
-/**
- * Composable for a settings section header.
- */
 @Composable
-fun SettingsSection(title: String, content: @Composable () -> Unit) {
+fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = 12.dp)
     ) {
         Text(
             text = title,
@@ -210,13 +240,11 @@ fun SettingsSection(title: String, content: @Composable () -> Unit) {
             color = Color.White,
             modifier = Modifier.padding(bottom = 12.dp)
         )
+
         content()
     }
 }
 
-/**
- * Settings item with a toggle switch.
- */
 @Composable
 fun SettingsToggleItem(
     title: String,
@@ -229,48 +257,49 @@ fun SettingsToggleItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.1f)
+            containerColor = Color.White.copy(alpha = 0.10f)
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(10.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
                 )
+
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = Color.White.copy(alpha = 0.75f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
+
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color(0xFF10B981),
                     checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f),
-                    uncheckedThumbColor = Color.Gray,
-                    uncheckedTrackColor = Color.Gray.copy(alpha = 0.3f)
+                    uncheckedThumbColor = Color.LightGray,
+                    uncheckedTrackColor = Color.White.copy(alpha = 0.25f)
                 )
             )
         }
     }
 }
 
-/**
- * Information card for game rules and instructions
- */
 @Composable
 fun InfoCard(
     title: String,
@@ -281,9 +310,9 @@ fun InfoCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF3B82F6).copy(alpha = 0.2f)
+            containerColor = Color(0xFF3B82F6).copy(alpha = 0.20f)
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(10.dp)
     ) {
         Column(
             modifier = Modifier
@@ -297,13 +326,13 @@ fun InfoCard(
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+
             Text(
                 text = description,
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.9f),
+                color = Color.White.copy(alpha = 0.90f),
                 lineHeight = 20.sp
             )
         }
     }
 }
-

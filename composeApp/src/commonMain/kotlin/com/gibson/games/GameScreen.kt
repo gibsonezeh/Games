@@ -1,52 +1,66 @@
 package com.gibson.games
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import com.gibson.games.ludo.GameRules
 import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
 import com.gibson.games.ludo.LudoSettingsScreen
-import androidx.compose.runtime.*
 
-/**
- * A wrapper screen for the selected game. It handles the top-level back navigation.
- */
 @Composable
-fun GameScreen(game: Game, onExit: () -> Unit) {
+fun GameScreen(
+    game: Game,
+    onExit: () -> Unit
+) {
     when (game) {
         Game.LUDO -> LudoNavigationScreen(onExit = onExit)
-        // Add other games here
-    }
-
-    // Handle back navigation
-    BackHandler {
-        onExit()
     }
 }
 
-/**
- * Navigation controller for Ludo game screens
- */
+private enum class LudoScreen {
+    MAIN_MENU,
+    GAME,
+    SETTINGS
+}
+
 @Composable
-fun LudoNavigationScreen(onExit: () -> Unit) {
-    var currentScreen by remember { mutableStateOf("main_menu") }
-    
-    // BackHandler for returning from Ludo main menu to game selection
-    if (currentScreen == "main_menu") {
+fun LudoNavigationScreen(
+    onExit: () -> Unit
+) {
+    var currentScreen by remember { mutableStateOf(LudoScreen.MAIN_MENU) }
+    var gameRules by remember { mutableStateOf(GameRules()) }
 
-    }
-    
     when (currentScreen) {
-        "main_menu" -> LudoMainMenuScreen(
-            onPlayClicked = { currentScreen = "game" },
-            onExitClicked = { onExit() },
-            onSettingsClicked = { currentScreen = "settings" }
-        )
-        "game" -> LudoGameScreen(
-            onExit = { currentScreen = "main_menu" }
-        )
-        "settings" -> LudoSettingsScreen(
-            onBackClicked = { currentScreen = "main_menu" }
-        )
+        LudoScreen.MAIN_MENU -> {
+            LudoMainMenuScreen(
+                onPlayClicked = {
+                    currentScreen = LudoScreen.GAME
+                },
+                onExitClicked = onExit,
+                onSettingsClicked = {
+                    currentScreen = LudoScreen.SETTINGS
+                }
+            )
+        }
+
+        LudoScreen.GAME -> {
+            LudoGameScreen(
+                onExit = {
+                    currentScreen = LudoScreen.MAIN_MENU
+                },
+                gameRules = gameRules
+            )
+        }
+
+        LudoScreen.SETTINGS -> {
+            LudoSettingsScreen(
+                onBackClicked = {
+                    currentScreen = LudoScreen.MAIN_MENU
+                },
+                gameRules = gameRules,
+                onRulesChanged = { updatedRules ->
+                    gameRules = updatedRules
+                }
+            )
+        }
     }
 }
-
