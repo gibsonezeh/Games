@@ -5,19 +5,18 @@ import kotlin.random.Random
 /**
  * Core Ludo game logic.
  *
- * Position model used by the UI:
- * -1      -> token is in base
- * 0..51   -> token is on the shared board path
+ * UI position model:
+ * -1       -> token is in base
+ * 0..51    -> token is on the shared board path
  * 100..105 -> token is in the home path
- * 200     -> token has finished
+ * 200      -> token has finished
  *
- * Internally, movement is computed using relative progress per color:
- * -1      -> in base
- * 0..51   -> on main loop
- * 52..57  -> in home path
- * 58      -> finished
+ * Internal movement model:
+ * -1       -> in base
+ * 0..51    -> main loop progress
+ * 52..57   -> home path progress
+ * 58       -> finished
  */
-
 enum class PlayerColor {
     GREEN, RED, YELLOW, BLUE
 }
@@ -92,14 +91,19 @@ fun rollTwoDice(): DiceRoll {
 }
 
 /**
- * Preserves your original board layout starting positions.
+ * These indices must match the board path in getTokenCoordinates().
+ *
+ * 0  -> Green start at (1,6)
+ * 13 -> Red start at (8,1)
+ * 26 -> Blue start at (13,8)
+ * 39 -> Yellow start at (6,13)
  */
 fun getStartingPosition(color: PlayerColor): Int {
     return when (color) {
-        PlayerColor.GREEN -> 1
-        PlayerColor.RED -> 14
-        PlayerColor.YELLOW -> 27
-        PlayerColor.BLUE -> 40
+        PlayerColor.GREEN -> 0
+        PlayerColor.RED -> 13
+        PlayerColor.BLUE -> 26
+        PlayerColor.YELLOW -> 39
     }
 }
 
@@ -113,13 +117,7 @@ fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
 }
 
 /**
- * Converts a UI position into relative movement progress for that token color.
- *
- * Relative progress:
- * -1      -> base
- * 0..51   -> main loop
- * 52..57  -> home path
- * 58      -> finished
+ * Converts a UI position into relative progress for the token's own color.
  */
 private fun getRelativeProgress(token: Token): Int {
     return when (val pos = token.position) {
@@ -135,7 +133,7 @@ private fun getRelativeProgress(token: Token): Int {
 }
 
 /**
- * Converts relative progress back into the UI position model.
+ * Converts a relative progress value back into the UI position model.
  */
 private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
     return when {
@@ -148,16 +146,16 @@ private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
 }
 
 /**
- * Returns true if the given board position is protected from capture.
+ * Safe zones aligned to the corrected board path.
  */
 fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
-    val mainPathSafeZones = setOf(1, 9, 14, 22, 27, 35, 40, 48)
+    val mainPathSafeZones = setOf(0, 8, 13, 21, 26, 34, 39, 47)
 
     val startingPoints = mapOf(
-        PlayerColor.GREEN to 1,
-        PlayerColor.RED to 14,
-        PlayerColor.YELLOW to 27,
-        PlayerColor.BLUE to 40
+        PlayerColor.GREEN to 0,
+        PlayerColor.RED to 13,
+        PlayerColor.BLUE to 26,
+        PlayerColor.YELLOW to 39
     )
 
     return when {
@@ -170,9 +168,6 @@ fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
     }
 }
 
-/**
- * Returns whether a token can be moved by the given number of steps.
- */
 fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
     if (steps <= 0) return false
 
@@ -185,18 +180,12 @@ fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
     }
 }
 
-/**
- * Returns all tokens of a player that can legally move with the given dice value.
- */
 fun getMovableTokens(player: Player, diceValue: Int, rules: GameRules): List<Token> {
     return player.tokens.filter { token ->
         isValidMove(token, diceValue, rules)
     }
 }
 
-/**
- * Moves a token immutably and applies capture logic if needed.
- */
 fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules): BoardState {
     if (!isValidMove(token, steps, rules)) {
         return boardState
@@ -207,10 +196,9 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
         -1 -> 0
         else -> currentProgress + steps
     }
+
     val newPosition = getPositionFromProgress(token.color, newProgress)
     val movedToken = token.copy(position = newPosition)
-
-    var capturedAny = false
 
     val updatedPlayers = boardState.players.map { player ->
         when {
@@ -231,7 +219,6 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
                         rules.capturedTokenReturnsToBase
 
                     if (shouldCapture) {
-                        capturedAny = true
                         enemyToken.copy(position = -1)
                     } else {
                         enemyToken
@@ -243,27 +230,19 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
         }
     }
 
-    val movedBoardState = boardState.copy(
-        players = updatedPlayers,
-        winner = checkForWinner(boardState.copy(players = updatedPlayers))
-    )
+    val updatedBoard = boardState.copy(players = updatedPlayers)
+    val winner = checkForWinner(updatedBoard)
 
-    return if (movedBoardState.winner != null) {
-        movedBoardState.copy(gamePhase = GamePhase.GAME_OVER)
+    return if (winner != null) {
+        updatedBoard.copy(
+            winner = winner,
+            gamePhase = GamePhase.GAME_OVER
+        )
     } else {
-        movedBoardState
+        updatedBoard
     }
 }
 
-/**
- * Computes available move values from a two-dice roll.
- *
- * Current rule model:
- * - If neither die is 6: available moves are die1, die2, total
- * - If one or both dice are 6: allow each die value separately
- *
- * This keeps compatibility with your current UI flow.
- */
 private fun computeAvailableMoves(diceRoll: DiceRoll): List<Int> {
     val moves = mutableListOf<Int>()
 
@@ -279,12 +258,6 @@ private fun computeAvailableMoves(diceRoll: DiceRoll): List<Int> {
     return moves.distinct()
 }
 
-/**
- * Handles the roll phase and prepares the board for movement selection.
- *
- * Turn advancement is intentionally not forced here because your UI currently
- * expects to stay on the same player while selecting a move.
- */
 fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
     val availableMoves = computeAvailableMoves(diceRoll)
@@ -310,15 +283,6 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
     )
 }
 
-/**
- * Simple AI token selection.
- *
- * Priority:
- * 1. Finish a token if possible
- * 2. Move a token out of base
- * 3. Move token in home path
- * 4. Move most advanced token
- */
 fun selectBestToken(player: Player, diceRoll: Int, rules: GameRules): Token? {
     val movableTokens = getMovableTokens(player, diceRoll, rules)
     if (movableTokens.isEmpty()) return null
@@ -340,9 +304,6 @@ fun selectBestToken(player: Player, diceRoll: Int, rules: GameRules): Token? {
     return movableTokens.maxByOrNull { getRelativeProgress(it) }
 }
 
-/**
- * Simplified AI move. Uses the best available move value and best token for that move.
- */
 fun performAutomaticMove(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
     val moveOptions = computeAvailableMoves(diceRoll)
@@ -383,9 +344,6 @@ fun canCaptureAt(
     }
 }
 
-/**
- * Score based on relative progress rather than raw board index.
- */
 fun getPlayerScore(player: Player): Int {
     return player.tokens.sumOf { token ->
         when (val progress = getRelativeProgress(token)) {
@@ -397,9 +355,6 @@ fun getPlayerScore(player: Player): Int {
     }
 }
 
-/**
- * Returns progress from 0f..1f per player.
- */
 fun getGameProgress(boardState: BoardState): Map<PlayerColor, Float> {
     val maxPerToken = 58f
     val maxPerPlayer = maxPerToken * 4f
