@@ -63,6 +63,7 @@ private data class MoveOption(
     val kind: MoveOptionKind
 )
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
@@ -92,7 +93,7 @@ fun LudoGameScreen(
 
         remainingDiceValues.forEachIndexed { index, value ->
             options += MoveOption(
-                key = "die_$index_$value",
+                key = "die_${index}_$value",
                 title = "Die ${index + 1}",
                 value = value,
                 kind = MoveOptionKind.DIE
@@ -115,7 +116,7 @@ fun LudoGameScreen(
         if (boardState.gamePhase == GamePhase.MOVING && boardState.diceRoll != null) {
             if (initializedRoll != boardState.diceRoll) {
                 initializedRoll = boardState.diceRoll
-                remainingDiceValues = listOf(boardState.diceRoll.die1, boardState.diceRoll.die2)
+                remainingDiceValues = listOf(boardState.diceRoll!!.die1, boardState.diceRoll!!.die2)
                 totalAvailable = true
                 selectedMoveOption = null
                 movableTokens = emptyList()
@@ -457,8 +458,7 @@ fun LudoGameScreen(
                                         temp.toList()
                                     }
 
-                                val newTotalAvailable =
-                                    if (moveOption.kind == MoveOptionKind.TOTAL) false else false
+                                if (moveOption.kind == MoveOptionKind.TOTAL) false else false
 
                                 val gotCaptureExtraTurn =
                                     gameRules.captureGivesExtraTurn &&
@@ -477,7 +477,7 @@ fun LudoGameScreen(
                                 }
 
                                 remainingDiceValues = newRemainingDiceValues
-                                totalAvailable = newTotalAvailable
+                                totalAvailable = false
 
                                 boardState = when {
                                     newRemainingDiceValues.isNotEmpty() && anyRemainingPlayable -> {
@@ -947,12 +947,11 @@ fun DrawScope.drawTriangle(p1: Offset, p2: Offset, p3: Offset, color: Color) {
 
 fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
     val path = Path()
-    val outerRadius = radius
     val innerRadius = radius * 0.4f
     var angle = -90.0
 
     for (i in 0 until 10) {
-        val r = if (i % 2 == 0) outerRadius else innerRadius
+        val r = if (i % 2 == 0) radius else innerRadius
         val x = center.x + (r * cos(Math.toRadians(angle))).toFloat()
         val y = center.y + (r * sin(Math.toRadians(angle))).toFloat()
         if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
