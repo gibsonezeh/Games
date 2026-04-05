@@ -351,12 +351,6 @@ fun LudoGameScreen(
                     )
                 }
 
-                drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2f).sp)
-                drawEmoji("🦚", squareSize * 3f, squareSize * 3f, (squareSize * 3.5f).sp)
-                drawEmoji("🦜", squareSize * 12f, squareSize * 3f, (squareSize * 3.5f).sp)
-                drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 3.5f).sp)
-                drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
-
                 fun drawToken(
                     centerX: Float,
                     centerY: Float,
@@ -408,26 +402,188 @@ fun LudoGameScreen(
                     )
                 }
 
-                boardState.players.forEach { player ->
-                    player.tokens.forEach { token ->
-                        val tokenCoords = getTokenCoordinates(token, squareSize)
-                        val isSelected =
-                            selectedToken?.id == token.id && selectedToken?.color == token.color
-                        val isMovable = movableTokens.any {
-                            it.id == token.id && it.color == token.color
-                        }
+                fun DrawScope.drawStackedToken(
+                    center: Offset,
+                    squareSize: Float,
+                    tokens: List<Token>,
+                    isMovable: Boolean,
+                    isSelected: Boolean
+                ) {
+                    val tokenRadius = squareSize * 0.35f
+                    val topLeft = Offset(center.x - tokenRadius, center.y - tokenRadius)
+                    val arcSize = Size(tokenRadius * 2f, tokenRadius * 2f)
 
-                        drawToken(
-                            centerX = tokenCoords.x,
-                            centerY = tokenCoords.y,
-                            color = when (token.color) {
-                                PlayerColor.GREEN -> green
-                                PlayerColor.RED -> red
-                                PlayerColor.YELLOW -> yellow
-                                PlayerColor.BLUE -> blue
+                    val colorGroups = tokens.groupBy { it.color }
+                    val orderedGroups = buildList {
+                        if (colorGroups.containsKey(PlayerColor.GREEN)) add(PlayerColor.GREEN)
+                        if (colorGroups.containsKey(PlayerColor.RED)) add(PlayerColor.RED)
+                        if (colorGroups.containsKey(PlayerColor.YELLOW)) add(PlayerColor.YELLOW)
+                        if (colorGroups.containsKey(PlayerColor.BLUE)) add(PlayerColor.BLUE)
+                    }
+
+                    fun colorFor(playerColor: PlayerColor): Color {
+                        return when (playerColor) {
+                            PlayerColor.GREEN -> green
+                            PlayerColor.RED -> red
+                            PlayerColor.YELLOW -> yellow
+                            PlayerColor.BLUE -> blue
+                        }
+                    }
+
+                    if (isMovable) {
+                        drawCircle(
+                            color = Color.Yellow.copy(alpha = 0.5f),
+                            radius = tokenRadius * 1.35f,
+                            center = center
+                        )
+                    }
+
+                    if (isSelected) {
+                        drawCircle(
+                            color = Color.White,
+                            radius = tokenRadius * 1.2f,
+                            center = center
+                        )
+                    }
+
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        radius = tokenRadius,
+                        center = Offset(center.x + 2f, center.y + 2f)
+                    )
+
+                    val sweep = 360f / orderedGroups.size
+                    var startAngle = -90f
+
+                    orderedGroups.forEach { playerColor ->
+                        drawArc(
+                            color = colorFor(playerColor),
+                            startAngle = startAngle,
+                            sweepAngle = sweep,
+                            useCenter = true,
+                            topLeft = topLeft,
+                            size = arcSize
+                        )
+                        startAngle += sweep
+                    }
+
+                    drawCircle(
+                        color = black,
+                        radius = tokenRadius,
+                        center = center,
+                        style = Stroke(width = 2f)
+                    )
+
+                    drawCircle(
+                        color = white.copy(alpha = 0.25f),
+                        radius = tokenRadius * 0.95f,
+                        center = Offset(center.x - tokenRadius * 0.08f, center.y - tokenRadius * 0.08f),
+                        style = Stroke(width = 1.5f)
+                    )
+
+                    val badgeDistance = tokenRadius * 0.62f
+                    val badgeRadius = tokenRadius * 0.24f
+                    startAngle = -90f + sweep / 2f
+
+                    orderedGroups.forEach { playerColor ->
+                        val count = colorGroups[playerColor]?.size ?: 0
+                        if (count > 1) {
+                            val angleRad = Math.toRadians(startAngle.toDouble())
+                            val badgeCenter = Offset(
+                                x = center.x + (badgeDistance * cos(angleRad)).toFloat(),
+                                y = center.y + (badgeDistance * sin(angleRad)).toFloat()
+                            )
+
+                            drawCircle(
+                                color = white,
+                                radius = badgeRadius,
+                                center = badgeCenter
+                            )
+                            drawCircle(
+                                color = black,
+                                radius = badgeRadius,
+                                center = badgeCenter,
+                                style = Stroke(width = 1.5f)
+                            )
+
+                            val badgeText = count.toString()
+                            val measured = textMeasurer.measure(
+                                text = AnnotatedString(badgeText),
+                                style = TextStyle(
+                                    fontSize = (squareSize * 0.18f).sp,
+                                    color = black,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+
+                            drawText(
+                                textMeasurer = textMeasurer,
+                                text = badgeText,
+                                topLeft = Offset(
+                                    badgeCenter.x - measured.size.width / 2f,
+                                    badgeCenter.y - measured.size.height / 2f
+                                ),
+                                style = TextStyle(
+                                    fontSize = (squareSize * 0.18f).sp,
+                                    color = black,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                        startAngle += sweep
+                    }
+                }
+
+                drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * 2f).sp)
+                drawEmoji("🦚", squareSize * 3f, squareSize * 3f, (squareSize * 3.5f).sp)
+                drawEmoji("🦜", squareSize * 12f, squareSize * 3f, (squareSize * 3.5f).sp)
+                drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * 3.5f).sp)
+                drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
+
+                val allTokens = boardState.players.flatMap { it.tokens }
+                val groupedTokens = allTokens.groupBy { it.position }
+
+                groupedTokens.forEach { (position, tokensAtPosition) ->
+                    val shouldUseStackedSafeZoneView =
+                        position in 0..51 &&
+                            tokensAtPosition.size > 1 &&
+                            isSafeZone(position, tokensAtPosition.first().color, gameRules)
+
+                    if (!shouldUseStackedSafeZoneView) {
+                        tokensAtPosition.forEach { token ->
+                            val tokenCoords = getTokenCoordinates(token, squareSize)
+                            val isSelected =
+                                selectedToken?.id == token.id && selectedToken?.color == token.color
+                            val isMovable = movableTokens.any {
+                                it.id == token.id && it.color == token.color
+                            }
+
+                            drawToken(
+                                centerX = tokenCoords.x,
+                                centerY = tokenCoords.y,
+                                color = when (token.color) {
+                                    PlayerColor.GREEN -> green
+                                    PlayerColor.RED -> red
+                                    PlayerColor.YELLOW -> yellow
+                                    PlayerColor.BLUE -> blue
+                                },
+                                isSelected = isSelected,
+                                isMovable = isMovable
+                            )
+                        }
+                    } else {
+                        val center = getTokenCoordinates(tokensAtPosition.first(), squareSize)
+
+                        drawStackedToken(
+                            center = center,
+                            squareSize = squareSize,
+                            tokens = tokensAtPosition,
+                            isMovable = tokensAtPosition.any { token ->
+                                movableTokens.any { it.id == token.id && it.color == token.color }
                             },
-                            isSelected = isSelected,
-                            isMovable = isMovable
+                            isSelected = tokensAtPosition.any { token ->
+                                selectedToken?.id == token.id && selectedToken?.color == token.color
+                            }
                         )
                     }
                 }
