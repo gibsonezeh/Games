@@ -21,6 +21,22 @@ enum class PlayerColor {
     GREEN, RED, YELLOW, BLUE
 }
 
+/**
+ * Source of a move value.
+ *
+ * DIE   -> came from a real die face
+ * TOTAL -> came from die1 + die2
+ */
+enum class MoveSource {
+    DIE,
+    TOTAL
+}
+
+data class MoveChoice(
+    val value: Int,
+    val source: MoveSource
+)
+
 data class Token(
     val id: Int,
     val color: PlayerColor,
@@ -57,7 +73,18 @@ enum class GamePhase {
 
 data class GameRules(
     val requiresSixToExitBase: Boolean = true,
+
+    /**
+     * Kept for compatibility with your existing settings screen.
+     * The gameplay logic below now uses getsExtraTurnOnDoubleSix instead.
+     */
     val getsExtraTurnOnSix: Boolean = true,
+
+    /**
+     * New rule: extra turn only if the roll is 6 and 6.
+     */
+    val getsExtraTurnOnDoubleSix: Boolean = true,
+
     val getsExtraTurnOnThreeSixesForfeit: Boolean = true,
     val mustPlayRolledNumbers: Boolean = true,
     val capturedTokenReturnsToBase: Boolean = true,
@@ -91,12 +118,12 @@ fun rollTwoDice(): DiceRoll {
 }
 
 /**
- * These indices must match the board path in getTokenCoordinates().
+ * These start indices must match the board path in getTokenCoordinates().
  *
- * 0  -> Green start at (1,6)
- * 13 -> Red start at (8,1)
- * 26 -> Blue start at (13,8)
- * 39 -> Yellow start at (6,13)
+ * 0  -> Green start
+ * 13 -> Red start
+ * 26 -> Blue start
+ * 39 -> Yellow start
  */
 fun getStartingPosition(color: PlayerColor): Int {
     return when (color) {
@@ -168,26 +195,73 @@ fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
     }
 }
 
-fun isValidMove(token: Token, steps: Int, rules: GameRules): Boolean {
+/**
+ * Base exit is only allowed by a real die = 6.
+ * Total = 6 is NOT allowed to bring a token out of base.
+ */
+private fun canExitBase(
+    steps: Int,
+    rules: GameRules,
+    moveSource: MoveSource
+): Boolean {
+    return !rules.requiresSixToExitBase ||
+        (moveSource == MoveSource.DIE && steps == 6)
+}
+
+fun isValidMove(
+    token: Token,
+    steps: Int,
+    rules: GameRules,
+    moveSource: MoveSource = MoveSource.DIE
+): Boolean {
     if (steps <= 0) return false
 
     val progress = getRelativeProgress(token)
 
     return when (progress) {
-        -1 -> !rules.requiresSixToExitBase || steps == 6
+        -1 -> canExitBase(steps, rules, moveSource)
         58 -> false
         else -> progress + steps <= 58
     }
 }
 
-fun getMovableTokens(player: Player, diceValue: Int, rules: GameRules): List<Token> {
+/**
+ * Backward-compatible overload.
+ */
+fun isValidMove(
+    token: Token,
+    steps: Int,
+    rules: GameRules
+): Boolean = isValidMove(token, steps, rules, MoveSource.DIE)
+
+fun getMovableTokens(
+    player: Player,
+    diceValue: Int,
+    rules: GameRules,
+    moveSource: MoveSource = MoveSource.DIE
+): List<Token> {
     return player.tokens.filter { token ->
-        isValidMove(token, diceValue, rules)
+        isValidMove(token, diceValue, rules, moveSource)
     }
 }
 
-fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules): BoardState {
-    if (!isValidMove(token, steps, rules)) {
+/**
+ * Backward-compatible overload.
+ */
+fun getMovableTokens(
+    player: Player,
+    diceValue: Int,
+    rules: GameRules
+): List<Token> = getMovableTokens(player, diceValue, rules, MoveSource.DIE)
+
+fun moveToken(
+    boardState: BoardState,
+    token: Token,
+    steps: Int,
+    rules: GameRules,
+    moveSource: MoveSource = MoveSource.DIE
+): BoardState {
+    if (!isValidMove(token, steps, rules, moveSource)) {
         return boardState
     }
 
@@ -243,24 +317,62 @@ fun moveToken(boardState: BoardState, token: Token, steps: Int, rules: GameRules
     }
 }
 
-private fun computeAvailableMoves(diceRoll: DiceRoll): List<Int> {
-    val moves = mutableListOf<Int>()
+/**
+ * Backward-compatible overload.
+ */
+fun moveToken(
+    boardState: BoardState,
+    token: Token,
+    steps: Int,
+    rules: GameRules
+): BoardState = moveToken(boardState, token, steps, rules, MoveSource.DIE)
 
-    if (diceRoll.die1 == 6 || diceRoll.die2 == 6) {
-        moves += diceRoll.die1
-        moves += diceRoll.die2
-    } else {
-        moves += diceRoll.die1
-        moves += diceRoll.die2
-        moves += diceRoll.total
-    }
-
-    return moves.distinct()
+/**
+ * Returns all legal move choices for a roll.
+ *
+ * Includes:
+ * - die1 as a DIE move
+ * - die2 as a DIE move
+ * - total as a TOTAL move
+ */
+fun getRollMoveChoices(diceRoll: DiceRoll): List<MoveChoice> {
+    return listOf(
+        MoveChoice(diceRoll.die1, MoveSource.DIE),
+        MoveChoice(diceRoll.die2, MoveSource.DIE),
+        MoveChoice(diceRoll.total, MoveSource.TOTAL)
+    )
 }
 
+fun hasAnyPlayableMove(
+    player: Player,
+    diceRoll: DiceRoll,
+    rules: GameRules
+): Boolean {
+    return getRollMoveChoices(diceRoll).any { choice ->
+        getMovableTokens(player, choice.value, rules, choice.source).isNotEmpty()
+    }
+}
+
+/**
+ * Extra turn now means true double six only.
+ */
+fun shouldGrantExtraTurnAfterRoll(
+    diceRoll: DiceRoll,
+    rules: GameRules
+): Boolean {
+    return rules.getsExtraTurnOnDoubleSix &&
+        diceRoll.die1 == 6 &&
+        diceRoll.die2 == 6
+}
+
+/**
+ * Handles the roll phase and prepares the board for movement selection.
+ *
+ * If the current player has no valid move at all, the turn auto-passes
+ * to the next player immediately.
+ */
 fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-    val availableMoves = computeAvailableMoves(diceRoll)
     val winner = checkForWinner(boardState)
 
     val updatedPlayers = boardState.players.map { player ->
@@ -274,17 +386,42 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
         }
     }
 
-    return boardState.copy(
-        players = updatedPlayers,
-        diceRoll = diceRoll,
-        gamePhase = if (winner != null) GamePhase.GAME_OVER else GamePhase.MOVING,
-        winner = winner,
-        availableMoves = availableMoves
-    )
+    if (winner != null) {
+        return boardState.copy(
+            players = updatedPlayers,
+            winner = winner,
+            gamePhase = GamePhase.GAME_OVER
+        )
+    }
+
+    val playerAfterUpdate = updatedPlayers.first { it.color == boardState.currentPlayer }
+    val hasMove = hasAnyPlayableMove(playerAfterUpdate, diceRoll, rules)
+
+    return if (!hasMove) {
+        boardState.copy(
+            players = updatedPlayers,
+            currentPlayer = getNextPlayer(boardState.currentPlayer),
+            diceRoll = null,
+            gamePhase = GamePhase.ROLLING,
+            availableMoves = emptyList()
+        )
+    } else {
+        boardState.copy(
+            players = updatedPlayers,
+            diceRoll = diceRoll,
+            gamePhase = GamePhase.MOVING,
+            availableMoves = listOf(diceRoll.die1, diceRoll.die2, diceRoll.total)
+        )
+    }
 }
 
-fun selectBestToken(player: Player, diceRoll: Int, rules: GameRules): Token? {
-    val movableTokens = getMovableTokens(player, diceRoll, rules)
+fun selectBestToken(
+    player: Player,
+    diceRoll: Int,
+    rules: GameRules,
+    moveSource: MoveSource = MoveSource.DIE
+): Token? {
+    val movableTokens = getMovableTokens(player, diceRoll, rules, moveSource)
     if (movableTokens.isEmpty()) return null
 
     val finishingToken = movableTokens.firstOrNull { token ->
@@ -306,12 +443,12 @@ fun selectBestToken(player: Player, diceRoll: Int, rules: GameRules): Token? {
 
 fun performAutomaticMove(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-    val moveOptions = computeAvailableMoves(diceRoll)
+    val choices = getRollMoveChoices(diceRoll)
 
-    for (moveValue in moveOptions.sortedDescending()) {
-        val selectedToken = selectBestToken(currentPlayer, moveValue, rules)
+    for (choice in choices.sortedByDescending { it.value }) {
+        val selectedToken = selectBestToken(currentPlayer, choice.value, rules, choice.source)
         if (selectedToken != null) {
-            return moveToken(boardState, selectedToken, moveValue, rules)
+            return moveToken(boardState, selectedToken, choice.value, rules, choice.source)
         }
     }
 
