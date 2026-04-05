@@ -1,6 +1,5 @@
 package com.gibson.games.ludo
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -42,7 +41,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,7 +50,18 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
+private enum class MoveOptionKind {
+    DIE,
+    TOTAL
+}
+
+private data class MoveOption(
+    val key: String,
+    val title: String,
+    val value: Int,
+    val kind: MoveOptionKind
+)
+
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
@@ -67,43 +76,85 @@ fun LudoGameScreen(
     var selectedToken by remember { mutableStateOf<Token?>(null) }
     var movableTokens by remember { mutableStateOf<List<Token>>(emptyList()) }
     var gameMessage by remember { mutableStateOf("") }
-    var selectedMoveValue by remember { mutableStateOf<Int?>(null) }
+
+    var selectedMoveOption by remember { mutableStateOf<MoveOption?>(null) }
+    var remainingDiceValues by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var totalAvailable by remember { mutableStateOf(false) }
+    var initializedRoll by remember { mutableStateOf<DiceRoll?>(null) }
 
     BackHandler {
         showExitDialog = true
     }
 
-    LaunchedEffect(boardState.diceRoll, selectedMoveValue, boardState.currentPlayer, boardState.gamePhase) {
+    fun buildMoveOptions(): List<MoveOption> {
+        val options = mutableListOf<MoveOption>()
+
+        remainingDiceValues.forEachIndexed { index, value ->
+            options += MoveOption(
+                key = "die_$index_$value",
+                title = "Die ${index + 1}",
+                value = value,
+                kind = MoveOptionKind.DIE
+            )
+        }
+
+        if (totalAvailable && remainingDiceValues.size == 2) {
+            options += MoveOption(
+                key = "total_${remainingDiceValues.sum()}",
+                title = "Total",
+                value = remainingDiceValues.sum(),
+                kind = MoveOptionKind.TOTAL
+            )
+        }
+
+        return options
+    }
+
+    LaunchedEffect(boardState.diceRoll, boardState.gamePhase) {
         if (boardState.gamePhase == GamePhase.MOVING && boardState.diceRoll != null) {
-            if (selectedMoveValue == null) {
+            if (initializedRoll != boardState.diceRoll) {
+                initializedRoll = boardState.diceRoll
+                remainingDiceValues = listOf(boardState.diceRoll.die1, boardState.diceRoll.die2)
+                totalAvailable = true
+                selectedMoveOption = null
+                movableTokens = emptyList()
+            }
+        } else if (boardState.gamePhase == GamePhase.ROLLING) {
+            initializedRoll = null
+            remainingDiceValues = emptyList()
+            totalAvailable = false
+            selectedMoveOption = null
+            movableTokens = emptyList()
+            selectedToken = null
+            if (!isRolling) {
+                gameMessage = "Roll the dice"
+            }
+        }
+    }
+
+    LaunchedEffect(selectedMoveOption, boardState.currentPlayer, boardState.gamePhase, remainingDiceValues) {
+        if (boardState.gamePhase == GamePhase.MOVING) {
+            val moveOption = selectedMoveOption
+            if (moveOption == null) {
                 movableTokens = emptyList()
                 gameMessage = "Choose a dice value to use for movement"
             } else {
                 val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-                val available = getMovableTokens(currentPlayer, selectedMoveValue!!, gameRules)
+                val available = getMovableTokens(currentPlayer, moveOption.value, gameRules)
                 movableTokens = available
 
                 if (available.isEmpty()) {
-                    val moveValue = selectedMoveValue
-                    if (moveValue != null) {
-                        gameMessage = "No valid moves with $moveValue"
-                        delay(1200)
-                        if (selectedMoveValue == moveValue) {
-                            selectedMoveValue = null
-                            movableTokens = emptyList()
-                            gameMessage = "Choose another dice value"
-                        }
+                    val selectedKey = moveOption.key
+                    gameMessage = "No valid moves with ${moveOption.value}"
+                    delay(1200)
+                    if (selectedMoveOption?.key == selectedKey) {
+                        selectedMoveOption = null
+                        movableTokens = emptyList()
+                        gameMessage = "Choose another dice value"
                     }
                 } else {
-                    gameMessage = "Select a token to move with $selectedMoveValue"
+                    gameMessage = "Select a token to move with ${moveOption.value}"
                 }
-            }
-        } else if (boardState.gamePhase == GamePhase.ROLLING) {
-            movableTokens = emptyList()
-            selectedMoveValue = null
-            selectedToken = null
-            if (!isRolling) {
-                gameMessage = "Roll the dice"
             }
         }
     }
@@ -113,9 +164,9 @@ fun LudoGameScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        val boardSizeDp = if (maxWidth < maxHeight) maxWidth else maxHeight
-        val squareSizeDp = boardSizeDp / 15f
         val density = LocalDensity.current
+        val boardSizePx = with(density) { minOf(maxWidth.toPx(), maxHeight.toPx()) }
+        val squareSizePx = boardSizePx / 15f
 
         Box(modifier = Modifier.fillMaxSize()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -368,9 +419,9 @@ fun LudoGameScreen(
                 }
             }
 
-            if (boardState.gamePhase == GamePhase.MOVING && selectedMoveValue != null) {
+            if (boardState.gamePhase == GamePhase.MOVING && selectedMoveOption != null) {
                 movableTokens.forEach { token ->
-                    val coords = getTokenCoordinates(token, with(density) { squareSizeDp.toPx() })
+                    val coords = getTokenCoordinates(token, squareSizePx)
                     val xDp = with(density) { coords.x.toDp() }
                     val yDp = with(density) { coords.y.toDp() }
 
@@ -381,47 +432,97 @@ fun LudoGameScreen(
                             .clickable {
                                 selectedToken = token
 
+                                val moveOption = selectedMoveOption ?: return@clickable
                                 val beforeMove = boardState
-                                val movedState = moveToken(beforeMove, token, selectedMoveValue!!, gameRules)
+                                val movedState = moveToken(beforeMove, token, moveOption.value, gameRules)
 
                                 if (movedState.winner != null) {
                                     boardState = movedState.copy(gamePhase = GamePhase.GAME_OVER)
                                     gameMessage = "${movedState.winner.name} wins!"
-                                    selectedMoveValue = null
+                                    selectedMoveOption = null
                                     movableTokens = emptyList()
+                                    remainingDiceValues = emptyList()
+                                    totalAvailable = false
                                     return@clickable
                                 }
+
+                                val newRemainingDiceValues =
+                                    if (moveOption.kind == MoveOptionKind.TOTAL) {
+                                        emptyList()
+                                    } else {
+                                        val temp = remainingDiceValues.toMutableList()
+                                        val index = temp.indexOf(moveOption.value)
+                                        if (index != -1) temp.removeAt(index)
+                                        temp.toList()
+                                    }
+
+                                val newTotalAvailable =
+                                    if (moveOption.kind == MoveOptionKind.TOTAL) false else false
 
                                 val gotCaptureExtraTurn =
                                     gameRules.captureGivesExtraTurn &&
                                         didCaptureEnemy(beforeMove, movedState, beforeMove.currentPlayer)
 
+                                val originalRoll = beforeMove.diceRoll
                                 val gotSixExtraTurn =
-                                    gameRules.getsExtraTurnOnSix && selectedMoveValue == 6
+                                    gameRules.getsExtraTurnOnSix &&
+                                        originalRoll != null &&
+                                        (originalRoll.die1 == 6 || originalRoll.die2 == 6)
+ val currentPlayerAfterMove =
+                                    movedState.players.first { it.color == beforeMove.currentPlayer }
 
-                                boardState = if (gotCaptureExtraTurn || gotSixExtraTurn) {
-                                    movedState.copy(
-                                        gamePhase = GamePhase.ROLLING,
-                                        diceRoll = null,
-                                        availableMoves = emptyList()
-                                    )
-                                } else {
-                                    movedState.copy(
-                                        currentPlayer = getNextPlayer(beforeMove.currentPlayer),
-                                        gamePhase = GamePhase.ROLLING,
-                                        diceRoll = null,
-                                        availableMoves = emptyList()
-                                    )
+                                val anyRemainingPlayable = newRemainingDiceValues.any { remainingValue ->
+                                    getMovableTokens(currentPlayerAfterMove, remainingValue, gameRules).isNotEmpty()
+                                }
+
+                                remainingDiceValues = newRemainingDiceValues
+                                totalAvailable = newTotalAvailable
+
+                                boardState = when {
+                                    newRemainingDiceValues.isNotEmpty() && anyRemainingPlayable -> {
+                                        movedState.copy(
+                                            currentPlayer = beforeMove.currentPlayer,
+                                            gamePhase = GamePhase.MOVING,
+                                            diceRoll = beforeMove.diceRoll,
+                                            availableMoves = newRemainingDiceValues
+                                        )
+                                    }
+
+                                    gotCaptureExtraTurn || gotSixExtraTurn -> {
+                                        movedState.copy(
+                                            currentPlayer = beforeMove.currentPlayer,
+                                            gamePhase = GamePhase.ROLLING,
+                                            diceRoll = null,
+                                            availableMoves = emptyList()
+                                        )
+                                    }
+
+                                    else -> {
+                                        movedState.copy(
+                                            currentPlayer = getNextPlayer(beforeMove.currentPlayer),
+                                            gamePhase = GamePhase.ROLLING,
+                                            diceRoll = null,
+                                            availableMoves = emptyList()
+                                        )
+                                    }
                                 }
 
                                 gameMessage = when {
-                                    gotCaptureExtraTurn -> "Capture! Roll again"
-                                    gotSixExtraTurn -> "You rolled a 6. Roll again"
-                                    else -> "Next player: ${boardState.currentPlayer.name}"
+                                    newRemainingDiceValues.isNotEmpty() && anyRemainingPlayable ->
+                                        "Play the remaining die"
+
+                                    gotCaptureExtraTurn ->
+                                        "Capture! Roll again"
+
+                                    gotSixExtraTurn ->
+                                        "You rolled a 6. Roll again"
+
+                                    else ->
+                                        "Next player: ${boardState.currentPlayer.name}"
                                 }
 
                                 selectedToken = null
-                                selectedMoveValue = null
+                                selectedMoveOption = null
                                 movableTokens = emptyList()
                             }
                     )
@@ -507,7 +608,10 @@ fun LudoGameScreen(
                                 selectedToken = null
                                 movableTokens = emptyList()
                                 gameMessage = "New game started"
-                                selectedMoveValue = null
+                                selectedMoveOption = null
+                                remainingDiceValues = emptyList()
+                                totalAvailable = false
+                                initializedRoll = null
                                 isRolling = false
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -568,56 +672,22 @@ fun LudoGameScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                val diceRoll = boardState.diceRoll
-                if (diceRoll != null) {
+                val moveOptions = buildMoveOptions()
+                if (moveOptions.isNotEmpty()) {
                     Row(
                         modifier = Modifier.padding(bottom = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        val selectableMoves = boardState.availableMoves.toSet()
-
-                        if (diceRoll.die1 in selectableMoves) {
+                        moveOptions.forEach { option ->
                             DiceCard(
-                                title = "Die 1",
-                                value = diceRoll.die1.toString(),
+                                title = option.title,
+                                value = option.value.toString(),
                                 isRolling = false,
-                                isSelected = selectedMoveValue == diceRoll.die1,
+                                isTotal = option.kind == MoveOptionKind.TOTAL,
+                                isSelected = selectedMoveOption?.key == option.key,
                                 onClick = {
                                     if (boardState.gamePhase == GamePhase.MOVING) {
-                                        selectedMoveValue = diceRoll.die1
-                                    }
-                                },
-                                isEnabled = boardState.gamePhase == GamePhase.MOVING
-                            )
-                        }
-
-                        if (diceRoll.die2 in selectableMoves &&
-                            !(diceRoll.die2 == diceRoll.die1 && diceRoll.die1 !in listOf(6, diceRoll.total))
-                        ) {
-                            DiceCard(
-                                title = "Die 2",
-                                value = diceRoll.die2.toString(),
-                                isRolling = false,
-                                isSelected = selectedMoveValue == diceRoll.die2,
-                                onClick = {
-                                    if (boardState.gamePhase == GamePhase.MOVING) {
-                                        selectedMoveValue = diceRoll.die2
-                                    }
-                                },
-                                isEnabled = boardState.gamePhase == GamePhase.MOVING
-                            )
-                        }
-
-                        if (diceRoll.total in selectableMoves && diceRoll.die1 != 6 && diceRoll.die2 != 6) {
-                            DiceCard(
-                                title = "Total",
-                                value = diceRoll.total.toString(),
-                                isRolling = false,
-                                isTotal = true,
-                                isSelected = selectedMoveValue == diceRoll.total,
-                                onClick = {
-                                    if (boardState.gamePhase == GamePhase.MOVING) {
-                                        selectedMoveValue = diceRoll.total
+                                        selectedMoveOption = option
                                     }
                                 },
                                 isEnabled = boardState.gamePhase == GamePhase.MOVING
@@ -630,9 +700,12 @@ fun LudoGameScreen(
                     onClick = {
                         if (!isRolling && boardState.gamePhase == GamePhase.ROLLING) {
                             isRolling = true
-                            selectedMoveValue = null
+                            selectedMoveOption = null
                             movableTokens = emptyList()
                             selectedToken = null
+                            remainingDiceValues = emptyList()
+                            totalAvailable = false
+                            initializedRoll = null
                             gameMessage = "Rolling..."
 
                             scope.launch {
@@ -893,5 +966,3 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
         style = Stroke(width = 2f)
     )
 }
-
-private operator fun Dp.div(value: Float): Dp = (this.value / value).dp
