@@ -2,14 +2,33 @@ package com.gibson.games.ludo
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -18,12 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * Settings screen for Ludo game.
- *
- * This screen keeps a local editable copy of the rules, then commits
- * them back to the parent when the user leaves the screen.
- */
 @Composable
 fun LudoSettingsScreen(
     onBackClicked: () -> Unit,
@@ -41,7 +54,7 @@ fun LudoSettingsScreen(
         saveAndGoBack()
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -53,172 +66,193 @@ fun LudoSettingsScreen(
                     )
                 )
             )
+            .padding(24.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                verticalAlignment = Alignment.CenterVertically
+            IconButton(
+                onClick = { saveAndGoBack() }
             ) {
-                IconButton(
-                    onClick = { saveAndGoBack() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-
-                Text(
-                    text = "Game Settings",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 12.dp)
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                SettingsSection(title = "Gameplay Rules") {
-                    SettingsToggleItem(
-                        title = "Require Six to Exit Base",
-                        description = "A 6 is required to move a token out of the home base.",
-                        isChecked = currentGameRules.requiresSixToExitBase,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                requiresSixToExitBase = it
-                            )
-                        }
-                    )
+            Text(
+                text = "Game Settings",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
 
-                    SettingsToggleItem(
-                        title = "Extra Turn on Six",
-                        description = "Player gets an extra turn when rolling a 6.",
-                        isChecked = currentGameRules.getsExtraTurnOnSix,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                getsExtraTurnOnSix = it
-                            )
-                        }
-                    )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            SettingsSection(title = "Gameplay Rules") {
+                SettingsToggleItem(
+                    title = "Require Six to Exit Base",
+                    description = "A token can leave base only with an actual die value of 6. Total = 6 does not count.",
+                    isChecked = currentGameRules.requiresSixToExitBase,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            requiresSixToExitBase = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Three Sixes Forfeit Turn",
-                        description = "Rolling three consecutive 6s forfeits the turn.",
-                        isChecked = currentGameRules.getsExtraTurnOnThreeSixesForfeit,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                getsExtraTurnOnThreeSixesForfeit = it
-                            )
-                        }
-                    )
+                SettingsToggleItem(
+                    title = "Extra Turn on Double Six",
+                    description = "A player gets another round only when Die 1 = 6 and Die 2 = 6 in the same roll.",
+                    isChecked = currentGameRules.getsExtraTurnOnDoubleSix,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            getsExtraTurnOnDoubleSix = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Must Play Rolled Numbers",
-                        description = "Player must move a token for each number rolled.",
-                        isChecked = currentGameRules.mustPlayRolledNumbers,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                mustPlayRolledNumbers = it
-                            )
-                        }
-                    )
+                SettingsToggleItem(
+                    title = "Legacy Extra Turn on Six",
+                    description = "Compatibility toggle kept in rules data. Current gameplay should use the Double Six rule above.",
+                    isChecked = currentGameRules.getsExtraTurnOnSix,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            getsExtraTurnOnSix = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Captured Token Returns to Base",
-                        description = "A captured token returns to its home base.",
-                        isChecked = currentGameRules.capturedTokenReturnsToBase,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                capturedTokenReturnsToBase = it
-                            )
-                        }
-                    )
+                SettingsToggleItem(
+                    title = "Three Sixes Forfeit Turn",
+                    description = "Rolling three consecutive six-heavy turns can forfeit the turn.",
+                    isChecked = currentGameRules.getsExtraTurnOnThreeSixesForfeit,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            getsExtraTurnOnThreeSixesForfeit = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Capture Gives Extra Turn",
-                        description = "Capturing an opponent's token grants an extra turn.",
-                        isChecked = currentGameRules.captureGivesExtraTurn,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                captureGivesExtraTurn = it
-                            )
-                        }
-                    )
+                SettingsToggleItem(
+                    title = "Must Play Rolled Numbers",
+                    description = "The player should use available dice values whenever a valid move exists.",
+                    isChecked = currentGameRules.mustPlayRolledNumbers,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            mustPlayRolledNumbers = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Starting Point Safe Zone (Own Color)",
-                        description = "A player's own starting point is safe for that color.",
-                        isChecked = currentGameRules.startingPointIsSafeZoneForColor,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                startingPointIsSafeZoneForColor = it
-                            )
-                        }
-                    )
+                SettingsToggleItem(
+                    title = "Captured Token Returns to Base",
+                    description = "Captured tokens are sent back to base.",
+                    isChecked = currentGameRules.capturedTokenReturnsToBase,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            capturedTokenReturnsToBase = it
+                        )
+                    }
+                )
 
-                    SettingsToggleItem(
-                        title = "Starting Point Safe Zone (All Colors)",
-                        description = "All starting points are safe zones for every player.",
-                        isChecked = currentGameRules.startingPointIsSafeZoneForAll,
-                        onCheckedChange = {
-                            currentGameRules = currentGameRules.copy(
-                                startingPointIsSafeZoneForAll = it
-                            )
-                        }
-                    )
-                }
+                SettingsToggleItem(
+                    title = "Capture Gives Extra Turn",
+                    description = "Capturing an opponent grants another round.",
+                    isChecked = currentGameRules.captureGivesExtraTurn,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            captureGivesExtraTurn = it
+                        )
+                    }
+                )
 
-                SettingsSection(title = "Game Information") {
-                    InfoCard(
-                        title = "How to Play",
-                        description = "• Roll the dice to move your bird tokens\n" +
-                            "• Get all 4 tokens to the center to win\n" +
-                            "• Capture opponents by landing on them\n" +
-                            "• Use safe zones to protect your tokens"
-                    )
+                SettingsToggleItem(
+                    title = "Capture Sends To Home Lane",
+                    description = "Alternative capture behavior. Usually off for classic play.",
+                    isChecked = currentGameRules.captureSendsToHome,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            captureSendsToHome = it
+                        )
+                    }
+                )
 
-                    InfoCard(
-                        title = "Bird Teams",
-                        description = "🦚 Green Peacock\n" +
-                            "🦜 Red Parrot\n" +
-                            "🐥 Yellow Chick\n" +
-                            "🐦 Blue Bird"
-                    )
-                }
+                SettingsToggleItem(
+                    title = "Starting Point Safe Zone (Own Color)",
+                    description = "A player's own starting point is safe for that color.",
+                    isChecked = currentGameRules.startingPointIsSafeZoneForColor,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            startingPointIsSafeZoneForColor = it
+                        )
+                    }
+                )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { saveAndGoBack() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF10B981)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Save Settings",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                SettingsToggleItem(
+                    title = "Starting Point Safe Zone (All Colors)",
+                    description = "All starting points are safe zones for every player.",
+                    isChecked = currentGameRules.startingPointIsSafeZoneForAll,
+                    onCheckedChange = {
+                        currentGameRules = currentGameRules.copy(
+                            startingPointIsSafeZoneForAll = it
+                        )
+                    }
+                )
             }
+
+            SettingsSection(title = "Game Information") {
+                InfoCard(
+                    title = "How to Play",
+                    description =
+                        "• Roll two dice each turn\n" +
+                        "• You may play Die 1, Die 2, or the Total when valid\n" +
+                        "• A token leaves base only with an actual die value of 6\n" +
+                        "• Total = 6 cannot bring a token out of base\n" +
+                        "• If Double Six is enabled, 6 + 6 gives another round\n" +
+                        "• Get all 4 tokens to the center to win"
+                )
+
+                InfoCard(
+                    title = "Bird Teams",
+                    description =
+                        "🦚 Green Peacock\n" +
+                        "🦜 Red Parrot\n" +
+                        "🐥 Yellow Chick\n" +
+                        "🐦 Blue Bird"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { saveAndGoBack() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF10B981)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Save Settings",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
