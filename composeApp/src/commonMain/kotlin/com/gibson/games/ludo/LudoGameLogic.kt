@@ -176,7 +176,7 @@ private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
  * Safe zones aligned to the corrected board path.
  */
 fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
-    val mainPathSafeZones = setOf(0, 8, 13, 21, 26, 34, 39, 47)
+    val mainPathSafeZones = setOf(8, 21, 34, 47)
 
     val startingPoints = mapOf(
         PlayerColor.GREEN to 0,
