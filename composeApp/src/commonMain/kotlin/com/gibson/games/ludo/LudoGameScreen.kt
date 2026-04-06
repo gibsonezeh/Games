@@ -1090,7 +1090,7 @@ fun getTokenCoordinates(token: Token, squareSize: Float): Offset {
             Offset((x + 0.5f) * squareSize, (y + 0.5f) * squareSize)
         }
 
-        in 100..105 -> {
+        in 100..104 -> {
             val homePathIndex = token.position - 100
             when (token.color) {
                 PlayerColor.GREEN -> Offset(
