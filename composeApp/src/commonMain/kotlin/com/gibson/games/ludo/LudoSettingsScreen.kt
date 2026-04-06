@@ -188,27 +188,40 @@ fun LudoSettingsScreen(
                 )
 
                 SettingsToggleItem(
-                    title = "Starting Point Safe Zone (Own Color)",
-                    description = "A player's own starting point is safe for that color.",
-                    isChecked = currentGameRules.startingPointIsSafeZoneForColor,
-                    onCheckedChange = {
-                        currentGameRules = currentGameRules.copy(
-                            startingPointIsSafeZoneForColor = it
-                        )
-                    }
-                )
+    title = "Starting Point Safe Zone (Own Color)",
+    description = "Only the owner of that starting point is safe on it.",
+    isChecked = currentGameRules.startingPointIsSafeZoneForColor,
+    onCheckedChange = { isChecked ->
+        currentGameRules = if (isChecked) {
+            currentGameRules.copy(
+                startingPointIsSafeZoneForColor = true,
+                startingPointIsSafeZoneForAll = false
+            )
+        } else {
+            currentGameRules.copy(
+                startingPointIsSafeZoneForColor = false
+            )
+        }
+    }
+)
 
-                SettingsToggleItem(
-                    title = "Starting Point Safe Zone (All Colors)",
-                    description = "All starting points are safe zones for every player.",
-                    isChecked = currentGameRules.startingPointIsSafeZoneForAll,
-                    onCheckedChange = {
-                        currentGameRules = currentGameRules.copy(
-                            startingPointIsSafeZoneForAll = it
-                        )
-                    }
-                )
-            }
+SettingsToggleItem(
+    title = "Starting Point Safe Zone (All Colors)",
+    description = "Any player is safe on any starting point.",
+    isChecked = currentGameRules.startingPointIsSafeZoneForAll,
+    onCheckedChange = { isChecked ->
+        currentGameRules = if (isChecked) {
+            currentGameRules.copy(
+                startingPointIsSafeZoneForAll = true,
+                startingPointIsSafeZoneForColor = false
+            )
+        } else {
+            currentGameRules.copy(
+                startingPointIsSafeZoneForAll = false
+            )
+        }
+    }
+)
 
             SettingsSection(title = "Game Information") {
                 InfoCard(
