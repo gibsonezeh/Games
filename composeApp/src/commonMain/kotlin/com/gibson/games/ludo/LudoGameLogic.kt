@@ -2,31 +2,10 @@ package com.gibson.games.ludo
 
 import kotlin.random.Random
 
-/**
- * Core Ludo game logic.
- *
- * UI position model:
- * -1       -> token is in base
- * 0..51    -> token is on the shared board path
- * 100..105 -> token is in the home path
- * 200      -> token has finished
- *
- * Internal movement model:
- * -1       -> in base
- * 0..51    -> main loop progress
- * 52..57   -> home path progress
- * 58       -> finished
- */
 enum class PlayerColor {
     GREEN, RED, YELLOW, BLUE
 }
 
-/**
- * Source of a move value.
- *
- * DIE   -> came from a real die face
- * TOTAL -> came from die1 + die2
- */
 enum class MoveSource {
     DIE,
     TOTAL
@@ -73,18 +52,8 @@ enum class GamePhase {
 
 data class GameRules(
     val requiresSixToExitBase: Boolean = true,
-
-    /**
-     * Kept for compatibility with your existing settings screen.
-     * The gameplay logic below now uses getsExtraTurnOnDoubleSix instead.
-     */
     val getsExtraTurnOnSix: Boolean = true,
-
-    /**
-     * New rule: extra turn only if the roll is 6 and 6.
-     */
     val getsExtraTurnOnDoubleSix: Boolean = true,
-
     val getsExtraTurnOnThreeSixesForfeit: Boolean = true,
     val mustPlayRolledNumbers: Boolean = true,
     val capturedTokenReturnsToBase: Boolean = true,
@@ -117,14 +86,6 @@ fun rollTwoDice(): DiceRoll {
     return DiceRoll(die1, die2)
 }
 
-/**
- * These start indices must match the board path in getTokenCoordinates().
- *
- * 0  -> Green start
- * 13 -> Red start
- * 26 -> Blue start
- * 39 -> Yellow start
- */
 fun getStartingPosition(color: PlayerColor): Int {
     return when (color) {
         PlayerColor.GREEN -> 0
@@ -144,13 +105,17 @@ fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
 }
 
 /**
- * Converts a UI position into relative progress for the token's own color.
+ * Internal progress model after fix:
+ * -1      -> base
+ * 0..51   -> main loop
+ * 52..56  -> 5 home-lane steps
+ * 57      -> finished
  */
 private fun getRelativeProgress(token: Token): Int {
     return when (val pos = token.position) {
         -1 -> -1
-        200 -> 58
-        in 100..105 -> 52 + (pos - 100)
+        200 -> 57
+        in 100..104 -> 52 + (pos - 100)
         in 0..51 -> {
             val start = getStartingPosition(token.color)
             (pos - start + 52) % 52
@@ -159,22 +124,16 @@ private fun getRelativeProgress(token: Token): Int {
     }
 }
 
-/**
- * Converts a relative progress value back into the UI position model.
- */
 private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
     return when {
         progress < 0 -> -1
         progress in 0..51 -> (getStartingPosition(color) + progress) % 52
-        progress in 52..57 -> 100 + (progress - 52)
-        progress >= 58 -> 200
+        progress in 52..56 -> 100 + (progress - 52)
+        progress >= 57 -> 200
         else -> -1
     }
 }
 
-/**
- * Safe zones aligned to the corrected board path.
- */
 fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
     val mainPathSafeZones = setOf(8, 21, 34, 47)
 
@@ -187,7 +146,7 @@ fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
 
     return when {
         position == 200 -> true
-        position in 100..105 -> true
+        position in 100..104 -> true
         rules.startingPointIsSafeZoneForAll && position in startingPoints.values -> true
         rules.startingPointIsSafeZoneForColor && startingPoints[color] == position -> true
         position in mainPathSafeZones -> true
@@ -195,10 +154,6 @@ fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
     }
 }
 
-/**
- * Base exit is only allowed by a real die = 6.
- * Total = 6 is NOT allowed to bring a token out of base.
- */
 private fun canExitBase(
     steps: Int,
     rules: GameRules,
@@ -220,14 +175,11 @@ fun isValidMove(
 
     return when (progress) {
         -1 -> canExitBase(steps, rules, moveSource)
-        58 -> false
-        else -> progress + steps <= 58
+        57 -> false
+        else -> progress + steps <= 57
     }
 }
 
-/**
- * Backward-compatible overload.
- */
 fun isValidMove(
     token: Token,
     steps: Int,
@@ -245,9 +197,6 @@ fun getMovableTokens(
     }
 }
 
-/**
- * Backward-compatible overload.
- */
 fun getMovableTokens(
     player: Player,
     diceValue: Int,
@@ -317,9 +266,6 @@ fun moveToken(
     }
 }
 
-/**
- * Backward-compatible overload.
- */
 fun moveToken(
     boardState: BoardState,
     token: Token,
@@ -327,14 +273,6 @@ fun moveToken(
     rules: GameRules
 ): BoardState = moveToken(boardState, token, steps, rules, MoveSource.DIE)
 
-/**
- * Returns all legal move choices for a roll.
- *
- * Includes:
- * - die1 as a DIE move
- * - die2 as a DIE move
- * - total as a TOTAL move
- */
 fun getRollMoveChoices(diceRoll: DiceRoll): List<MoveChoice> {
     return listOf(
         MoveChoice(diceRoll.die1, MoveSource.DIE),
@@ -353,9 +291,6 @@ fun hasAnyPlayableMove(
     }
 }
 
-/**
- * Extra turn now means true double six only.
- */
 fun shouldGrantExtraTurnAfterRoll(
     diceRoll: DiceRoll,
     rules: GameRules
@@ -365,12 +300,6 @@ fun shouldGrantExtraTurnAfterRoll(
         diceRoll.die2 == 6
 }
 
-/**
- * Handles the roll phase and prepares the board for movement selection.
- *
- * If the current player has no valid move at all, the turn auto-passes
- * to the next player immediately.
- */
 fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
     val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
     val winner = checkForWinner(boardState)
@@ -426,7 +355,7 @@ fun selectBestToken(
 
     val finishingToken = movableTokens.firstOrNull { token ->
         val progress = getRelativeProgress(token)
-        progress != -1 && progress + diceRoll == 58
+        progress != -1 && progress + diceRoll == 57
     }
     if (finishingToken != null) return finishingToken
 
@@ -434,7 +363,7 @@ fun selectBestToken(
     if (baseToken != null) return baseToken
 
     val homePathToken = movableTokens
-        .filter { it.position in 100..105 }
+        .filter { it.position in 100..104 }
         .maxByOrNull { getRelativeProgress(it) }
     if (homePathToken != null) return homePathToken
 
@@ -485,22 +414,22 @@ fun getPlayerScore(player: Player): Int {
     return player.tokens.sumOf { token ->
         when (val progress = getRelativeProgress(token)) {
             -1 -> 0
-            58 -> 100
-            in 52..57 -> 70 + ((progress - 52) * 5)
+            57 -> 100
+            in 52..56 -> 70 + ((progress - 52) * 5)
             else -> progress
         }
     }
 }
 
 fun getGameProgress(boardState: BoardState): Map<PlayerColor, Float> {
-    val maxPerToken = 58f
+    val maxPerToken = 57f
     val maxPerPlayer = maxPerToken * 4f
 
     return boardState.players.associate { player ->
         val totalProgress = player.tokens.sumOf { token ->
             when (val progress = getRelativeProgress(token)) {
                 -1 -> 0
-                58 -> 58
+                57 -> 57
                 else -> progress
             }
         }.toFloat()
