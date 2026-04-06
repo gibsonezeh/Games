@@ -105,20 +105,23 @@ fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
 }
 
 /**
- * Internal progress model after fix:
+ * Internal progress model:
  * -1      -> base
- * 0..51   -> main loop
- * 52..56  -> 5 home-lane steps
- * 57      -> finished
+ * 0..50   -> outer path
+ * 51..55  -> 5 home-lane steps
+ * 56      -> finished
  */
 private fun getRelativeProgress(token: Token): Int {
     return when (val pos = token.position) {
         -1 -> -1
-        200 -> 57
-        in 100..104 -> 52 + (pos - 100)
+        200 -> 56
+        in 100..104 -> 51 + (pos - 100)
         in 0..51 -> {
             val start = getStartingPosition(token.color)
-            (pos - start + 52) % 52
+            val raw = (pos - start + 52) % 52
+
+            // Skip the extra outer tile before entering the colored home lane
+            if (raw == 51) 50 else raw
         }
         else -> -1
     }
@@ -127,9 +130,9 @@ private fun getRelativeProgress(token: Token): Int {
 private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
     return when {
         progress < 0 -> -1
-        progress in 0..51 -> (getStartingPosition(color) + progress) % 52
-        progress in 52..56 -> 100 + (progress - 52)
-        progress >= 57 -> 200
+        progress in 0..50 -> (getStartingPosition(color) + progress) % 52
+        progress in 51..55 -> 100 + (progress - 51)
+        progress >= 56 -> 200
         else -> -1
     }
 }
@@ -175,8 +178,8 @@ fun isValidMove(
 
     return when (progress) {
         -1 -> canExitBase(steps, rules, moveSource)
-        57 -> false
-        else -> progress + steps <= 57
+        56 -> false
+        else -> progress + steps <= 56
     }
 }
 
@@ -355,7 +358,7 @@ fun selectBestToken(
 
     val finishingToken = movableTokens.firstOrNull { token ->
         val progress = getRelativeProgress(token)
-        progress != -1 && progress + diceRoll == 57
+        progress != -1 && progress + diceRoll == 56
     }
     if (finishingToken != null) return finishingToken
 
@@ -414,22 +417,22 @@ fun getPlayerScore(player: Player): Int {
     return player.tokens.sumOf { token ->
         when (val progress = getRelativeProgress(token)) {
             -1 -> 0
-            57 -> 100
-            in 52..56 -> 70 + ((progress - 52) * 5)
+            56 -> 100
+            in 51..55 -> 70 + ((progress - 51) * 5)
             else -> progress
         }
     }
 }
 
 fun getGameProgress(boardState: BoardState): Map<PlayerColor, Float> {
-    val maxPerToken = 57f
+    val maxPerToken = 56f
     val maxPerPlayer = maxPerToken * 4f
 
     return boardState.players.associate { player ->
         val totalProgress = player.tokens.sumOf { token ->
             when (val progress = getRelativeProgress(token)) {
                 -1 -> 0
-                57 -> 57
+                56 -> 56
                 else -> progress
             }
         }.toFloat()
