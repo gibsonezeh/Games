@@ -188,60 +188,61 @@ fun LudoSettingsScreen(
                 )
 
                 SettingsToggleItem(
-    title = "Starting Point Safe Zone (Own Color)",
-    description = "Only the owner of that starting point is safe on it.",
-    isChecked = currentGameRules.startingPointIsSafeZoneForColor,
-    onCheckedChange = { isChecked ->
-        currentGameRules = if (isChecked) {
-            currentGameRules.copy(
-                startingPointIsSafeZoneForColor = true,
-                startingPointIsSafeZoneForAll = false
-            )
-        } else {
-            currentGameRules.copy(
-                startingPointIsSafeZoneForColor = false
-            )
-        }
-    }
-)
+                    title = "Starting Point Safe Zone (Own Color)",
+                    description = "Only the owner of that starting point is safe on it.",
+                    isChecked = currentGameRules.startingPointIsSafeZoneForColor,
+                    onCheckedChange = { isChecked ->
+                        currentGameRules = if (isChecked) {
+                            currentGameRules.copy(
+                                startingPointIsSafeZoneForColor = true,
+                                startingPointIsSafeZoneForAll = false
+                            )
+                        } else {
+                            currentGameRules.copy(
+                                startingPointIsSafeZoneForColor = false
+                            )
+                        }
+                    }
+                )
 
-SettingsToggleItem(
-    title = "Starting Point Safe Zone (All Colors)",
-    description = "Any player is safe on any starting point.",
-    isChecked = currentGameRules.startingPointIsSafeZoneForAll,
-    onCheckedChange = { isChecked ->
-        currentGameRules = if (isChecked) {
-            currentGameRules.copy(
-                startingPointIsSafeZoneForAll = true,
-                startingPointIsSafeZoneForColor = false
-            )
-        } else {
-            currentGameRules.copy(
-                startingPointIsSafeZoneForAll = false
-            )
-        }
-    }
-)
+                SettingsToggleItem(
+                    title = "Starting Point Safe Zone (All Colors)",
+                    description = "Any player is safe on any starting point.",
+                    isChecked = currentGameRules.startingPointIsSafeZoneForAll,
+                    onCheckedChange = { isChecked ->
+                        currentGameRules = if (isChecked) {
+                            currentGameRules.copy(
+                                startingPointIsSafeZoneForAll = true,
+                                startingPointIsSafeZoneForColor = false
+                            )
+                        } else {
+                            currentGameRules.copy(
+                                startingPointIsSafeZoneForAll = false
+                            )
+                        }
+                    }
+                )
+            }
 
             SettingsSection(title = "Game Information") {
                 InfoCard(
                     title = "How to Play",
                     description =
                         "• Roll two dice each turn\n" +
-                        "• You may play Die 1, Die 2, or the Total when valid\n" +
-                        "• A token leaves base only with an actual die value of 6\n" +
-                        "• Total = 6 cannot bring a token out of base\n" +
-                        "• If Double Six is enabled, 6 + 6 gives another round\n" +
-                        "• Get all 4 tokens to the center to win"
+                            "• You may play Die 1, Die 2, or the Total when valid\n" +
+                            "• A token leaves base only with an actual die value of 6\n" +
+                            "• Total = 6 cannot bring a token out of base\n" +
+                            "• If Double Six is enabled, 6 + 6 gives another round\n" +
+                            "• Get all 4 tokens to the center to win"
                 )
 
                 InfoCard(
                     title = "Bird Teams",
                     description =
                         "🦚 Green Peacock\n" +
-                        "🦜 Red Parrot\n" +
-                        "🐥 Yellow Chick\n" +
-                        "🐦 Blue Bird"
+                            "🦜 Red Parrot\n" +
+                            "🐥 Yellow Chick\n" +
+                            "🐦 Blue Bird"
                 )
             }
 
