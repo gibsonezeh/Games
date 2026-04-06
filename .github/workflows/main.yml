@@ -1,0 +1,120 @@
+name: Kadwise Assemble Debug (Manual Changed-File Detection)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  assemble:
+    name: Assemble Debug APK (With Build Cache)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle files + Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            **/.gradle/build-cache
+            composeApp/build
+            shared/build
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ hashFiles('gradle.properties', '**/build.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+        shell: bash
+
+      - name: Detect changed files from previous commit
+        id: changes
+        shell: bash
+        run: |
+          echo "Current SHA: $GITHUB_SHA"
+
+          # Handle first commit safely
+          if ! git rev-parse HEAD^ >/dev/null 2>&1; then
+            echo "No parent commit found. Treating as changed."
+            echo "android_changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Comparing:"
+          echo "BASE: $(git rev-parse HEAD^)"
+          echo "HEAD: $(git rev-parse HEAD)"
+
+          git diff --name-only HEAD^ HEAD > changed_files.txt
+
+          echo "Changed files:"
+          cat changed_files.txt || true
+
+          if grep -E '^(composeApp/|shared/|gradle\.properties|settings\.gradle|settings\.gradle\.kts|build\.gradle|build\.gradle\.kts|gradle/libs\.versions\.toml)' changed_files.txt >/dev/null; then
+            echo "android_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Relevant Android/KMP files changed."
+          else
+            echo "android_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No relevant Android/KMP files changed."
+          fi
+
+      - name: Compile Kotlin Metadata (Error Extractor)
+        if: steps.changes.outputs.android_changed == 'true'
+        id: compile_metadata
+        shell: bash
+        run: |
+          echo "🔍 Compiling commonMain sources to detect Kotlin errors..."
+          ./gradlew compileKotlinMetadata --build-cache --stacktrace --info | tee build_log.txt
+
+          echo ""
+          echo "----------------------------------------"
+          echo "🧾 CommonMain Kotlin Compilation Error Summary"
+          echo "----------------------------------------"
+          grep -E "^e: " build_log.txt || echo "✅ No Kotlin compilation errors found in commonMain."
+
+      - name: Assemble Android Debug APK (Error Extractor)
+        if: steps.changes.outputs.android_changed == 'true'
+        id: assemble_debug
+        shell: bash
+        run: |
+          echo "🚀 Building Android Debug APK..."
+          ./gradlew :composeApp:assembleDebug --build-cache --stacktrace --info | tee android_build_log.txt
+
+          echo ""
+          echo "----------------------------------------"
+          echo "🤖 Android Kotlin Compilation Error Summary"
+          echo "----------------------------------------"
+          grep -E "^e: " android_build_log.txt || echo "✅ No Kotlin compilation errors found in Android module."
+
+      - name: Generate Signing Report
+        if: steps.changes.outputs.android_changed == 'true'
+        shell: bash
+        run: |
+          echo "🔑 Generating Signing Report..."
+          ./gradlew signingReport
+
+      - name: Upload Debug APK
+        if: success() && steps.changes.outputs.android_changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kadwise-debug-apk
+          path: composeApp/build/outputs/apk/debug/*.apk
+
+      - name: No relevant changes
+        if: steps.changes.outputs.android_changed != 'true'
+        shell: bash
+        run: echo "No Android/KMP-related file changes detected. Skipping build."
