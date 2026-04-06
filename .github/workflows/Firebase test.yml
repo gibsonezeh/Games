@@ -69,7 +69,7 @@ jobs:
             --type instrumentation \
             --app "composeApp/build/outputs/apk/debug/composeApp-debug.apk" \
             --test "composeApp/build/outputs/apk/androidTest/debug/composeApp-debug-androidTest.apk" \
-            --device model=Pixel2,version=30,locale=en,orientation=portrait \
+            --device model=Pixel5,version=30,locale=en,orientation=portrait \
             --timeout 15m \
             --results-bucket "gs://${{ secrets.FTL_RESULTS_BUCKET }}" \
             --results-dir "kadwise-${{ github.run_id }}"
