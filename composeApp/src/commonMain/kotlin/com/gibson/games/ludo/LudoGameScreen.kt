@@ -890,11 +890,20 @@ fun LudoGameScreen(
                             gameMessage = "Rolling..."
 
                             scope.launch {
-                                delay(700)
-                                val newDiceRoll = rollTwoDice()
-                                boardState = handleTurn(boardState, gameRules, newDiceRoll)
-                                isRolling = false
+    repeat(8) {
+        boardState = boardState.copy(
+            diceRoll = DiceRoll(
+                die1 = rollDice(),
+                die2 = rollDice()
+            )
+        )
+        delay(90)
+    }
 
+    val newDiceRoll = rollTwoDice()
+    boardState = handleTurn(boardState, gameRules, newDiceRoll)
+    isRolling = false
+                            
                                 if (boardState.gamePhase == GamePhase.ROLLING &&
                                     boardState.diceRoll == null &&
                                     boardState.winner == null
