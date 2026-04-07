@@ -934,9 +934,11 @@ fun DiceCard(
     onClick: () -> Unit = {},
     isEnabled: Boolean = true
 ) {
+    val intValue = value.toIntOrNull()
+
     Card(
         modifier = Modifier
-            .size(80.dp)
+            .size(width = 90.dp, height = 110.dp)
             .clickable(enabled = isEnabled && !isRolling, onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = when {
@@ -946,14 +948,16 @@ fun DiceCard(
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 4.dp
+            defaultElevation = if (isSelected) 10.dp else 4.dp
         ),
-        shape = RoundedCornerShape(14.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = title,
@@ -961,12 +965,123 @@ fun DiceCard(
                 fontWeight = FontWeight.Medium,
                 color = if (isSelected || isTotal) Color.White else Color.Gray
             )
+
+            if (isRolling) {
+                Text(
+                    text = "🎲",
+                    fontSize = 30.sp,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            } else if (isTotal || intValue == null || intValue !in 1..6) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            color = Color.White.copy(alpha = if (isSelected || isTotal) 0.18f else 0.9f),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = value,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected || isTotal) Color.White else Color.Black
+                    )
+                }
+            } else {
+                RealDieFace(
+                    value = intValue,
+                    modifier = Modifier.size(56.dp),
+                    pipColor = if (isSelected) Color.White else Color.Black,
+                    dieColor = if (isSelected) Color(0xFF059669) else Color.White,
+                    borderColor = if (isSelected) Color.White else Color.Black
+                )
+            }
+
             Text(
                 text = value,
-                fontSize = 24.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isSelected || isTotal) Color.White else Color.Black
             )
+        }
+    }
+}
+
+@Composable
+fun RealDieFace(
+    value: Int,
+    modifier: Modifier = Modifier,
+    pipColor: Color = Color.Black,
+    dieColor: Color = Color.White,
+    borderColor: Color = Color.Black
+) {
+    Canvas(modifier = modifier) {
+        val corner = size.minDimension * 0.16f
+        val pipRadius = size.minDimension * 0.08f
+
+        drawRoundRect(
+            color = dieColor,
+            cornerRadius = CornerRadius(corner, corner)
+        )
+
+        drawRoundRect(
+            color = borderColor,
+            cornerRadius = CornerRadius(corner, corner),
+            style = Stroke(width = size.minDimension * 0.04f)
+        )
+
+        val left = size.width * 0.25f
+        val centerX = size.width * 0.5f
+        val right = size.width * 0.75f
+
+        val top = size.height * 0.25f
+        val centerY = size.height * 0.5f
+        val bottom = size.height * 0.75f
+
+        fun pip(x: Float, y: Float) {
+            drawCircle(
+                color = pipColor,
+                radius = pipRadius,
+                center = Offset(x, y)
+            )
+        }
+
+        when (value) {
+            1 -> {
+                pip(centerX, centerY)
+            }
+            2 -> {
+                pip(left, top)
+                pip(right, bottom)
+            }
+            3 -> {
+                pip(left, top)
+                pip(centerX, centerY)
+                pip(right, bottom)
+            }
+            4 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(left, bottom)
+                pip(right, bottom)
+            }
+            5 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(centerX, centerY)
+                pip(left, bottom)
+                pip(right, bottom)
+            }
+            6 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(left, centerY)
+                pip(right, centerY)
+                pip(left, bottom)
+                pip(right, bottom)
+            }
         }
     }
 }
