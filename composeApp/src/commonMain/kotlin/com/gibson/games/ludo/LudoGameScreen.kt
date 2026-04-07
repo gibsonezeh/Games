@@ -542,14 +542,13 @@ fun LudoGameScreen(
                 drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * 3.5f).sp)
 
                 val allTokens = boardState.players.flatMap { it.tokens }
-                val groupedTokens = allTokens.groupBy { it.position }
+val groupedTokens = allTokens.groupBy { it.position }
 
-                groupedTokens.forEach { (position, tokensAtPosition) ->
-                    val shouldUseStackedSafeZoneView =
-                        position in 0..51 &&
-                            tokensAtPosition.size > 1 &&
-                            isSafeZone(position, tokensAtPosition.first().color, gameRules)
-
+groupedTokens.forEach { (position, tokensAtPosition) ->
+    val shouldUseStackedSafeZoneView =
+        position in 0..51 &&
+            tokensAtPosition.size > 1 &&
+            isStackableSafeZonePosition(position, gameRules)
                     if (!shouldUseStackedSafeZoneView) {
                         tokensAtPosition.forEach { token ->
                             val tokenCoords = getTokenCoordinates(token, squareSize)
@@ -1277,4 +1276,17 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
         color = Color.Black.copy(alpha = 0.8f),
         style = Stroke(width = 2f)
     )
+}
+
+
+private fun isStackableSafeZonePosition(position: Int, rules: GameRules): Boolean {
+    val normalSafeZones = setOf(8, 21, 34, 47)
+    val startingPoints = setOf(0, 13, 26, 39)
+
+    return when {
+        position in normalSafeZones -> true
+        rules.startingPointIsSafeZoneForAll && position in startingPoints -> true
+        rules.startingPointIsSafeZoneForColor && position in startingPoints -> true
+        else -> false
+    }
 }
