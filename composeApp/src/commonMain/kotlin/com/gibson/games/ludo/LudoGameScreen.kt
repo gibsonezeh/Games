@@ -1,5 +1,6 @@
 package com.gibson.games.ludo
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -62,6 +63,7 @@ private data class MoveOption(
     val kind: MoveOptionKind
 )
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,

@@ -137,9 +137,9 @@ fun getStartingPosition(color: PlayerColor): Int {
 fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
     return when (currentPlayer) {
         PlayerColor.GREEN -> PlayerColor.RED
-        PlayerColor.RED -> PlayerColor.YELLOW
-        PlayerColor.YELLOW -> PlayerColor.BLUE
-        PlayerColor.BLUE -> PlayerColor.GREEN
+        PlayerColor.RED -> PlayerColor.BLUE
+        PlayerColor.BLUE -> PlayerColor.YELLOW
+        PlayerColor.YELLOW -> PlayerColor.GREEN
     }
 }
 
