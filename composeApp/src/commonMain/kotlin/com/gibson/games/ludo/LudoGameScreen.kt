@@ -1,5 +1,6 @@
 package com.gibson.games.ludo
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -70,6 +71,7 @@ fun LudoGameScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var boardState by remember(gameRules) { mutableStateOf(initializeGameState(gameRules)) }
     var isRolling by remember { mutableStateOf(false) }
@@ -120,6 +122,10 @@ fun LudoGameScreen(
 
         return options
     }
+
+LaunchedEffect(Unit) {
+    SoundManager.init(context)
+}
 
     LaunchedEffect(boardState.diceRoll, boardState.gamePhase) {
         if (boardState.gamePhase == GamePhase.MOVING && boardState.diceRoll != null) {
