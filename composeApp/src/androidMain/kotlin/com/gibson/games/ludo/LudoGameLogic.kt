@@ -293,9 +293,11 @@ fun moveToken(
                                     )
                                     enemyToken.copy(position = movedBackPosition)
                                 }
+
+                                else -> {}
                             }
                         }
-                    }
+                    } as List<Token>
                 )
             }
         }
