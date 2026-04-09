@@ -1,7 +1,8 @@
- package com.gibson.games.ludo
+package com.gibson.games.ludo
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -78,7 +79,7 @@ fun LudoSettingsScreen(
                 onClick = { saveAndGoBack() }
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.White
                 )
@@ -154,38 +155,70 @@ fun LudoSettingsScreen(
                     }
                 )
 
-                SettingsToggleItem(
-                    title = "Captured Token Returns to Base",
-                    description = "Captured tokens are sent back to base.",
-                    isChecked = currentGameRules.capturedTokenReturnsToBase,
-                    onCheckedChange = {
-                        currentGameRules = currentGameRules.copy(
-                            capturedTokenReturnsToBase = it
-                        )
-                    }
-                )
+                SettingsChoiceSection(
+                    title = "Captured Token Penalty",
+                    description = "Choose what happens to the token that gets captured."
+                ) {
+                    SettingsChoiceItem(
+                        title = "Return to Base",
+                        description = "Captured token goes back to base.",
+                        isSelected = currentGameRules.capturePenalty == CapturePenalty.RETURN_TO_BASE,
+                        onClick = {
+                            currentGameRules = currentGameRules.copy(
+                                capturePenalty = CapturePenalty.RETURN_TO_BASE
+                            )
+                        }
+                    )
 
-                SettingsToggleItem(
-                    title = "Capture Gives Extra Turn",
-                    description = "Capturing an opponent grants another round.",
-                    isChecked = currentGameRules.captureGivesExtraTurn,
-                    onCheckedChange = {
-                        currentGameRules = currentGameRules.copy(
-                            captureGivesExtraTurn = it
-                        )
-                    }
-                )
+                    SettingsChoiceItem(
+                        title = "Move Back 5 Steps",
+                        description = "Captured token moves backward by 5 steps instead of returning to base.",
+                        isSelected = currentGameRules.capturePenalty == CapturePenalty.MOVE_BACK_5,
+                        onClick = {
+                            currentGameRules = currentGameRules.copy(
+                                capturePenalty = CapturePenalty.MOVE_BACK_5
+                            )
+                        }
+                    )
+                }
 
-                SettingsToggleItem(
-                    title = "Capture Sends To Home Lane",
-                    description = "Alternative capture behavior. Usually off for classic play.",
-                    isChecked = currentGameRules.captureSendsToHome,
-                    onCheckedChange = {
-                        currentGameRules = currentGameRules.copy(
-                            captureSendsToHome = it
-                        )
-                    }
-                )
+                SettingsChoiceSection(
+                    title = "Capturing Token Reward",
+                    description = "Choose what the token that captures another one receives."
+                ) {
+                    SettingsChoiceItem(
+                        title = "No Reward",
+                        description = "Token stays where it captured and the game continues normally.",
+                        isSelected = currentGameRules.captureReward == CaptureReward.NONE,
+                        onClick = {
+                            currentGameRules = currentGameRules.copy(
+                                captureReward = CaptureReward.NONE
+                            )
+                        }
+                    )
+
+                    SettingsChoiceItem(
+                        title = "Extra Turn",
+                        description = "Capturing grants another dice roll.",
+                        isSelected = currentGameRules.captureReward == CaptureReward.EXTRA_TURN,
+                        onClick = {
+                            currentGameRules = currentGameRules.copy(
+                                captureReward = CaptureReward.EXTRA_TURN
+                            )
+                        }
+                    )
+
+                    SettingsChoiceItem(
+                        title = "Go Home",
+                        description = "The capturing token goes directly to the center as a bonus.",
+                        isSelected = currentGameRules.captureReward == CaptureReward.GO_HOME,
+                        onClick = {
+                            currentGameRules = currentGameRules.copy(
+                                captureReward = CaptureReward.GO_HOME
+                            )
+                        }
+                    )
+                }
 
                 SettingsToggleItem(
                     title = "Starting Point Safe Zone (Own Color)",
@@ -233,6 +266,7 @@ fun LudoSettingsScreen(
                             "• A token leaves base only with an actual die value of 6\n" +
                             "• Total = 6 cannot bring a token out of base\n" +
                             "• If Double Six is enabled, 6 + 6 gives another round\n" +
+                            "• Capture rules can be customized in settings\n" +
                             "• Get all 4 tokens to the center to win"
                 )
 
@@ -290,6 +324,91 @@ fun SettingsSection(
         )
 
         content()
+    }
+}
+
+@Composable
+fun SettingsChoiceSection(
+    title: String,
+    description: String,
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = title,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+
+        Text(
+            text = description,
+            fontSize = 14.sp,
+            color = Color.White.copy(alpha = 0.78f),
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+        )
+
+        content()
+    }
+}
+
+@Composable
+fun SettingsChoiceItem(
+    title: String,
+    description: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                Color(0xFF10B981).copy(alpha = 0.22f)
+            } else {
+                Color.White.copy(alpha = 0.10f)
+            }
+        ),
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (isSelected) "✓" else "○",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color(0xFF10B981) else Color.White.copy(alpha = 0.8f)
+            )
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
     }
 }
 
