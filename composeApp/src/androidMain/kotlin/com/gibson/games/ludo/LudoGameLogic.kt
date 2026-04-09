@@ -6,6 +6,18 @@ enum class PlayerColor {
     GREEN, RED, YELLOW, BLUE
 }
 
+enum class CapturePenalty{
+    NONE,
+    RETURN_TO_BASE,
+    MOVE_BACK_5
+}
+
+enum class CaptureReward{
+    NONE,
+    GO_HOME,
+    EXTRA_TURN
+}
+
 enum class MoveSource {
     DIE,
     TOTAL
@@ -60,7 +72,8 @@ data class GameRules(
     val captureGivesExtraTurn: Boolean = true,
     val captureSendsToHome: Boolean = false,
     val startingPointIsSafeZoneForColor: Boolean = true,
-    val startingPointIsSafeZoneForAll: Boolean = false
+    val startingPointIsSafeZoneForAll: Boolean = false,
+    val capturePenalty: Any = 0
 )
 
 fun initializeGameState(rules: GameRules = GameRules()): BoardState {
