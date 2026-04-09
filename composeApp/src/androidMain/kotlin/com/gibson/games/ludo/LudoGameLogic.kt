@@ -237,8 +237,27 @@ fun moveToken(
         else -> currentProgress + steps
     }
 
-    val newPosition = getPositionFromProgress(token.color, newProgress)
-    val movedToken = token.copy(position = newPosition)
+    val landingPosition = getPositionFromProgress(token.color, newProgress)
+
+    val capturedEnemies = boardState.players
+        .filter { it.color != token.color }
+        .flatMap { player -> player.tokens }
+        .filter { enemyToken ->
+            landingPosition in 0..51 &&
+                enemyToken.position == landingPosition &&
+                !isSafeZone(landingPosition, enemyToken.color, rules)
+        }
+
+    val didCapture = capturedEnemies.isNotEmpty()
+
+    val movedToken = when {
+        didCapture && rules.captureReward == CaptureReward.GO_HOME -> {
+            token.copy(position = 200)
+        }
+        else -> {
+            token.copy(position = landingPosition)
+        }
+    }
 
     val updatedPlayers = boardState.players.map { player ->
         when {
@@ -251,21 +270,33 @@ fun moveToken(
             }
 
             else -> {
-                val updatedTokens = player.tokens.map { enemyToken ->
-                    val shouldCapture = newPosition in 0..51 &&
-                        enemyToken.position == newPosition &&
-                        enemyToken.color != token.color &&
-                        !isSafeZone(newPosition, enemyToken.color, rules) &&
-                        rules.capturedTokenReturnsToBase
+                player.copy(
+                    tokens = player.tokens.map { enemyToken ->
+                        val wasCaptured = capturedEnemies.any {
+                            it.color == enemyToken.color && it.id == enemyToken.id
+                        }
 
-                    if (shouldCapture) {
-                        enemyToken.copy(position = -1)
-                    } else {
-                        enemyToken
+                        if (!wasCaptured) {
+                            enemyToken
+                        } else {
+                            when (rules.capturePenalty) {
+                                CapturePenalty.RETURN_TO_BASE -> {
+                                    enemyToken.copy(position = -1)
+                                }
+
+                                CapturePenalty.MOVE_BACK_5 -> {
+                                    val enemyProgress = getRelativeProgress(enemyToken)
+                                    val movedBackProgress = (enemyProgress - 5).coerceAtLeast(0)
+                                    val movedBackPosition = getPositionFromProgress(
+                                        enemyToken.color,
+                                        movedBackProgress
+                                    )
+                                    enemyToken.copy(position = movedBackPosition)
+                                }
+                            }
+                        }
                     }
-                }
-
-                player.copy(tokens = updatedTokens)
+                )
             }
         }
     }
