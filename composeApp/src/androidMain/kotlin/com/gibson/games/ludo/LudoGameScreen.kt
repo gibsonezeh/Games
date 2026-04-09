@@ -657,6 +657,7 @@ LaunchedEffect(Unit) {
                                     }
 
                                     if (movedState.winner != null) {
+                                        SoundManager.playWin() // 🔥 ADD HERE
                                         boardState = movedState.copy(gamePhase = GamePhase.GAME_OVER)
                                         gameMessage = "${movedState.winner.name} wins!"
                                         selectedMoveOption = null
