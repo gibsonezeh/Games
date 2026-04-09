@@ -127,6 +127,12 @@ LaunchedEffect(Unit) {
     SoundManager.init(context)
 }
 
+DisposableEffect(Unit) {
+    onDispose {
+        SoundManager.release()
+    }
+}
+
     LaunchedEffect(boardState.diceRoll, boardState.gamePhase) {
         if (boardState.gamePhase == GamePhase.MOVING && boardState.diceRoll != null) {
             if (initializedRoll != boardState.diceRoll) {
