@@ -1,6 +1,7 @@
 package com.gibson.games.ludo
 
 import android.content.Context
+import com.gibson.games.R
 import android.media.SoundPool
 
 object SoundManager {
