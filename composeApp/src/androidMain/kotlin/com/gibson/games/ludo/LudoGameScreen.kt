@@ -935,6 +935,7 @@ LaunchedEffect(Unit) {
                             initializedRoll = null
                             animatedTokenPositions = emptyMap()
                             gameMessage = "Rolling..."
+                            SoundManager.playRoll()
 
                             scope.launch {
                                 delay(700)
