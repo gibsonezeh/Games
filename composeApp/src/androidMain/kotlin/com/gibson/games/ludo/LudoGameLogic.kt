@@ -11,17 +11,6 @@ enum class MoveSource {
     TOTAL
 }
 
-enum class CapturePenalty {
-    RETURN_TO_BASE,
-    MOVE_BACK_5
-}
-
-enum class CaptureReward {
-    NONE,
-    EXTRA_TURN,
-    GO_HOME
-}
-
 data class MoveChoice(
     val value: Int,
     val source: MoveSource
@@ -67,8 +56,9 @@ data class GameRules(
     val getsExtraTurnOnDoubleSix: Boolean = true,
     val getsExtraTurnOnThreeSixesForfeit: Boolean = true,
     val mustPlayRolledNumbers: Boolean = true,
-    val capturePenalty: CapturePenalty = CapturePenalty.RETURN_TO_BASE,
-    val captureReward: CaptureReward = CaptureReward.EXTRA_TURN,
+    val capturedTokenReturnsToBase: Boolean = true,
+    val captureGivesExtraTurn: Boolean = true,
+    val captureSendsToHome: Boolean = false,
     val startingPointIsSafeZoneForColor: Boolean = true,
     val startingPointIsSafeZoneForAll: Boolean = false
 )
@@ -129,6 +119,8 @@ private fun getRelativeProgress(token: Token): Int {
         in 0..51 -> {
             val start = getStartingPosition(token.color)
             val raw = (pos - start + 52) % 52
+
+            // Skip the extra outer tile before entering the colored home lane
             if (raw == 51) 50 else raw
         }
         else -> -1
@@ -231,22 +223,8 @@ fun moveToken(
         else -> currentProgress + steps
     }
 
-    val landingPosition = getPositionFromProgress(token.color, newProgress)
-
-    val didCapture = boardState.players.any { player ->
-        player.color != token.color &&
-            player.tokens.any { enemyToken ->
-                enemyToken.position == landingPosition &&
-                    landingPosition in 0..51 &&
-                    !isSafeZone(landingPosition, enemyToken.color, rules)
-            }
-    }
-
-    val movedToken = if (didCapture && rules.captureReward == CaptureReward.GO_HOME) {
-        token.copy(position = 200)
-    } else {
-        token.copy(position = landingPosition)
-    }
+    val newPosition = getPositionFromProgress(token.color, newProgress)
+    val movedToken = token.copy(position = newPosition)
 
     val updatedPlayers = boardState.players.map { player ->
         when {
@@ -260,28 +238,14 @@ fun moveToken(
 
             else -> {
                 val updatedTokens = player.tokens.map { enemyToken ->
-                    val shouldCapture =
-                        landingPosition in 0..51 &&
-                            enemyToken.position == landingPosition &&
-                            enemyToken.color != token.color &&
-                            !isSafeZone(landingPosition, enemyToken.color, rules)
+                    val shouldCapture = newPosition in 0..51 &&
+                        enemyToken.position == newPosition &&
+                        enemyToken.color != token.color &&
+                        !isSafeZone(newPosition, enemyToken.color, rules) &&
+                        rules.capturedTokenReturnsToBase
 
                     if (shouldCapture) {
-                        when (rules.capturePenalty) {
-                            CapturePenalty.RETURN_TO_BASE -> {
-                                enemyToken.copy(position = -1)
-                            }
-
-                            CapturePenalty.MOVE_BACK_5 -> {
-                                val enemyProgress = getRelativeProgress(enemyToken)
-                                val newEnemyProgress = (enemyProgress - 5).coerceAtLeast(0)
-                                val newEnemyPosition = getPositionFromProgress(
-                                    enemyToken.color,
-                                    newEnemyProgress
-                                )
-                                enemyToken.copy(position = newEnemyPosition)
-                            }
-                        }
+                        enemyToken.copy(position = -1)
                     } else {
                         enemyToken
                     }
@@ -398,17 +362,6 @@ fun selectBestToken(
     }
     if (finishingToken != null) return finishingToken
 
-    val captureToHomeToken = movableTokens.firstOrNull { token ->
-        if (rules.captureReward != CaptureReward.GO_HOME) return@firstOrNull false
-
-        val currentProgress = getRelativeProgress(token)
-        val landingProgress = if (currentProgress == -1) 0 else currentProgress + diceRoll
-        val landingPosition = getPositionFromProgress(token.color, landingProgress)
-
-        boardStateHasCapturableEnemyAtPosition = false
-        false
-    }
-
     val baseToken = movableTokens.firstOrNull { it.position == -1 }
     if (baseToken != null) return baseToken
 
@@ -457,27 +410,6 @@ fun canCaptureAt(
     return getTokensAtPosition(boardState, position).any { token ->
         token.color != attackingColor &&
             !isSafeZone(position, token.color, rules)
-    }
-}
-
-fun didAnyCapture(
-    before: BoardState,
-    after: BoardState,
-    currentPlayer: PlayerColor
-): Boolean {
-    val beforeEnemies = before.players
-        .filter { it.color != currentPlayer }
-        .flatMap { it.tokens }
-
-    val afterEnemies = after.players
-        .filter { it.color != currentPlayer }
-        .flatMap { it.tokens }
-
-    return beforeEnemies.any { beforeToken ->
-        val afterToken = afterEnemies.firstOrNull {
-            it.color == beforeToken.color && it.id == beforeToken.id
-        }
-        afterToken != null && beforeToken.position != afterToken.position
     }
 }
 
