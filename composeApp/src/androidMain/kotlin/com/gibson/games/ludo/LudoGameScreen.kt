@@ -689,9 +689,10 @@ DisposableEffect(Unit) {
                                     val gotCaptureExtraTurn =
                                         gameRules.captureGivesExtraTurn &&
                                             didCaptureEnemy(beforeMove, movedState, beforeMove.currentPlayer)
-                                            if (gotCaptureExtraTurn) {
-                                                 SoundManager.playCapture()
-                                            }
+                                            
+                                    if (gotCaptureExtraTurn) {
+                                         SoundManager.playCapture()
+                                  }
 
                                     val originalRoll = beforeMove.diceRoll
                                     val gotDoubleSixExtraTurn =
