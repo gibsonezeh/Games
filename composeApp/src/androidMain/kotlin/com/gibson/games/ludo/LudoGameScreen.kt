@@ -749,6 +749,10 @@ LaunchedEffect(Unit) {
                                             "Next player: ${boardState.currentPlayer.name}"
                                     }
 
+                                    if (gotDoubleSixExtraTurn) {
+                                       SoundManager.playExtraTurn()
+                                    }
+
                                     selectedToken = null
                                     selectedMoveOption = null
                                     movableTokens = emptyList()
