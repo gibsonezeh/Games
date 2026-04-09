@@ -640,6 +640,7 @@ LaunchedEffect(Unit) {
                                         animatedTokenPositions = animatedTokenPositions.toMutableMap().apply {
                                             this[tokenKey(token)] = stepPosition
                                         }
+                                        SoundManager.playMove() // 🔥 here
                                         delay(160)
                                     }
 
