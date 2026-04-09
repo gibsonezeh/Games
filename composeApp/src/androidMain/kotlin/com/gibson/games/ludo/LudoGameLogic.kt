@@ -70,10 +70,11 @@ data class GameRules(
     val mustPlayRolledNumbers: Boolean = true,
     val capturedTokenReturnsToBase: Boolean = true,
     val captureGivesExtraTurn: Boolean = true,
+    val captureReward: CaptureReward = CaptureReward.EXTRA_TURN,
+    val capturePenalty: CapturePenalty = CapturePenalty.RETURN_TO_BASE,
     val captureSendsToHome: Boolean = false,
     val startingPointIsSafeZoneForColor: Boolean = true,
     val startingPointIsSafeZoneForAll: Boolean = false,
-    val capturePenalty: Any = 0
 )
 
 fun initializeGameState(rules: GameRules = GameRules()): BoardState {
