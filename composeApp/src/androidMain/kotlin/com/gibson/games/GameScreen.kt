@@ -6,7 +6,6 @@ import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
 import com.gibson.games.zuma.ui.ZumaNavigationScreen
 import com.gibson.games.ludo.LudoSettingsScreen
-import com.gibson.games.Game
 
 @Composable
 fun GameScreen(
@@ -51,7 +50,8 @@ fun LudoNavigationScreen(
                 onExit = {
                     currentScreen = LudoScreen.MAIN_MENU
                 },
-                gameRules = gameRules
+                gameRules = gameRules,
+                didCaptureEnemy = { _, _, _ -> false }
             )
         }
 
@@ -67,4 +67,5 @@ fun LudoNavigationScreen(
             )
         }
     }
+
 }

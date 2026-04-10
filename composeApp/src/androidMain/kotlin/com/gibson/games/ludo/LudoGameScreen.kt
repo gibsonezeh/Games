@@ -70,7 +70,8 @@ private data class MoveOption(
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
-    gameRules: GameRules = GameRules()
+    gameRules: GameRules = GameRules(),
+    didCaptureEnemy: (BoardState, BoardState, PlayerColor) -> Boolean
 ) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
@@ -731,7 +732,7 @@ fun LudoGameScreen(
                                                     remove(tokenKey(token))
                                                 }
 
-                                            val didCapture = didAnyCapture(
+                                            val didCapture = didCaptureEnemy(
                                                 beforeMove,
                                                 movedState,
                                                 beforeMove.currentPlayer
