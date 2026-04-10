@@ -1140,7 +1140,26 @@ fun DiceCard(
     }
 }
 
+private fun didCaptureEnemy(
+    before: BoardState,
+    after: BoardState,
+    currentPlayer: PlayerColor
+): Boolean {
+    val beforeEnemies = before.players
+        .filter { it.color != currentPlayer }
+        .flatMap { it.tokens }
 
+    val afterEnemies = after.players
+        .filter { it.color != currentPlayer }
+        .flatMap { it.tokens }
+
+    return beforeEnemies.any { beforeToken ->
+        val afterToken = afterEnemies.firstOrNull {
+            it.color == beforeToken.color && it.id == beforeToken.id
+        }
+        beforeToken.position != -1 && afterToken?.position == -1
+    }
+}
 
 private fun isStackableSafeZonePosition(position: Int, rules: GameRules): Boolean {
     val normalSafeZones = setOf(8, 21, 34, 47)
