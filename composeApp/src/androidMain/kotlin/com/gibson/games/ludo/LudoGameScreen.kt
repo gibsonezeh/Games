@@ -629,8 +629,8 @@ fun LudoGameScreen(
                         groupedTokens.forEach { (position, tokensAtPosition) ->
                             val shouldUseStackedSafeZoneView =
                                 position in 0..51 &&
-                                    tokensAtPosition.size > 1 &&
-                                    isStackableSafeZonePosition(position, gameRules)
+                                        tokensAtPosition.size > 1 &&
+                                        isStackableSafeZonePosition(position, gameRules)
 
                             if (!shouldUseStackedSafeZoneView) {
                                 tokensAtPosition.forEach { token ->
@@ -638,7 +638,7 @@ fun LudoGameScreen(
                                     val tokenCoords = getTokenCoordinates(drawnToken, squareSize)
                                     val isSelected =
                                         selectedToken?.id == token.id &&
-                                            selectedToken?.color == token.color
+                                                selectedToken?.color == token.color
                                     val isMovable = movableTokens.any {
                                         it.id == token.id && it.color == token.color
                                     }
@@ -673,7 +673,7 @@ fun LudoGameScreen(
                                     },
                                     isSelected = tokensAtPosition.any { token ->
                                         selectedToken?.id == token.id &&
-                                            selectedToken?.color == token.color
+                                                selectedToken?.color == token.color
                                     }
                                 )
                             }
@@ -768,16 +768,16 @@ fun LudoGameScreen(
 
                                             val gotCaptureExtraTurn =
                                                 didCapture &&
-                                                    gameRules.captureReward ==
-                                                    CaptureReward.EXTRA_TURN
+                                                        gameRules.captureReward ==
+                                                        CaptureReward.EXTRA_TURN
 
                                             val originalRoll = beforeMove.diceRoll
                                             val gotDoubleSixExtraTurn =
                                                 originalRoll != null &&
-                                                    shouldGrantExtraTurnAfterRoll(
-                                                        originalRoll,
-                                                        gameRules
-                                                    )
+                                                        shouldGrantExtraTurnAfterRoll(
+                                                            originalRoll,
+                                                            gameRules
+                                                        )
 
                                             val currentPlayerAfterMove =
                                                 movedState.players.first {
@@ -799,7 +799,7 @@ fun LudoGameScreen(
 
                                             boardState = when {
                                                 newRemainingDiceValues.isNotEmpty() &&
-                                                    anyRemainingPlayable -> {
+                                                        anyRemainingPlayable -> {
                                                     movedState.copy(
                                                         currentPlayer = beforeMove.currentPlayer,
                                                         gamePhase = GamePhase.MOVING,
@@ -831,7 +831,7 @@ fun LudoGameScreen(
 
                                             gameMessage = when {
                                                 newRemainingDiceValues.isNotEmpty() &&
-                                                    anyRemainingPlayable -> {
+                                                        anyRemainingPlayable -> {
                                                     "Play the remaining die"
                                                 }
 
@@ -1028,7 +1028,7 @@ fun LudoGameScreen(
                                             }
                                         },
                                         isEnabled = boardState.gamePhase == GamePhase.MOVING &&
-                                            !isAnimatingMove
+                                                !isAnimatingMove
                                     )
                                 }
                             }
@@ -1068,8 +1068,8 @@ fun LudoGameScreen(
                                 }
                             },
                             enabled = !isRolling &&
-                                !isAnimatingMove &&
-                                boardState.gamePhase == GamePhase.ROLLING,
+                                    !isAnimatingMove &&
+                                    boardState.gamePhase == GamePhase.ROLLING,
                             modifier = Modifier
                                 .padding(bottom = 8.dp)
                                 .size(width = 120.dp, height = 48.dp),
