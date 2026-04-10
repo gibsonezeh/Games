@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import com.gibson.games.ludo.GameRules
 import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
+import com.gibson.games.zuma.ui.ZumaNavigationScreen
 import com.gibson.games.ludo.LudoSettingsScreen
 
 @Composable
