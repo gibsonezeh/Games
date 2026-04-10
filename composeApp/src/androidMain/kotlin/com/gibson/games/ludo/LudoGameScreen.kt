@@ -686,13 +686,15 @@ DisposableEffect(Unit) {
                                             temp.toList()
                                         }
 
+                                    val didCapture =
+                                      didCaptureEnemy(beforeMove, movedState, beforeMove.currentPlayer)
+
                                     val gotCaptureExtraTurn =
-                                        gameRules.captureGivesExtraTurn &&
-                                            didCaptureEnemy(beforeMove, movedState, beforeMove.currentPlayer)
-                                            
-                                    if (gotCaptureExtraTurn) {
-                                         SoundManager.playCapture()
-                                  }
+                                       didCapture && gameRules.captureReward == CaptureReward.EXTRA_TURN
+
+                                    if (didCapture) {
+                                       SoundManager.playCapture()
+                                     }
 
                                     val originalRoll = beforeMove.diceRoll
                                     val gotDoubleSixExtraTurn =
@@ -755,10 +757,6 @@ DisposableEffect(Unit) {
 
                                         else ->
                                             "Next player: ${boardState.currentPlayer.name}"
-                                    }
-
-                                    if (gotDoubleSixExtraTurn) {
-                                       SoundManager.playExtraTurn()
                                     }
 
                                     selectedToken = null
