@@ -69,7 +69,6 @@ data class GameRules(
     val getsExtraTurnOnThreeSixesForfeit: Boolean = true,
     val mustPlayRolledNumbers: Boolean = true,
     val capturedTokenReturnsToBase: Boolean = true,
-    val captureGivesExtraTurn: Boolean = true,
     val captureReward: CaptureReward = CaptureReward.EXTRA_TURN,
     val capturePenalty: CapturePenalty = CapturePenalty.RETURN_TO_BASE,
     val captureSendsToHome: Boolean = false,
