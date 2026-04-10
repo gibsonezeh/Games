@@ -67,11 +67,12 @@ private data class MoveOption(
     val kind: MoveOptionKind
 )
 
+
+
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
-    gameRules: GameRules = GameRules(),
-    didCaptureEnemy: (BoardState, BoardState, PlayerColor) -> Boolean
+    gameRules: GameRules = GameRules()
 ) {
     var showExitDialog by remember { mutableStateOf(false) }
     val textMeasurer = rememberTextMeasurer()
@@ -1138,6 +1139,8 @@ fun DiceCard(
         }
     }
 }
+
+
 
 private fun isStackableSafeZonePosition(position: Int, rules: GameRules): Boolean {
     val normalSafeZones = setOf(8, 21, 34, 47)

@@ -51,7 +51,7 @@ fun LudoNavigationScreen(
                     currentScreen = LudoScreen.MAIN_MENU
                 },
                 gameRules = gameRules,
-                didCaptureEnemy = { _, _, _ -> false }
+
             )
         }
 
