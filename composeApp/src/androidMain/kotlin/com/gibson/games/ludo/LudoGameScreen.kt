@@ -2,6 +2,8 @@ package com.gibson.games.ludo
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +56,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
+import kotlin.random.Random
 
 private enum class MoveOptionKind {
     DIE,
@@ -66,8 +69,6 @@ private data class MoveOption(
     val value: Int,
     val kind: MoveOptionKind
 )
-
-
 
 @Composable
 fun LudoGameScreen(
@@ -94,6 +95,9 @@ fun LudoGameScreen(
     var animatedTokenPositions by remember {
         mutableStateOf<Map<Pair<PlayerColor, Int>, Int>>(emptyMap())
     }
+
+    var die1Display by remember { mutableStateOf(1) }
+    var die2Display by remember { mutableStateOf(1) }
 
     fun tokenKey(token: Token): Pair<PlayerColor, Int> = token.color to token.id
 
@@ -123,6 +127,42 @@ fun LudoGameScreen(
         }
 
         return options
+    }
+
+    suspend fun animateAndRollDice() {
+        if (isRolling || isAnimatingMove || boardState.gamePhase != GamePhase.ROLLING) return
+
+        isRolling = true
+        selectedMoveOption = null
+        movableTokens = emptyList()
+        selectedToken = null
+        remainingDiceValues = emptyList()
+        totalAvailable = false
+        initializedRoll = null
+        animatedTokenPositions = emptyMap()
+        gameMessage = "Rolling..."
+        SoundManager.playRoll()
+
+        val finalRoll = rollTwoDice()
+
+        repeat(12) {
+            die1Display = Random.nextInt(1, 7)
+            die2Display = Random.nextInt(1, 7)
+            delay(70)
+        }
+
+        die1Display = finalRoll.die1
+        die2Display = finalRoll.die2
+
+        boardState = handleTurn(boardState, gameRules, finalRoll)
+        isRolling = false
+
+        if (boardState.gamePhase == GamePhase.ROLLING &&
+            boardState.diceRoll == null &&
+            boardState.winner == null
+        ) {
+            gameMessage = "No valid move. Next player: ${boardState.currentPlayer.name}"
+        }
     }
 
     BackHandler {
@@ -770,8 +810,7 @@ fun LudoGameScreen(
 
                                             val gotCaptureExtraTurn =
                                                 didCapture &&
-                                                        gameRules.captureReward ==
-                                                        CaptureReward.EXTRA_TURN
+                                                        gameRules.captureReward == CaptureReward.EXTRA_TURN
 
                                             val originalRoll = beforeMove.diceRoll
                                             val gotDoubleSixExtraTurn =
@@ -950,6 +989,8 @@ fun LudoGameScreen(
                                         animatedTokenPositions = emptyMap()
                                         isRolling = false
                                         isAnimatingMove = false
+                                        die1Display = 1
+                                        die2Display = 1
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF10B981)
@@ -1009,6 +1050,21 @@ fun LudoGameScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
+                        Row(
+                            modifier = Modifier.padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            DiceFace(
+                                value = die1Display,
+                                modifier = Modifier.size(72.dp)
+                            )
+                            DiceFace(
+                                value = die2Display,
+                                modifier = Modifier.size(72.dp)
+                            )
+                        }
+
                         val moveOptions = buildMoveOptions()
                         if (moveOptions.isNotEmpty()) {
                             Row(
@@ -1038,35 +1094,8 @@ fun LudoGameScreen(
 
                         Button(
                             onClick = {
-                                if (!isRolling &&
-                                    !isAnimatingMove &&
-                                    boardState.gamePhase == GamePhase.ROLLING
-                                ) {
-                                    isRolling = true
-                                    selectedMoveOption = null
-                                    movableTokens = emptyList()
-                                    selectedToken = null
-                                    remainingDiceValues = emptyList()
-                                    totalAvailable = false
-                                    initializedRoll = null
-                                    animatedTokenPositions = emptyMap()
-                                    gameMessage = "Rolling..."
-                                    SoundManager.playRoll()
-
-                                    scope.launch {
-                                        delay(700)
-                                        val newDiceRoll = rollTwoDice()
-                                        boardState = handleTurn(boardState, gameRules, newDiceRoll)
-                                        isRolling = false
-
-                                        if (boardState.gamePhase == GamePhase.ROLLING &&
-                                            boardState.diceRoll == null &&
-                                            boardState.winner == null
-                                        ) {
-                                            gameMessage =
-                                                "No valid move. Next player: ${boardState.currentPlayer.name}"
-                                        }
-                                    }
+                                scope.launch {
+                                    animateAndRollDice()
                                 }
                             },
                             enabled = !isRolling &&
@@ -1088,6 +1117,74 @@ fun LudoGameScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun DiceFace(
+    value: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(
+        modifier = modifier
+            .background(Color.White, RoundedCornerShape(16.dp))
+            .border(2.dp, Color.Black, RoundedCornerShape(16.dp))
+            .padding(6.dp)
+    ) {
+        val safeValue = value.coerceIn(1, 6)
+        val pipRadius = size.minDimension * 0.08f
+
+        val left = size.width * 0.25f
+        val centerX = size.width * 0.5f
+        val right = size.width * 0.75f
+
+        val top = size.height * 0.25f
+        val centerY = size.height * 0.5f
+        val bottom = size.height * 0.75f
+
+        fun pip(x: Float, y: Float) {
+            drawCircle(
+                color = Color.Black,
+                radius = pipRadius,
+                center = Offset(x, y)
+            )
+        }
+
+        when (safeValue) {
+            1 -> {
+                pip(centerX, centerY)
+            }
+            2 -> {
+                pip(left, top)
+                pip(right, bottom)
+            }
+            3 -> {
+                pip(left, top)
+                pip(centerX, centerY)
+                pip(right, bottom)
+            }
+            4 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(left, bottom)
+                pip(right, bottom)
+            }
+            5 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(centerX, centerY)
+                pip(left, bottom)
+                pip(right, bottom)
+            }
+            6 -> {
+                pip(left, top)
+                pip(right, top)
+                pip(left, centerY)
+                pip(right, centerY)
+                pip(left, bottom)
+                pip(right, bottom)
             }
         }
     }
