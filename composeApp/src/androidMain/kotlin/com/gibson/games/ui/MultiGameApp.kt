@@ -4,11 +4,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.gibson.games.Game
 import com.gibson.games.GameMenu
 import com.gibson.games.GameScreen
+
 
 @Composable
 fun MultiGameApp(
@@ -17,13 +22,13 @@ fun MultiGameApp(
     var selectedGame by remember { mutableStateOf<Game?>(null) }
 
     Surface(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.Companion.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.Companion.fillMaxSize()
         ) {
             Box(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.Companion.weight(1f)
             ) {
                 selectedGame?.let { game ->
                     GameScreen(

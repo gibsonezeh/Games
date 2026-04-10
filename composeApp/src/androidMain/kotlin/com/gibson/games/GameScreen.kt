@@ -5,6 +5,7 @@ import com.gibson.games.ludo.GameRules
 import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
 import com.gibson.games.ludo.LudoSettingsScreen
+import com.gibson.games.Game
 
 @Composable
 fun GameScreen(
