@@ -13,6 +13,8 @@ fun GameScreen(
 ) {
     when (game) {
         Game.LUDO -> LudoNavigationScreen(onExit = onExit)
+        
+        Game.ZUMA -> ZumaNavigationScreen(onExit = onExit) // ✅ NEW
     }
 }
 
