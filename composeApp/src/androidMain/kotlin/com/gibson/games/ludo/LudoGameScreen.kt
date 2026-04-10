@@ -224,7 +224,7 @@ DisposableEffect(Unit) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val boardSize = min(size.width, size.height)
                     val squareSize = boardSize / 15f
-                }
+                
 
                 val green = Color(0xFF00B04F)
                 val blue = Color(0xFF0066CC)
@@ -1279,3 +1279,4 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
         style = Stroke(width = 2f)
     )
 }
+    }
