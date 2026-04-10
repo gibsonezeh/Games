@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import com.gibson.games.ludo.GameRules
 import com.gibson.games.ludo.LudoGameScreen
 import com.gibson.games.ludo.LudoMainMenuScreen
+import com.gibson.games.zuma.ui.ZumaNavigationScreen
 import com.gibson.games.ludo.LudoSettingsScreen
 import com.gibson.games.Game
 
@@ -14,6 +15,8 @@ fun GameScreen(
 ) {
     when (game) {
         Game.LUDO -> LudoNavigationScreen(onExit = onExit)
+        
+        Game.ZUMA -> ZumaNavigationScreen(onExit = onExit) // ✅ NEW
     }
 }
 

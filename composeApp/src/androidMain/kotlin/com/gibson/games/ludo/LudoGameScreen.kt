@@ -1,6 +1,8 @@
 package com.gibson.games.ludo
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -199,18 +201,30 @@ DisposableEffect(Unit) {
     }
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        val density = LocalDensity.current
-        val boardSizePx = with(density) { minOf(maxWidth.toPx(), maxHeight.toPx()) }
-        val squareSizePx = boardSizePx / 15f
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)
+) {
+    val density = LocalDensity.current
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val boardSize = min(size.width, size.height)
-                val squareSize = boardSize / 15f
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .sizeIn(maxWidth = 420.dp, maxHeight = 420.dp)
+        ) {
+            val boardSizePx = with(density) { minOf(maxWidth.toPx(), maxHeight.toPx()) }
+            val squareSizePx = boardSizePx / 15f
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val boardSize = min(size.width, size.height)
+                    val squareSize = boardSize / 15f
+                
 
                 val green = Color(0xFF00B04F)
                 val blue = Color(0xFF0066CC)
@@ -1265,3 +1279,4 @@ fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
         style = Stroke(width = 2f)
     )
 }
+    }
