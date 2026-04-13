@@ -2,6 +2,7 @@ package com.gibson.games.ludo
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
@@ -72,18 +73,29 @@ fun LudoBoard(
                 val red = Color(0xFFC8102E)
                 val white = Color.White
                 val black = Color.Black
-                val darkGray = Color(0xFF333333)
 
-                drawRect(
-                    color = Color(0xFFE0E0E0),
-                    topLeft = Offset(-squareSize * 0.5f, -squareSize * 0.5f),
-                    size = Size(boardSize + squareSize, boardSize + squareSize)
+                // Rounded outer frame
+                drawRoundRect(
+                    color = Color(0xFFD9D9D9),
+                    topLeft = Offset(-squareSize * 0.55f, -squareSize * 0.55f),
+                    size = Size(boardSize + squareSize * 1.1f, boardSize + squareSize * 1.1f),
+                    cornerRadius = CornerRadius(squareSize * 0.9f, squareSize * 0.9f)
                 )
-                drawRect(
-                    color = darkGray,
-                    topLeft = Offset(-squareSize * 0.5f, -squareSize * 0.5f),
-                    size = Size(boardSize + squareSize, boardSize + squareSize),
-                    style = Stroke(width = 8f)
+
+                drawRoundRect(
+                    color = Color(0xFF8A8A8A),
+                    topLeft = Offset(-squareSize * 0.42f, -squareSize * 0.42f),
+                    size = Size(boardSize + squareSize * 0.84f, boardSize + squareSize * 0.84f),
+                    cornerRadius = CornerRadius(squareSize * 0.75f, squareSize * 0.75f),
+                    style = Stroke(width = squareSize * 0.22f)
+                )
+
+                drawRoundRect(
+                    color = Color(0xFF2E2E2E),
+                    topLeft = Offset(-squareSize * 0.24f, -squareSize * 0.24f),
+                    size = Size(boardSize + squareSize * 0.48f, boardSize + squareSize * 0.48f),
+                    cornerRadius = CornerRadius(squareSize * 0.55f, squareSize * 0.55f),
+                    style = Stroke(width = squareSize * 0.08f)
                 )
 
                 drawRect(color = white, size = Size(boardSize, boardSize))
@@ -218,6 +230,28 @@ fun LudoBoard(
                 drawGameSquare(6, 13, yellow)
                 drawStar(
                     center = Offset(6.5f * squareSize, 13.5f * squareSize),
+                    radius = squareSize * 0.3f,
+                    color = white
+                )
+
+                // Opposite safe-zone stars
+                drawStar(
+                    center = Offset(2.5f * squareSize, 8.5f * squareSize),
+                    radius = squareSize * 0.3f,
+                    color = white
+                )
+                drawStar(
+                    center = Offset(6.5f * squareSize, 2.5f * squareSize),
+                    radius = squareSize * 0.3f,
+                    color = white
+                )
+                drawStar(
+                    center = Offset(12.5f * squareSize, 6.5f * squareSize),
+                    radius = squareSize * 0.3f,
+                    color = white
+                )
+                drawStar(
+                    center = Offset(8.5f * squareSize, 12.5f * squareSize),
                     radius = squareSize * 0.3f,
                     color = white
                 )
@@ -475,7 +509,7 @@ fun LudoBoard(
                             val tokenCoords = getTokenCoordinates(drawnToken, squareSize)
                             val isSelected =
                                 selectedToken?.id == token.id &&
-                                    selectedToken.color == token.color
+                                    selectedToken?.color == token.color
                             val isMovable = movableTokens.any {
                                 it.id == token.id && it.color == token.color
                             }
@@ -510,7 +544,7 @@ fun LudoBoard(
                             },
                             isSelected = tokensAtPosition.any { token ->
                                 selectedToken?.id == token.id &&
-                                    selectedToken.color == token.color
+                                    selectedToken?.color == token.color
                             }
                         )
                     }
@@ -529,7 +563,11 @@ fun LudoBoard(
                                 y = with(density) { coords.y.toDp() - 22.dp }
                             )
                             .size(44.dp)
-                            .clickable(enabled = !isAnimatingMove) {
+                            .clickable(
+                                enabled = !isAnimatingMove,
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
                                 if (!isAnimatingMove) onTokenClick(token)
                             }
                     )
@@ -543,10 +581,10 @@ fun LudoBoard(
             Box(
                 modifier = Modifier
                     .offset(
-                        x = with(density) { centerOffset.x.toDp() - 90.dp },
-                        y = with(density) { centerOffset.y.toDp() - 90.dp }
+                        x = with(density) { centerOffset.x.toDp() - 34.dp },
+                        y = with(density) { centerOffset.y.toDp() - 28.dp }
                     )
-                    .size(180.dp)
+                    .size(width = 68.dp, height = 56.dp)
             ) {
                 CenterDiceRoller(
                     die1Value = die1Display,
