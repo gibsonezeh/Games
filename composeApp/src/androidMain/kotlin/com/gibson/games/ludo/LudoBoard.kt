@@ -469,25 +469,47 @@ fun LudoBoard(
                             isStackableSafeZonePosition(position, gameRules)
 
                     if (!shouldUseStackedSafeZoneView) {
-                        tokensAtPosition.forEach { token ->
-                            val drawnToken = token.copy(position = displayedPosition(token))
-                            val tokenCoords = getTokenCoordinates(drawnToken, squareSize)
-                            val isSelected =
-                                selectedToken?.id == token.id &&
-                                    selectedToken?.color == token.color
-                            val isMovable = movableTokens.any {
-                                it.id == token.id && it.color == token.color
-                            }
-
-                            drawToken(
-                                centerX = tokenCoords.x,
-                                centerY = tokenCoords.y,
-                                color = when (token.color) {
-                                    PlayerColor.GREEN -> green
-                                    PlayerColor.RED -> red
-                                    PlayerColor.YELLOW -> yellow
-                 )
-            }
+    tokensAtPosition.forEach { token ->
+        val drawnToken = token.copy(position = displayedPosition(token))
+        val tokenCoords = getTokenCoordinates(drawnToken, squareSize)
+        val isSelected =
+            selectedToken?.id == token.id &&
+                selectedToken?.color == token.color
+        val isMovable = movableTokens.any {
+            it.id == token.id && it.color == token.color
         }
+
+        drawToken(
+            centerX = tokenCoords.x,
+            centerY = tokenCoords.y,
+            color = when (token.color) {
+                PlayerColor.GREEN -> green
+                PlayerColor.RED -> red
+                PlayerColor.YELLOW -> yellow
+                PlayerColor.BLUE -> blue
+            },
+            isSelected = isSelected,
+            isMovable = isMovable
+        )
     }
-}
+} else {
+    val drawnFirst = tokensAtPosition.first().copy(
+        position = displayedPosition(tokensAtPosition.first())
+    )
+    val center = getTokenCoordinates(drawnFirst, squareSize)
+
+    drawStackedToken(
+        center = center,
+        squareSize = squareSize,
+        tokens = tokensAtPosition,
+        isMovable = tokensAtPosition.any { token ->
+            movableTokens.any {
+                it.id == token.id && it.color == token.color
+            }
+        },
+        isSelected = tokensAtPosition.any { token ->
+            selectedToken?.id == token.id &&
+                selectedToken?.color == token.color
+        }
+    )
+                    }
