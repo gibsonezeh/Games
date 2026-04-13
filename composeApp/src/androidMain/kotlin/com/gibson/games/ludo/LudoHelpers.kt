@@ -25,7 +25,10 @@ fun didCaptureEnemy(
         val afterToken = afterEnemies.firstOrNull {
             it.color == beforeToken.color && it.id == beforeToken.id
         }
-        beforeToken.position != -1 && afterToken?.position == -1
+
+        afterToken != null &&
+            beforeToken.position != afterToken.position &&
+            beforeToken.position in 0..51
     }
 }
 
