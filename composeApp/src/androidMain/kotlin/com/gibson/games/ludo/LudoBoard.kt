@@ -514,3 +514,4 @@ fun LudoBoard(
     )
                     }
                 }
+            }
