@@ -8,30 +8,28 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.runtime.remember
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
@@ -56,113 +54,99 @@ fun CenterDiceRoller(
     )
 
     val die1OffsetX = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die1OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> -24f
-            CenterDiceAnimState.SPLIT -> -92f
-            CenterDiceAnimState.RETURN -> -24f
+            CenterDiceAnimState.IDLE -> -14f
+            CenterDiceAnimState.SPLIT -> -56f
+            CenterDiceAnimState.RETURN -> -14f
         }
     }
 
     val die1OffsetY = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die1OffsetY"
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -44f
+            CenterDiceAnimState.SPLIT -> -24f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
 
     val die2OffsetX = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die2OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> 24f
-            CenterDiceAnimState.SPLIT -> 92f
-            CenterDiceAnimState.RETURN -> 24f
+            CenterDiceAnimState.IDLE -> 14f
+            CenterDiceAnimState.SPLIT -> 56f
+            CenterDiceAnimState.RETURN -> 14f
         }
     }
 
     val die2OffsetY = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die2OffsetY"
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 44f
+            CenterDiceAnimState.SPLIT -> 24f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
 
     val die1Rotation = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die1Rotation"
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -28f
+            CenterDiceAnimState.SPLIT -> -24f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
 
     val die2Rotation = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "die2Rotation"
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 28f
+            CenterDiceAnimState.SPLIT -> 24f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
 
     val diceScale = transition.animateFloat(
-        transitionSpec = {
-            tween(durationMillis = 320, easing = FastOutSlowInEasing)
-        },
+        transitionSpec = { tween(durationMillis = 320, easing = FastOutSlowInEasing) },
         label = "diceScale"
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 1f
-            CenterDiceAnimState.SPLIT -> 1.08f
+            CenterDiceAnimState.SPLIT -> 1.06f
             CenterDiceAnimState.RETURN -> 1f
         }
     }
 
     Box(
         modifier = modifier
-            .size(180.dp)
+            .size(width = 68.dp, height = 56.dp)
             .clickable(
-    enabled = !isRolling,
-    indication = null,
-    interactionSource = remember { MutableInteractionSource() },
-    onClick = onClick
-)
+                enabled = !isRolling,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .offset {
                     IntOffset(
-                        die1OffsetX.value.roundToInt(),
-                        die1OffsetY.value.roundToInt()
+                        x = die1OffsetX.value.roundToInt(),
+                        y = die1OffsetY.value.roundToInt()
                     )
                 }
                 .rotate(die1Rotation.value)
@@ -170,7 +154,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die1Value,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(38.dp)
             )
         }
 
@@ -178,8 +162,8 @@ fun CenterDiceRoller(
             modifier = Modifier
                 .offset {
                     IntOffset(
-                        die2OffsetX.value.roundToInt(),
-                        die2OffsetY.value.roundToInt()
+                        x = die2OffsetX.value.roundToInt(),
+                        y = die2OffsetY.value.roundToInt()
                     )
                 }
                 .rotate(die2Rotation.value)
@@ -187,7 +171,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die2Value,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(38.dp)
             )
         }
     }
@@ -200,9 +184,8 @@ fun DiceFace(
 ) {
     Canvas(
         modifier = modifier
-            .background(Color(0xFFFDFDFD), RoundedCornerShape(14.dp))
-            .border(2.dp, Color.Black, RoundedCornerShape(14.dp))
-            .padding(6.dp)
+            .background(Color(0xFFFDFDFD), RoundedCornerShape(12.dp))
+            .border(2.dp, Color.Black, RoundedCornerShape(12.dp))
     ) {
         val safeValue = value.coerceIn(1, 6)
         val pipRadius = size.minDimension * 0.08f
@@ -224,9 +207,7 @@ fun DiceFace(
         }
 
         when (safeValue) {
-            1 -> {
-                pip(centerX, centerY)
-            }
+            1 -> pip(centerX, centerY)
             2 -> {
                 pip(left, top)
                 pip(right, bottom)
@@ -274,7 +255,12 @@ fun DiceCard(
     Card(
         modifier = Modifier
             .size(80.dp)
-            .clickable(enabled = isEnabled && !isRolling, onClick = onClick),
+            .clickable(
+                enabled = isEnabled && !isRolling,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick
+            ),
         colors = CardDefaults.cardColors(
             containerColor = when {
                 isSelected -> Color(0xFF10B981)
