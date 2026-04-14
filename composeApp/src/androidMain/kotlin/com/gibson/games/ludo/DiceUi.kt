@@ -58,9 +58,9 @@ fun CenterDiceRoller(
         label = "die1OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> -16f
-            CenterDiceAnimState.SPLIT -> -26f
-            CenterDiceAnimState.RETURN -> -16f
+            CenterDiceAnimState.IDLE -> -20f
+            CenterDiceAnimState.SPLIT -> -34f
+            CenterDiceAnimState.RETURN -> -20f
         }
     }
 
@@ -70,7 +70,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -6f
+            CenterDiceAnimState.SPLIT -> -8f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -80,9 +80,9 @@ fun CenterDiceRoller(
         label = "die2OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> 16f
-            CenterDiceAnimState.SPLIT -> 26f
-            CenterDiceAnimState.RETURN -> 16f
+            CenterDiceAnimState.IDLE -> 20f
+            CenterDiceAnimState.SPLIT -> 34f
+            CenterDiceAnimState.RETURN -> 20f
         }
     }
 
@@ -92,7 +92,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 6f
+            CenterDiceAnimState.SPLIT -> 8f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -125,7 +125,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 1f
-            CenterDiceAnimState.SPLIT -> 1.02f
+            CenterDiceAnimState.SPLIT -> 1.03f
             CenterDiceAnimState.RETURN -> 1f
         }
     }
@@ -152,7 +152,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die1Value,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
@@ -169,7 +169,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die2Value,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -182,8 +182,8 @@ fun DiceFace(
 ) {
     Canvas(
         modifier = modifier
-            .background(Color(0xFFFDFDFD), RoundedCornerShape(10.dp))
-            .border(2.dp, Color.Black, RoundedCornerShape(10.dp))
+            .background(Color(0xFFFDFDFD), RoundedCornerShape(6.dp))
+            .border(2.dp, Color.Black, RoundedCornerShape(6.dp))
     ) {
         val safeValue = value.coerceIn(1, 6)
         val pipRadius = size.minDimension * 0.08f
