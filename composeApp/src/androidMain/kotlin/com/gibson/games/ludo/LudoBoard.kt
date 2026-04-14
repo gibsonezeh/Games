@@ -580,13 +580,13 @@ fun LudoBoard(
 
 
 
-             Box(
+                Box(
     modifier = Modifier
         .offset(
-            x = with(density) { centerOffset.x.toDp() - 28.dp },
+            x = with(density) { centerOffset.x.toDp() - 36.dp },
             y = with(density) { centerOffset.y.toDp() - 16.dp }
         )
-        .size(width = 56.dp, height = 32.dp)
+        .size(width = 72.dp, height = 32.dp)
 ) {
     CenterDiceRoller(
         die1Value = die1Display,
@@ -597,6 +597,7 @@ fun LudoBoard(
         modifier = Modifier.fillMaxSize()
     )
 }
+     
             }
         }
     }
