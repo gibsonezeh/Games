@@ -27,9 +27,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
@@ -58,9 +58,9 @@ fun CenterDiceRoller(
         label = "die1OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> -14f
-            CenterDiceAnimState.SPLIT -> -56f
-            CenterDiceAnimState.RETURN -> -14f
+            CenterDiceAnimState.IDLE -> -10f
+            CenterDiceAnimState.SPLIT -> -24f
+            CenterDiceAnimState.RETURN -> -10f
         }
     }
 
@@ -70,7 +70,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -24f
+            CenterDiceAnimState.SPLIT -> -12f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -80,9 +80,9 @@ fun CenterDiceRoller(
         label = "die2OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> 14f
-            CenterDiceAnimState.SPLIT -> 56f
-            CenterDiceAnimState.RETURN -> 14f
+            CenterDiceAnimState.IDLE -> 10f
+            CenterDiceAnimState.SPLIT -> 24f
+            CenterDiceAnimState.RETURN -> 10f
         }
     }
 
@@ -92,7 +92,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 24f
+            CenterDiceAnimState.SPLIT -> 12f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -103,7 +103,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -24f
+            CenterDiceAnimState.SPLIT -> -18f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -114,7 +114,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 24f
+            CenterDiceAnimState.SPLIT -> 18f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -125,14 +125,13 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 1f
-            CenterDiceAnimState.SPLIT -> 1.06f
+            CenterDiceAnimState.SPLIT -> 1.04f
             CenterDiceAnimState.RETURN -> 1f
         }
     }
 
     Box(
         modifier = modifier
-            .size(width = 68.dp, height = 56.dp)
             .clickable(
                 enabled = !isRolling,
                 indication = null,
@@ -154,7 +153,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die1Value,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
 
@@ -171,7 +170,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die2Value,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
     }
@@ -184,8 +183,8 @@ fun DiceFace(
 ) {
     Canvas(
         modifier = modifier
-            .background(Color(0xFFFDFDFD), RoundedCornerShape(12.dp))
-            .border(2.dp, Color.Black, RoundedCornerShape(12.dp))
+            .background(Color(0xFFFDFDFD), RoundedCornerShape(10.dp))
+            .border(2.dp, Color.Black, RoundedCornerShape(10.dp))
     ) {
         val safeValue = value.coerceIn(1, 6)
         val pipRadius = size.minDimension * 0.08f
