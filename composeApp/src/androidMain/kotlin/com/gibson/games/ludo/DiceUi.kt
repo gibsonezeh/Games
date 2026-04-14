@@ -58,9 +58,9 @@ fun CenterDiceRoller(
         label = "die1OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> -10f
-            CenterDiceAnimState.SPLIT -> -24f
-            CenterDiceAnimState.RETURN -> -10f
+            CenterDiceAnimState.IDLE -> -16f
+            CenterDiceAnimState.SPLIT -> -26f
+            CenterDiceAnimState.RETURN -> -16f
         }
     }
 
@@ -70,7 +70,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -12f
+            CenterDiceAnimState.SPLIT -> -6f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -80,9 +80,9 @@ fun CenterDiceRoller(
         label = "die2OffsetX"
     ) { state ->
         when (state) {
-            CenterDiceAnimState.IDLE -> 10f
-            CenterDiceAnimState.SPLIT -> 24f
-            CenterDiceAnimState.RETURN -> 10f
+            CenterDiceAnimState.IDLE -> 16f
+            CenterDiceAnimState.SPLIT -> 26f
+            CenterDiceAnimState.RETURN -> 16f
         }
     }
 
@@ -92,7 +92,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 12f
+            CenterDiceAnimState.SPLIT -> 6f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -103,7 +103,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> -18f
+            CenterDiceAnimState.SPLIT -> -12f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -114,7 +114,7 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 0f
-            CenterDiceAnimState.SPLIT -> 18f
+            CenterDiceAnimState.SPLIT -> 12f
             CenterDiceAnimState.RETURN -> 0f
         }
     }
@@ -125,19 +125,18 @@ fun CenterDiceRoller(
     ) { state ->
         when (state) {
             CenterDiceAnimState.IDLE -> 1f
-            CenterDiceAnimState.SPLIT -> 1.04f
+            CenterDiceAnimState.SPLIT -> 1.02f
             CenterDiceAnimState.RETURN -> 1f
         }
     }
 
     Box(
-        modifier = modifier
-            .clickable(
-                enabled = !isRolling,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = onClick
-            ),
+        modifier = modifier.clickable(
+            enabled = !isRolling,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() },
+            onClick = onClick
+        ),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -153,7 +152,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die1Value,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
 
@@ -170,7 +169,7 @@ fun CenterDiceRoller(
         ) {
             DiceFace(
                 value = die2Value,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
     }
