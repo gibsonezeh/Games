@@ -579,21 +579,22 @@ fun LudoBoard(
                 }
 
                 Box(
-                    modifier = Modifier
-                        .offset(
-                            x = with(density) { centerOffset.x.toDp() - 34.dp },
-                            y = with(density) { centerOffset.y.toDp() - 28.dp }
-                        )
-                        .size(width = 68.dp, height = 56.dp)
-                ) {
-                    CenterDiceRoller(
-                        die1Value = die1Display,
-                        die2Value = die2Display,
-                        animationState = centerDiceState,
-                        isRolling = isRolling,
-                        onClick = onCenterDiceClick
-                    )
-                }
+    modifier = Modifier
+        .offset(
+            x = with(density) { centerOffset.x.toDp() - 28.dp },
+            y = with(density) { centerOffset.y.toDp() - 22.dp }
+        )
+        .size(width = 56.dp, height = 44.dp)
+) {
+    CenterDiceRoller(
+        die1Value = die1Display,
+        die2Value = die2Display,
+        animationState = centerDiceState,
+        isRolling = isRolling,
+        onClick = onCenterDiceClick,
+        modifier = Modifier.fillMaxSize()
+    )
+}
             }
         }
     }
