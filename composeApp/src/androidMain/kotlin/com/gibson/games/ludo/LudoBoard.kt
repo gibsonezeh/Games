@@ -14,24 +14,14 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlin.math.cos
+import androidx.compose.ui.unit.toDp
 import kotlin.math.min
-import kotlin.math.sin
 
 @Composable
 fun LudoBoard(
@@ -50,7 +40,6 @@ fun LudoBoard(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    val textMeasurer = rememberTextMeasurer()
 
     BoxWithConstraints(
         modifier = modifier
@@ -71,236 +60,156 @@ fun LudoBoard(
 
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val boardSize = min(size.width, size.height)
-                    val squareSize = boardSize / 15f
-                    val artScale = if (boardSize < 380f) 2.0f else 2.6f
-                    val centerArtScale = if (boardSize < 380f) 1.2f else 1.5f
+                    val square = boardSize / 15f
 
-                    val green = Color(0xFF00B04F)
-                    val blue = Color(0xFF0066CC)
-                    val yellow = Color(0xFFFFD700)
-                    val red = Color(0xFFC8102E)
-                    val white = Color.White
+                    val boardColor = Color(0xFFF5F5F0)
+                    val pathColor = Color(0xFFBDBDBD)
+
+                    val green = Color(0xFF2ECC71)
+                    val red = Color(0xFFE74C3C)
+                    val yellow = Color(0xFFF1C40F)
+                    val blue = Color(0xFF3498DB)
                     val black = Color.Black
+                    val white = Color.White
 
                     drawRoundRect(
-                        color = Color(0xFFD9D9D9),
-                        topLeft = Offset(-squareSize * 0.55f, -squareSize * 0.55f),
-                        size = Size(boardSize + squareSize * 1.1f, boardSize + squareSize * 1.1f),
-                        cornerRadius = CornerRadius(squareSize * 0.9f, squareSize * 0.9f)
+                        color = boardColor,
+                        size = Size(boardSize, boardSize),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(40f, 40f)
                     )
 
-                    drawRoundRect(
-                        color = Color(0xFF8A8A8A),
-                        topLeft = Offset(-squareSize * 0.42f, -squareSize * 0.42f),
-                        size = Size(boardSize + squareSize * 0.84f, boardSize + squareSize * 0.84f),
-                        cornerRadius = CornerRadius(squareSize * 0.75f, squareSize * 0.75f),
-                        style = Stroke(width = squareSize * 0.22f)
-                    )
-
-                    drawRoundRect(
-                        color = Color(0xFF2E2E2E),
-                        topLeft = Offset(-squareSize * 0.24f, -squareSize * 0.24f),
-                        size = Size(boardSize + squareSize * 0.48f, boardSize + squareSize * 0.48f),
-                        cornerRadius = CornerRadius(squareSize * 0.55f, squareSize * 0.55f),
-                        style = Stroke(width = squareSize * 0.08f)
-                    )
-
-                    drawRect(color = white, size = Size(boardSize, boardSize))
-
-                    drawRect(
-                        color = green,
-                        topLeft = Offset(0f, 0f),
-                        size = Size(squareSize * 6, squareSize * 6)
-                    )
-                    drawRect(
-                        color = black,
-                        topLeft = Offset(0f, 0f),
-                        size = Size(squareSize * 6, squareSize * 6),
-                        style = Stroke(width = 3f)
-                    )
-
-                    drawRect(
-                        color = red,
-                        topLeft = Offset(squareSize * 9, 0f),
-                        size = Size(squareSize * 6, squareSize * 6)
-                    )
-                    drawRect(
-                        color = black,
-                        topLeft = Offset(squareSize * 9, 0f),
-                        size = Size(squareSize * 6, squareSize * 6),
-                        style = Stroke(width = 3f)
-                    )
-
-                    drawRect(
-                        color = yellow,
-                        topLeft = Offset(0f, squareSize * 9),
-                        size = Size(squareSize * 6, squareSize * 6)
-                    )
-                    drawRect(
-                        color = black,
-                        topLeft = Offset(0f, squareSize * 9),
-                        size = Size(squareSize * 6, squareSize * 6),
-                        style = Stroke(width = 3f)
-                    )
-
-                    drawRect(
-                        color = blue,
-                        topLeft = Offset(squareSize * 9, squareSize * 9),
-                        size = Size(squareSize * 6, squareSize * 6)
-                    )
-                    drawRect(
-                        color = black,
-                        topLeft = Offset(squareSize * 9, squareSize * 9),
-                        size = Size(squareSize * 6, squareSize * 6),
-                        style = Stroke(width = 3f)
-                    )
-
-                    val centerTopLeft = Offset(squareSize * 6, squareSize * 6)
-                    val centerSize = Size(squareSize * 3, squareSize * 3)
-
-                    drawRoundRect(
-                        color = white,
-                        topLeft = centerTopLeft,
-                        size = centerSize,
-                        cornerRadius = CornerRadius(squareSize * 0.3f)
-                    )
-                    drawRoundRect(
-                        color = black,
-                        topLeft = centerTopLeft,
-                        size = centerSize,
-                        cornerRadius = CornerRadius(squareSize * 0.3f),
-                        style = Stroke(width = 3f)
-                    )
-
-                    fun drawGameSquare(x: Int, y: Int, color: Color, hasBorder: Boolean = true) {
-                        drawRect(
+                    fun drawDot(x: Int, y: Int, color: Color, radiusFactor: Float = 0.28f) {
+                        drawCircle(
                             color = color,
-                            topLeft = Offset(x * squareSize, y * squareSize),
-                            size = Size(squareSize, squareSize)
-                        )
-                        if (hasBorder) {
-                            drawRect(
-                                color = black,
-                                topLeft = Offset(x * squareSize, y * squareSize),
-                                size = Size(squareSize, squareSize),
-                                style = Stroke(width = 2f)
+                            radius = square * radiusFactor,
+                            center = Offset(
+                                (x + 0.5f) * square,
+                                (y + 0.5f) * square
                             )
+                        )
+                    }
+
+                    fun drawStarDot(x: Int, y: Int, color: Color) {
+                        drawDot(x, y, color, 0.32f)
+                        drawStar(
+                            center = Offset((x + 0.5f) * square, (y + 0.5f) * square),
+                            radius = square * 0.16f,
+                            color = white
+                        )
+                    }
+
+                    fun drawHomeSlots(startX: Float, startY: Float, color: Color) {
+                        val spacing = square * 2f
+                        for (i in 0..1) {
+                            for (j in 0..1) {
+                                val cx = startX + square * 1.5f + i * spacing
+                                val cy = startY + square * 1.5f + j * spacing
+                                drawCircle(
+                                    color = color.copy(alpha = 0.22f),
+                                    radius = square * 0.55f,
+                                    center = Offset(cx, cy)
+                                )
+                                drawCircle(
+                                    color = color.copy(alpha = 0.75f),
+                                    radius = square * 0.34f,
+                                    center = Offset(cx, cy),
+                                    style = Stroke(width = square * 0.05f)
+                                )
+                            }
                         }
                     }
 
+                    // Main neutral path
                     for (i in 0 until 6) {
-                        drawGameSquare(6, i, white)
-                        drawGameSquare(7, i, if (i == 1) red else white)
-                        drawGameSquare(8, i, white)
+                        drawDot(6, i, pathColor)
+                        drawDot(7, i, pathColor)
+                        drawDot(8, i, pathColor)
 
-                        drawGameSquare(6, i + 9, white)
-                        drawGameSquare(7, i + 9, if (i == 4) yellow else white)
-                        drawGameSquare(8, i + 9, white)
+                        drawDot(6, i + 9, pathColor)
+                        drawDot(7, i + 9, pathColor)
+                        drawDot(8, i + 9, pathColor)
                     }
 
                     for (i in 0 until 6) {
-                        drawGameSquare(i, 6, white)
-                        drawGameSquare(i, 7, if (i == 1) green else white)
-                        drawGameSquare(i, 8, white)
+                        drawDot(i, 6, pathColor)
+                        drawDot(i, 7, pathColor)
+                        drawDot(i, 8, pathColor)
 
-                        drawGameSquare(i + 9, 6, white)
-                        drawGameSquare(i + 9, 7, if (i == 4) blue else white)
-                        drawGameSquare(i + 9, 8, white)
+                        drawDot(i + 9, 6, pathColor)
+                        drawDot(i + 9, 7, pathColor)
+                        drawDot(i + 9, 8, pathColor)
                     }
 
-                    drawGameSquare(1, 6, green)
-                    drawStar(
-                        center = Offset(1.5f * squareSize, 6.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-
-                    drawGameSquare(8, 1, red)
-                    drawStar(
-                        center = Offset(8.5f * squareSize, 1.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-
-                    drawGameSquare(13, 8, blue)
-                    drawStar(
-                        center = Offset(13.5f * squareSize, 8.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-
-                    drawGameSquare(6, 13, yellow)
-                    drawStar(
-                        center = Offset(6.5f * squareSize, 13.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-
-                    drawStar(
-                        center = Offset(2.5f * squareSize, 8.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-                    drawStar(
-                        center = Offset(6.5f * squareSize, 2.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-                    drawStar(
-                        center = Offset(12.5f * squareSize, 6.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-                    drawStar(
-                        center = Offset(8.5f * squareSize, 12.5f * squareSize),
-                        radius = squareSize * 0.3f,
-                        color = white
-                    )
-
+                    // Colored home lanes
                     for (i in 1..5) {
-                        drawStar(
-                            center = Offset(7.5f * squareSize, (i + 0.5f) * squareSize),
-                            radius = squareSize * 0.3f,
-                            color = red
-                        )
-                        drawStar(
-                            center = Offset(7.5f * squareSize, (i + 8.5f) * squareSize),
-                            radius = squareSize * 0.3f,
-                            color = yellow
-                        )
-                        drawStar(
-                            center = Offset((i + 0.5f) * squareSize, 7.5f * squareSize),
-                            radius = squareSize * 0.3f,
-                            color = green
-                        )
-                        drawStar(
-                            center = Offset((i + 8.5f) * squareSize, 7.5f * squareSize),
-                            radius = squareSize * 0.3f,
-                            color = blue
-                        )
+                        drawDot(7, i, red)
+                        drawDot(7, i + 8, yellow)
+                        drawDot(i, 7, green)
+                        drawDot(i + 8, 7, blue)
                     }
 
-                    fun DrawScope.drawEmoji(
-                        emoji: String,
-                        centerX: Float,
-                        centerY: Float,
-                        fontSize: TextUnit,
-                        color: Color = Color.Black
-                    ) {
-                        val measured = textMeasurer.measure(
-                            text = AnnotatedString(emoji),
-                            style = TextStyle(fontSize = fontSize, color = color)
-                        )
-                        drawText(
-                            textMeasurer = textMeasurer,
-                            text = emoji,
-                            topLeft = Offset(
-                                centerX - measured.size.width / 2f,
-                                centerY - measured.size.height / 2f
-                            ),
-                            style = TextStyle(fontSize = fontSize, color = color)
-                        )
-                    }
+                    // Safe zones / starting points
+                    drawStarDot(1, 6, green)
+                    drawStarDot(8, 1, red)
+                    drawStarDot(13, 8, blue)
+                    drawStarDot(6, 13, yellow)
+
+                    // Opposite-side safe zones
+                    drawStarDot(2, 8, green)
+                    drawStarDot(6, 2, red)
+                    drawStarDot(12, 6, blue)
+                    drawStarDot(8, 12, yellow)
+
+                    // Soft home areas
+                    drawRoundRect(
+                        color = green.copy(alpha = 0.18f),
+                        topLeft = Offset(0f, 0f),
+                        size = Size(square * 6, square * 6),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(30f, 30f)
+                    )
+                    drawRoundRect(
+                        color = red.copy(alpha = 0.18f),
+                        topLeft = Offset(square * 9, 0f),
+                        size = Size(square * 6, square * 6),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(30f, 30f)
+                    )
+                    drawRoundRect(
+                        color = yellow.copy(alpha = 0.18f),
+                        topLeft = Offset(0f, square * 9),
+                        size = Size(square * 6, square * 6),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(30f, 30f)
+                    )
+                    drawRoundRect(
+                        color = blue.copy(alpha = 0.18f),
+                        topLeft = Offset(square * 9, square * 9),
+                        size = Size(square * 6, square * 6),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(30f, 30f)
+                    )
+
+                    // Home circles
+                    drawHomeSlots(0f, 0f, green)
+                    drawHomeSlots(square * 9, 0f, red)
+                    drawHomeSlots(0f, square * 9, yellow)
+                    drawHomeSlots(square * 9, square * 9, blue)
+
+                    // Center plate
+                    drawRoundRect(
+                        color = white,
+                        topLeft = Offset(square * 6, square * 6),
+                        size = Size(square * 3, square * 3),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(20f, 20f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFFBDBDBD),
+                        topLeft = Offset(square * 6, square * 6),
+                        size = Size(square * 3, square * 3),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(20f, 20f),
+                        style = Stroke(width = square * 0.06f)
+                    )
+
+                    // Tokens
+                    val allTokens = boardState.players.flatMap { it.tokens }
+                    val groupedTokens = allTokens.groupBy { displayedPosition(it) }
 
                     fun drawToken(
                         centerX: Float,
@@ -309,11 +218,11 @@ fun LudoBoard(
                         isSelected: Boolean = false,
                         isMovable: Boolean = false
                     ) {
-                        val tokenRadius = squareSize * 0.35f
+                        val tokenRadius = square * 0.35f
 
                         if (isMovable) {
                             drawCircle(
-                                color = Color.Yellow.copy(alpha = 0.5f),
+                                color = Color.Yellow.copy(alpha = 0.45f),
                                 radius = tokenRadius * 1.3f,
                                 center = Offset(centerX, centerY)
                             )
@@ -322,16 +231,11 @@ fun LudoBoard(
                         if (isSelected) {
                             drawCircle(
                                 color = Color.White,
-                                radius = tokenRadius * 1.2f,
+                                radius = tokenRadius * 1.15f,
                                 center = Offset(centerX, centerY)
                             )
                         }
 
-                        drawCircle(
-                            color = Color.Black.copy(alpha = 0.3f),
-                            radius = tokenRadius,
-                            center = Offset(centerX + 2f, centerY + 2f)
-                        )
                         drawCircle(
                             color = color,
                             radius = tokenRadius,
@@ -344,16 +248,16 @@ fun LudoBoard(
                             style = Stroke(width = 2f)
                         )
                         drawCircle(
-                            color = white.copy(alpha = 0.6f),
-                            radius = tokenRadius * 0.3f,
+                            color = white.copy(alpha = 0.55f),
+                            radius = tokenRadius * 0.28f,
                             center = Offset(
-                                centerX - tokenRadius * 0.3f,
-                                centerY - tokenRadius * 0.3f
+                                centerX - tokenRadius * 0.28f,
+                                centerY - tokenRadius * 0.28f
                             )
                         )
                     }
 
-                    fun DrawScope.drawStackedToken(
+                    fun drawStackedToken(
                         center: Offset,
                         squareSize: Float,
                         tokens: List<Token>,
@@ -383,8 +287,8 @@ fun LudoBoard(
 
                         if (isMovable) {
                             drawCircle(
-                                color = Color.Yellow.copy(alpha = 0.5f),
-                                radius = tokenRadius * 1.35f,
+                                color = Color.Yellow.copy(alpha = 0.45f),
+                                radius = tokenRadius * 1.3f,
                                 center = center
                             )
                         }
@@ -392,16 +296,10 @@ fun LudoBoard(
                         if (isSelected) {
                             drawCircle(
                                 color = Color.White,
-                                radius = tokenRadius * 1.2f,
+                                radius = tokenRadius * 1.15f,
                                 center = center
                             )
                         }
-
-                        drawCircle(
-                            color = Color.Black.copy(alpha = 0.3f),
-                            radius = tokenRadius,
-                            center = Offset(center.x + 2f, center.y + 2f)
-                        )
 
                         val sweep = 360f / orderedGroups.size
                         var startAngle = -90f
@@ -425,16 +323,6 @@ fun LudoBoard(
                             style = Stroke(width = 2f)
                         )
 
-                        drawCircle(
-                            color = white.copy(alpha = 0.25f),
-                            radius = tokenRadius * 0.95f,
-                            center = Offset(
-                                center.x - tokenRadius * 0.08f,
-                                center.y - tokenRadius * 0.08f
-                            ),
-                            style = Stroke(width = 1.5f)
-                        )
-
                         val badgeDistance = tokenRadius * 0.62f
                         val badgeRadius = tokenRadius * 0.24f
                         startAngle = -90f + sweep / 2f
@@ -444,8 +332,8 @@ fun LudoBoard(
                             if (count > 1) {
                                 val angleRad = Math.toRadians(startAngle.toDouble())
                                 val badgeCenter = Offset(
-                                    x = center.x + (badgeDistance * cos(angleRad)).toFloat(),
-                                    y = center.y + (badgeDistance * sin(angleRad)).toFloat()
+                                    x = center.x + badgeDistance * kotlin.math.cos(angleRad).toFloat(),
+                                    y = center.y + badgeDistance * kotlin.math.sin(angleRad).toFloat()
                                 )
 
                                 drawCircle(
@@ -459,43 +347,10 @@ fun LudoBoard(
                                     center = badgeCenter,
                                     style = Stroke(width = 1.5f)
                                 )
-
-                                val badgeText = count.toString()
-                                val measured = textMeasurer.measure(
-                                    text = AnnotatedString(badgeText),
-                                    style = TextStyle(
-                                        fontSize = (squareSize * 0.18f).sp,
-                                        color = black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-
-                                drawText(
-                                    textMeasurer = textMeasurer,
-                                    text = badgeText,
-                                    topLeft = Offset(
-                                        badgeCenter.x - measured.size.width / 2f,
-                                        badgeCenter.y - measured.size.height / 2f
-                                    ),
-                                    style = TextStyle(
-                                        fontSize = (squareSize * 0.18f).sp,
-                                        color = black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
                             }
                             startAngle += sweep
                         }
                     }
-
-                    drawEmoji("🕊️", squareSize * 7.5f, squareSize * 7.5f, (squareSize * centerArtScale).sp)
-                    drawEmoji("🦚", squareSize * 3f, squareSize * 3f, (squareSize * artScale).sp)
-                    drawEmoji("🦜", squareSize * 12f, squareSize * 3f, (squareSize * artScale).sp)
-                    drawEmoji("🐥", squareSize * 3f, squareSize * 12f, (squareSize * artScale).sp)
-                    drawEmoji("🐦", squareSize * 12f, squareSize * 12f, (squareSize * artScale).sp)
-
-                    val allTokens = boardState.players.flatMap { it.tokens }
-                    val groupedTokens = allTokens.groupBy { displayedPosition(it) }
 
                     groupedTokens.forEach { (position, tokensAtPosition) ->
                         val shouldUseStackedSafeZoneView =
@@ -506,7 +361,7 @@ fun LudoBoard(
                         if (!shouldUseStackedSafeZoneView) {
                             tokensAtPosition.forEach { token ->
                                 val drawnToken = token.copy(position = displayedPosition(token))
-                                val tokenCoords = getTokenCoordinates(drawnToken, squareSize)
+                                val tokenCoords = getTokenCoordinates(drawnToken, square)
                                 val isSelected =
                                     selectedToken?.id == token.id &&
                                         selectedToken?.color == token.color
@@ -531,11 +386,11 @@ fun LudoBoard(
                             val drawnFirst = tokensAtPosition.first().copy(
                                 position = displayedPosition(tokensAtPosition.first())
                             )
-                            val center = getTokenCoordinates(drawnFirst, squareSize)
+                            val center = getTokenCoordinates(drawnFirst, square)
 
                             drawStackedToken(
                                 center = center,
-                                squareSize = squareSize,
+                                squareSize = square,
                                 tokens = tokensAtPosition,
                                 isMovable = tokensAtPosition.any { token ->
                                     movableTokens.any {
@@ -578,26 +433,23 @@ fun LudoBoard(
                     Offset(squareSizePx * 7.5f, squareSizePx * 7.5f)
                 }
 
-
-
                 Box(
-    modifier = Modifier
-        .offset(
-            x = with(density) { centerOffset.x.toDp() - 36.dp },
-            y = with(density) { centerOffset.y.toDp() - 16.dp }
-        )
-        .size(width = 72.dp, height = 32.dp)
-) {
-    CenterDiceRoller(
-        die1Value = die1Display,
-        die2Value = die2Display,
-        animationState = centerDiceState,
-        isRolling = isRolling,
-        onClick = onCenterDiceClick,
-        modifier = Modifier.fillMaxSize()
-    )
-}
-     
+                    modifier = Modifier
+                        .offset(
+                            x = with(density) { centerOffset.x.toDp() - 36.dp },
+                            y = with(density) { centerOffset.y.toDp() - 16.dp }
+                        )
+                        .size(width = 72.dp, height = 32.dp)
+                ) {
+                    CenterDiceRoller(
+                        die1Value = die1Display,
+                        die2Value = die2Display,
+                        animationState = centerDiceState,
+                        isRolling = isRolling,
+                        onClick = onCenterDiceClick,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
