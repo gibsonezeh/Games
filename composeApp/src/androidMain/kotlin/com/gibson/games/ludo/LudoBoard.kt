@@ -97,25 +97,30 @@ fun LudoBoard(
                         )
                     }
 
-                    fun drawHomeSlots(startX: Float, startY: Float, color: Color) {
-                        val spacing = square * 2f
-                        for (i in 0..1) {
-                            for (j in 0..1) {
-                                val cx = startX + square * 1.5f + i * spacing
-                                val cy = startY + square * 1.5f + j * spacing
-                                drawCircle(
-                                    color = color.copy(alpha = 0.22f),
-                                    radius = square * 0.55f,
-                                    center = Offset(cx, cy)
-                                )
-                                drawCircle(
-                                    color = color.copy(alpha = 0.75f),
-                                    radius = square * 0.34f,
-                                    center = Offset(cx, cy),
-                                    style = Stroke(width = square * 0.05f)
-                                )
-                            }
-                        }
+                    fun drawHomeSlots(color: PlayerColor, slotColor: Color) {
+    for (id in 1..4) {
+        val center = getTokenCoordinates(
+            token = Token(
+                id = id,
+                color = color,
+                position = -1
+            ),
+            squareSize = square
+        )
+
+        drawCircle(
+            color = slotColor.copy(alpha = 0.18f),
+            radius = square * 0.52f,
+            center = center
+        )
+
+        drawCircle(
+            color = slotColor.copy(alpha = 0.55f),
+            radius = square * 0.34f,
+            center = center,
+            style = Stroke(width = square * 0.05f)
+        )
+    }
                     }
 
                     // Main neutral path
@@ -186,10 +191,10 @@ fun LudoBoard(
                     )
 
                     // Home circles
-                    drawHomeSlots(0f, 0f, green)
-                    drawHomeSlots(square * 9, 0f, red)
-                    drawHomeSlots(0f, square * 9, yellow)
-                    drawHomeSlots(square * 9, square * 9, blue)
+                    drawHomeSlots(PlayerColor.GREEN, green)
+                    drawHomeSlots(PlayerColor.RED, red)
+                    drawHomeSlots(PlayerColor.YELLOW, yellow)
+                    drawHomeSlots(PlayerColor.BLUE, blue)
 
                     // Center plate
                     drawRoundRect(
