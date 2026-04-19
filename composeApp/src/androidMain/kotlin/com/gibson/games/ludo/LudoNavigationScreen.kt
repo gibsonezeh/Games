@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 
 private enum class LudoScreen {
     MODE_MENU,
+    SETUP,
     GAME,
     SETTINGS
 }
@@ -19,6 +20,15 @@ fun LudoNavigationScreen(
     var currentScreen by remember { mutableStateOf(LudoScreen.MODE_MENU) }
     var gameRules by remember { mutableStateOf(GameRules()) }
     var selectedMode by remember { mutableStateOf(LudoMode.QUICK_PLAY) }
+    var setupConfig by remember {
+        mutableStateOf(
+            LudoSetupConfig(
+                mode = LudoMode.QUICK_PLAY,
+                playerCount = 1,
+                playerNames = listOf("Player 1")
+            )
+        )
+    }
 
     when (currentScreen) {
         LudoScreen.MODE_MENU -> {
@@ -29,12 +39,24 @@ fun LudoNavigationScreen(
                     currentScreen = when (mode) {
                         LudoMode.QUICK_PLAY,
                         LudoMode.PLAY_VS_AI,
-                        LudoMode.PASS_AND_PLAY -> LudoScreen.GAME
-
+                        LudoMode.PASS_AND_PLAY,
                         LudoMode.BLUETOOTH,
                         LudoMode.WIFI,
-                        LudoMode.ONLINE -> LudoScreen.SETTINGS
+                        LudoMode.ONLINE -> LudoScreen.SETUP
                     }
+                }
+            )
+        }
+
+        LudoScreen.SETUP -> {
+            LudoSetupScreen(
+                mode = selectedMode,
+                onBackClicked = {
+                    currentScreen = LudoScreen.MODE_MENU
+                },
+                onStartGame = { config ->
+                    setupConfig = config
+                    currentScreen = LudoScreen.GAME
                 }
             )
         }
