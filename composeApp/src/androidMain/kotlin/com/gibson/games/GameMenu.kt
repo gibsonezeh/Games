@@ -1,79 +1,76 @@
 package com.gibson.games
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.gibson.games.Game
+import androidx.compose.ui.unit.sp
+
 @Composable
 fun GameMenu(
     onGameSelected: (Game) -> Unit
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F172A),
-                        Color(0xFF1E293B),
-                        Color(0xFF334155)
-                    )
-                )
-            )
-            .padding(24.dp)
+            .background(Color(0xFFF6F4FA))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .widthIn(max = 420.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "Games to PLAY ▶️",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Choose a game and start playing",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            fontSize = 14.sp,
+            color = Color(0xFF6B7280)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(
-                text = "Kadwise Games",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Choose a game to play",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.80f)
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Game.entries.forEach { game ->
+            items(Game.entries.toList()) { game ->
                 GameMenuCard(
                     game = game,
                     onClick = { onGameSelected(game) }
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -85,47 +82,74 @@ private fun GameMenuCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.82f)
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.10f)
+            containerColor = Color.White
         ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
+                .fillMaxSize()
+                .padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .background(
+                        color = game.accentColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(20.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = when (game) {
+                        Game.LUDO -> "🎲"
+                        Game.ZUMA -> "🟢"
+                    },
+                    fontSize = 32.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Text(
                 text = game.displayName,
-                style = MaterialTheme.typography.headlineSmall,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = game.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.78f)
+                fontSize = 12.sp,
+                color = Color(0xFF6B7280),
+                maxLines = 3
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = onClick,
-                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = game.accentColor
-                )
+                ),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Play",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
