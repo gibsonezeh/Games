@@ -47,7 +47,12 @@ private data class MoveOption(
 fun LudoGameScreen(
     onExit: () -> Unit,
     gameRules: GameRules = GameRules()
+    setupConfig: LudoSetupConfig // ✅ ADD THIS
 ) {
+    val playerCount = setupConfig.playerCount
+    val playerNames = setupConfig.playerNames
+    val mode = setupConfig.mode
+    
     var showExitDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
