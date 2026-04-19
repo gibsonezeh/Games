@@ -46,7 +46,7 @@ private data class MoveOption(
 @Composable
 fun LudoGameScreen(
     onExit: () -> Unit,
-    gameRules: GameRules = GameRules()
+    gameRules: GameRules = GameRules(),
     setupConfig: LudoSetupConfig // ✅ ADD THIS
 ) {
     val playerCount = setupConfig.playerCount
