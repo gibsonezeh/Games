@@ -66,7 +66,8 @@ fun LudoNavigationScreen(
                 onExit = {
                     currentScreen = LudoScreen.MODE_MENU
                 },
-                gameRules = gameRules
+                gameRules = gameRules,
+                setupConfig = setupConfig
             )
         }
 
