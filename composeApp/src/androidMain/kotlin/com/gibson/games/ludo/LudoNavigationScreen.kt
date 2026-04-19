@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 private enum class LudoScreen {
-    MAIN_MENU,
+    MODE_MENU,
     GAME,
     SETTINGS
 }
@@ -16,18 +16,25 @@ private enum class LudoScreen {
 fun LudoNavigationScreen(
     onExit: () -> Unit
 ) {
-    var currentScreen by remember { mutableStateOf(LudoScreen.MAIN_MENU) }
+    var currentScreen by remember { mutableStateOf(LudoScreen.MODE_MENU) }
     var gameRules by remember { mutableStateOf(GameRules()) }
+    var selectedMode by remember { mutableStateOf(LudoMode.QUICK_PLAY) }
 
     when (currentScreen) {
-        LudoScreen.MAIN_MENU -> {
-            LudoMainMenuScreen(
-                onPlayClicked = {
-                    currentScreen = LudoScreen.GAME
-                },
-                onExitClicked = onExit,
-                onSettingsClicked = {
-                    currentScreen = LudoScreen.SETTINGS
+        LudoScreen.MODE_MENU -> {
+            LudoModeScreen(
+                onBackClicked = onExit,
+                onModeSelected = { mode ->
+                    selectedMode = mode
+                    currentScreen = when (mode) {
+                        LudoMode.QUICK_PLAY,
+                        LudoMode.PLAY_VS_AI,
+                        LudoMode.PASS_AND_PLAY -> LudoScreen.GAME
+
+                        LudoMode.BLUETOOTH,
+                        LudoMode.WIFI,
+                        LudoMode.ONLINE -> LudoScreen.SETTINGS
+                    }
                 }
             )
         }
@@ -35,7 +42,7 @@ fun LudoNavigationScreen(
         LudoScreen.GAME -> {
             LudoGameScreen(
                 onExit = {
-                    currentScreen = LudoScreen.MAIN_MENU
+                    currentScreen = LudoScreen.MODE_MENU
                 },
                 gameRules = gameRules
             )
@@ -44,7 +51,7 @@ fun LudoNavigationScreen(
         LudoScreen.SETTINGS -> {
             LudoSettingsScreen(
                 onBackClicked = {
-                    currentScreen = LudoScreen.MAIN_MENU
+                    currentScreen = LudoScreen.MODE_MENU
                 },
                 gameRules = gameRules,
                 onRulesChanged = { updatedRules ->
