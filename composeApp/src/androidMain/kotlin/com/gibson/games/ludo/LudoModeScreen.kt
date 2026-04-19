@@ -3,6 +3,7 @@ package com.gibson.games.ludo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,140 +41,182 @@ fun LudoModeScreen(
     onBackClicked: () -> Unit,
     onModeSelected: (LudoMode) -> Unit
 ) {
-    val soloModes = listOf(
-        Triple(LudoMode.QUICK_PLAY, "Quick Play", "1 Player"),
-        Triple(LudoMode.PLAY_VS_AI, "Play vs AI", "2 Players")
+    val modes = listOf(
+        LudoModeUi(
+            mode = LudoMode.QUICK_PLAY,
+            title = "Quick Play",
+            subtitle = "1 Player",
+            color = Color(0xFF3B82F6)
+        ),
+        LudoModeUi(
+            mode = LudoMode.PLAY_VS_AI,
+            title = "Play vs AI",
+            subtitle = "2 Players",
+            color = Color(0xFFEF4444)
+        ),
+        LudoModeUi(
+            mode = LudoMode.PASS_AND_PLAY,
+            title = "Pass & Play",
+            subtitle = "2–4 Players",
+            color = Color(0xFFA855F7)
+        ),
+        LudoModeUi(
+            mode = LudoMode.BLUETOOTH,
+            title = "Bluetooth",
+            subtitle = "Nearby multiplayer",
+            color = Color(0xFF06B6D4)
+        ),
+        LudoModeUi(
+            mode = LudoMode.WIFI,
+            title = "Wi-Fi",
+            subtitle = "Same network play",
+            color = Color(0xFF10B981)
+        ),
+        LudoModeUi(
+            mode = LudoMode.ONLINE,
+            title = "Online",
+            subtitle = "Play from anywhere",
+            color = Color(0xFFF59E0B)
+        )
     )
 
-    val multiplayerModes = listOf(
-        Triple(LudoMode.PASS_AND_PLAY, "Pass & Play", "2–4 Players"),
-        Triple(LudoMode.BLUETOOTH, "Bluetooth", "2–4 Players"),
-        Triple(LudoMode.WIFI, "Wi-Fi", "2–4 Players"),
-        Triple(LudoMode.ONLINE, "Online", "2–4 Players")
-    )
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF6F4FA))
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0B4FAF),
+                        Color(0xFF1D4ED8),
+                        Color(0xFF2563EB)
+                    )
+                )
+            )
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "Ludo Modes",
-            modifier = Modifier.padding(horizontal = 16.dp),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Choose how you want to play",
-            modifier = Modifier.padding(horizontal = 16.dp),
-            fontSize = 14.sp,
-            color = Color(0xFF6B7280)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         LazyColumn(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                SectionTitle("Solo")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.12f)
+                    ),
+                    shape = RoundedCornerShape(28.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🎲",
+                            fontSize = 40.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "Ludo",
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Choose how to play",
+                            color = Color.White.copy(alpha = 0.88f),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
 
-            items(soloModes.size) { index ->
-                val mode = soloModes[index]
-                ModeCard(
-                    title = mode.second,
-                    subtitle = mode.third,
-                    onClick = { onModeSelected(mode.first) }
+            items(modes.size) { index ->
+                val item = modes[index]
+                ModeActionCard(
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    color = item.color,
+                    onClick = { onModeSelected(item.mode) }
                 )
             }
 
             item {
                 Spacer(modifier = Modifier.height(6.dp))
-                SectionTitle("Multiplayer")
-            }
 
-            items(multiplayerModes.size) { index ->
-                val mode = multiplayerModes[index]
-                ModeCard(
-                    title = mode.second,
-                    subtitle = mode.third,
-                    onClick = { onModeSelected(mode.first) }
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
                 Button(
                     onClick = onBackClicked,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6B7280)
+                        containerColor = Color.White.copy(alpha = 0.18f)
                     )
                 ) {
                     Text(
                         text = "Back",
                         color = Color.White,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
 }
 
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color.Black
-    )
-}
+private data class LudoModeUi(
+    val mode: LudoMode,
+    val title: String,
+    val subtitle: String,
+    val color: Color
+)
 
 @Composable
-private fun ModeCard(
+private fun ModeActionCard(
     title: String,
     subtitle: String,
+    color: Color,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = color
         ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 18.dp, vertical = 18.dp)
         ) {
             Text(
                 text = title,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = subtitle,
+                color = Color.White.copy(alpha = 0.92f),
                 fontSize = 13.sp,
-                color = Color(0xFF6B7280)
+                fontWeight = FontWeight.Medium
             )
         }
     }
