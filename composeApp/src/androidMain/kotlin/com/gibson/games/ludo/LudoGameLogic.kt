@@ -6,13 +6,13 @@ enum class PlayerColor {
     GREEN, RED, YELLOW, BLUE
 }
 
-enum class CapturePenalty{
+enum class CapturePenalty {
     NONE,
     RETURN_TO_BASE,
     MOVE_BACK_5
 }
 
-enum class CaptureReward{
+enum class CaptureReward {
     NONE,
     GO_HOME,
     EXTRA_TURN
@@ -28,6 +28,11 @@ data class MoveChoice(
     val source: MoveSource
 )
 
+data class AIDecision(
+    val choice: MoveChoice,
+    val token: Token
+)
+
 data class Token(
     val id: Int,
     val color: PlayerColor,
@@ -37,6 +42,7 @@ data class Token(
 data class Player(
     val color: PlayerColor,
     val tokens: List<Token>,
+    val isAI: Boolean = false,
     val hasRolled: Boolean = false,
     val diceRolls: List<Int> = emptyList()
 )
@@ -73,20 +79,49 @@ data class GameRules(
     val capturePenalty: CapturePenalty = CapturePenalty.RETURN_TO_BASE,
     val captureSendsToHome: Boolean = false,
     val startingPointIsSafeZoneForColor: Boolean = true,
-    val startingPointIsSafeZoneForAll: Boolean = false,
+    val startingPointIsSafeZoneForAll: Boolean = false
 )
 
-fun initializeGameState(rules: GameRules = GameRules()): BoardState {
-    val players = PlayerColor.entries.map { color ->
+private fun getActiveColors(playerCount: Int): List<PlayerColor> {
+    return when (playerCount) {
+        1 -> listOf(PlayerColor.GREEN)
+        2 -> listOf(PlayerColor.GREEN, PlayerColor.RED)
+        3 -> listOf(PlayerColor.GREEN, PlayerColor.RED, PlayerColor.BLUE)
+        else -> listOf(
+            PlayerColor.GREEN,
+            PlayerColor.RED,
+            PlayerColor.BLUE,
+            PlayerColor.YELLOW
+        )
+    }
+}
+
+fun initializeGameState(
+    rules: GameRules = GameRules(),
+    setupConfig: LudoSetupConfig? = null
+): BoardState {
+    val activeColors = getActiveColors(setupConfig?.playerCount ?: 4)
+
+    val players = activeColors.mapIndexed { index, color ->
         val tokens = (1..4).map { id ->
             Token(id = id, color = color, position = -1)
         }
-        Player(color = color, tokens = tokens)
+
+        val isAIPlayer = when (setupConfig?.mode) {
+            LudoMode.PLAY_VS_AI -> index == 1
+            else -> false
+        }
+
+        Player(
+            color = color,
+            tokens = tokens,
+            isAI = isAIPlayer
+        )
     }
 
     return BoardState(
         players = players,
-        currentPlayer = PlayerColor.GREEN,
+        currentPlayer = activeColors.first(),
         gamePhase = GamePhase.ROLLING
     )
 }
@@ -106,6 +141,19 @@ fun getStartingPosition(color: PlayerColor): Int {
         PlayerColor.BLUE -> 26
         PlayerColor.YELLOW -> 39
     }
+}
+
+fun getNextPlayer(
+    currentPlayer: PlayerColor,
+    players: List<Player>
+): PlayerColor {
+    if (players.isEmpty()) return currentPlayer
+
+    val currentIndex = players.indexOfFirst { it.color == currentPlayer }
+    if (currentIndex == -1) return players.first().color
+
+    val nextIndex = (currentIndex + 1) % players.size
+    return players[nextIndex].color
 }
 
 fun getNextPlayer(currentPlayer: PlayerColor): PlayerColor {
@@ -132,8 +180,6 @@ private fun getRelativeProgress(token: Token): Int {
         in 0..51 -> {
             val start = getStartingPosition(token.color)
             val raw = (pos - start + 52) % 52
-
-            // Skip the extra outer tile before entering the colored home lane
             if (raw == 51) 50 else raw
         }
         else -> -1
@@ -148,6 +194,23 @@ private fun getPositionFromProgress(color: PlayerColor, progress: Int): Int {
         progress >= 56 -> 200
         else -> -1
     }
+}
+
+private fun predictLandingPosition(
+    token: Token,
+    steps: Int,
+    rules: GameRules,
+    moveSource: MoveSource = MoveSource.DIE
+): Int? {
+    if (!isValidMove(token, steps, rules, moveSource)) return null
+
+    val currentProgress = getRelativeProgress(token)
+    val newProgress = when (currentProgress) {
+        -1 -> 0
+        else -> currentProgress + steps
+    }
+
+    return getPositionFromProgress(token.color, newProgress)
 }
 
 fun isSafeZone(position: Int, color: PlayerColor, rules: GameRules): Boolean {
@@ -293,10 +356,12 @@ fun moveToken(
                                     enemyToken.copy(position = movedBackPosition)
                                 }
 
-                                else -> {}
+                                CapturePenalty.NONE -> {
+                                    enemyToken
+                                }
                             }
                         }
-                    } as List<Token>
+                    }
                 )
             }
         }
@@ -378,7 +443,7 @@ fun handleTurn(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): Bo
     return if (!hasMove) {
         boardState.copy(
             players = updatedPlayers,
-            currentPlayer = getNextPlayer(boardState.currentPlayer),
+            currentPlayer = getNextPlayer(boardState.currentPlayer, updatedPlayers),
             diceRoll = null,
             gamePhase = GamePhase.ROLLING,
             availableMoves = emptyList()
@@ -419,18 +484,104 @@ fun selectBestToken(
     return movableTokens.maxByOrNull { getRelativeProgress(it) }
 }
 
-fun performAutomaticMove(boardState: BoardState, rules: GameRules, diceRoll: DiceRoll): BoardState {
-    val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
-    val choices = getRollMoveChoices(diceRoll)
+private fun scoreAIMove(
+    token: Token,
+    landingPosition: Int,
+    boardState: BoardState,
+    rules: GameRules,
+    choice: MoveChoice
+): Int {
+    var score = 0
 
-    for (choice in choices.sortedByDescending { it.value }) {
-        val selectedToken = selectBestToken(currentPlayer, choice.value, rules, choice.source)
-        if (selectedToken != null) {
-            return moveToken(boardState, selectedToken, choice.value, rules, choice.source)
+    if (token.position == -1) {
+        score += 60
+    }
+
+    if (landingPosition == 200) {
+        score += 120
+    }
+
+    if (landingPosition in 100..104) {
+        score += 50 + (landingPosition - 100) * 5
+    }
+
+    if (canCaptureAt(landingPosition, token.color, rules, boardState)) {
+        score += 90
+    }
+
+    if (isSafeZone(landingPosition, token.color, rules)) {
+        score += 25
+    }
+
+    score += when (choice.source) {
+        MoveSource.TOTAL -> 8
+        MoveSource.DIE -> 4
+    }
+
+    score += choice.value
+    score += getRelativeProgress(token).coerceAtLeast(0)
+
+    return score
+}
+
+fun chooseBestAIMove(
+    player: Player,
+    boardState: BoardState,
+    rules: GameRules,
+    choices: List<MoveChoice>
+): AIDecision? {
+    var bestDecision: AIDecision? = null
+    var bestScore = Int.MIN_VALUE
+
+    for (choice in choices) {
+        val movableTokens = getMovableTokens(player, choice.value, rules, choice.source)
+
+        for (token in movableTokens) {
+            val landingPosition = predictLandingPosition(token, choice.value, rules, choice.source)
+                ?: continue
+
+            val score = scoreAIMove(
+                token = token,
+                landingPosition = landingPosition,
+                boardState = boardState,
+                rules = rules,
+                choice = choice
+            )
+
+            if (score > bestScore) {
+                bestScore = score
+                bestDecision = AIDecision(choice = choice, token = token)
+            }
         }
     }
 
-    return boardState
+    return bestDecision
+}
+
+fun performAutomaticMove(
+    boardState: BoardState,
+    rules: GameRules,
+    diceRoll: DiceRoll
+): BoardState {
+    val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
+    val decision = chooseBestAIMove(
+        player = currentPlayer,
+        boardState = boardState.copy(diceRoll = diceRoll),
+        rules = rules,
+        choices = getRollMoveChoices(diceRoll)
+    )
+
+    return if (decision != null) {
+        moveToken(
+            boardState = boardState,
+            token = decision.token,
+            steps = decision.choice.value,
+            rules = rules,
+            moveSource = decision.choice.source
+        )
+    } else {
+        boardState
+    }
 }
 
 fun checkForWinner(boardState: BoardState): PlayerColor? {
