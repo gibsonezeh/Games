@@ -47,22 +47,21 @@ private data class MoveOption(
 fun LudoGameScreen(
     onExit: () -> Unit,
     gameRules: GameRules = GameRules(),
-    setupConfig: LudoSetupConfig // ✅ ADD THIS
+    setupConfig: LudoSetupConfig
 ) {
-    val playerCount = setupConfig.playerCount
-    val playerNames = setupConfig.playerNames
-    val mode = setupConfig.mode
-    
     var showExitDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    var boardState by remember(gameRules) { mutableStateOf(initializeGameState(gameRules)) }
+    var boardState by remember(gameRules, setupConfig) {
+        mutableStateOf(initializeGameState(gameRules, setupConfig))
+    }
     var isRolling by remember { mutableStateOf(false) }
     var isAnimatingMove by remember { mutableStateOf(false) }
     var selectedToken by remember { mutableStateOf<Token?>(null) }
     var movableTokens by remember { mutableStateOf<List<Token>>(emptyList()) }
     var gameMessage by remember { mutableStateOf("Roll the dice") }
+    var aiBusy by remember { mutableStateOf(false) }
 
     var selectedMoveOption by remember { mutableStateOf<MoveOption?>(null) }
     var remainingDiceValues by remember { mutableStateOf<List<Int>>(emptyList()) }
@@ -81,6 +80,28 @@ fun LudoGameScreen(
 
     fun displayedPosition(token: Token): Int {
         return animatedTokenPositions[tokenKey(token)] ?: token.position
+    }
+
+    fun currentPlayerState(): Player {
+        return boardState.players.first { it.color == boardState.currentPlayer }
+    }
+
+    fun currentPlayerName(): String {
+        val index = boardState.players.indexOfFirst { it.color == boardState.currentPlayer }
+        return setupConfig.playerNames.getOrNull(index) ?: boardState.currentPlayer.name
+    }
+
+    fun currentPlayerIsAI(): Boolean = currentPlayerState().isAI
+
+    fun optionToChoice(option: MoveOption): MoveChoice {
+        return MoveChoice(
+            value = option.value,
+            source = if (option.kind == MoveOptionKind.TOTAL) {
+                MoveSource.TOTAL
+            } else {
+                MoveSource.DIE
+            }
+        )
     }
 
     fun buildMoveOptions(): List<MoveOption> {
@@ -118,9 +139,13 @@ fun LudoGameScreen(
         totalAvailable = false
         initializedRoll = null
         animatedTokenPositions = emptyMap()
-        gameMessage = "Rolling..."
-        SoundManager.playRoll()
+        gameMessage = if (currentPlayerIsAI()) {
+            "${currentPlayerName()} is rolling..."
+        } else {
+            "Rolling..."
+        }
 
+        SoundManager.playRoll()
         centerDiceState = CenterDiceAnimState.SPLIT
 
         val finalRoll = rollTwoDice()
@@ -147,8 +172,178 @@ fun LudoGameScreen(
             boardState.diceRoll == null &&
             boardState.winner == null
         ) {
-            gameMessage = "No valid move. Next player: ${boardState.currentPlayer.name}"
+            gameMessage = "No valid move. Next player: ${currentPlayerName()}"
         }
+    }
+
+    suspend fun executeMove(
+        token: Token,
+        moveOption: MoveOption
+    ) {
+        if (isAnimatingMove) return
+
+        selectedMoveOption = moveOption
+        selectedToken = token
+
+        val beforeMove = boardState
+        val moveSource =
+            if (moveOption.kind == MoveOptionKind.TOTAL) {
+                MoveSource.TOTAL
+            } else {
+                MoveSource.DIE
+            }
+
+        isAnimatingMove = true
+
+        val path = buildMovementPath(token, moveOption.value)
+
+        for (stepPosition in path) {
+            animatedTokenPositions =
+                animatedTokenPositions.toMutableMap().apply {
+                    this[tokenKey(token)] = stepPosition
+                }
+            SoundManager.playMove()
+            delay(160)
+        }
+
+        val movedState = moveToken(
+            beforeMove,
+            token,
+            moveOption.value,
+            gameRules,
+            moveSource
+        )
+
+        animatedTokenPositions =
+            animatedTokenPositions.toMutableMap().apply {
+                remove(tokenKey(token))
+            }
+
+        val didCapture = didCaptureEnemy(
+            beforeMove,
+            movedState,
+            beforeMove.currentPlayer
+        )
+
+        if (didCapture) {
+            SoundManager.playCapture()
+        }
+
+        if (movedState.winner != null) {
+            SoundManager.playWin()
+            boardState = movedState.copy(
+                gamePhase = GamePhase.GAME_OVER
+            )
+            gameMessage = "${movedState.winner.name} wins!"
+            selectedMoveOption = null
+            movableTokens = emptyList()
+            remainingDiceValues = emptyList()
+            totalAvailable = false
+            selectedToken = null
+            isAnimatingMove = false
+            return
+        }
+
+        val newRemainingDiceValues =
+            if (moveOption.kind == MoveOptionKind.TOTAL) {
+                emptyList()
+            } else {
+                val temp = remainingDiceValues.toMutableList()
+                val index = temp.indexOf(moveOption.value)
+                if (index != -1) temp.removeAt(index)
+                temp.toList()
+            }
+
+        val gotCaptureExtraTurn =
+            didCapture &&
+                gameRules.captureReward == CaptureReward.EXTRA_TURN
+
+        val originalRoll = beforeMove.diceRoll
+        val gotDoubleSixExtraTurn =
+            originalRoll != null &&
+                shouldGrantExtraTurnAfterRoll(
+                    originalRoll,
+                    gameRules
+                )
+
+        val currentPlayerAfterMove =
+            movedState.players.first {
+                it.color == beforeMove.currentPlayer
+            }
+
+        val anyRemainingPlayable =
+            newRemainingDiceValues.any { remainingValue ->
+                getMovableTokens(
+                    currentPlayerAfterMove,
+                    remainingValue,
+                    gameRules,
+                    MoveSource.DIE
+                ).isNotEmpty()
+            }
+
+        remainingDiceValues = newRemainingDiceValues
+        totalAvailable = false
+
+        boardState = when {
+            newRemainingDiceValues.isNotEmpty() &&
+                anyRemainingPlayable -> {
+                movedState.copy(
+                    currentPlayer = beforeMove.currentPlayer,
+                    gamePhase = GamePhase.MOVING,
+                    diceRoll = beforeMove.diceRoll,
+                    availableMoves = newRemainingDiceValues
+                )
+            }
+
+            gotCaptureExtraTurn || gotDoubleSixExtraTurn -> {
+                movedState.copy(
+                    currentPlayer = beforeMove.currentPlayer,
+                    gamePhase = GamePhase.ROLLING,
+                    diceRoll = null,
+                    availableMoves = emptyList()
+                )
+            }
+
+            else -> {
+                movedState.copy(
+                    currentPlayer = getNextPlayer(beforeMove.currentPlayer, movedState.players),
+                    gamePhase = GamePhase.ROLLING,
+                    diceRoll = null,
+                    availableMoves = emptyList()
+                )
+            }
+        }
+
+        gameMessage = when {
+            newRemainingDiceValues.isNotEmpty() && anyRemainingPlayable -> {
+                if (currentPlayerIsAI()) {
+                    "${currentPlayerName()} will play the remaining die"
+                } else {
+                    "Play the remaining die"
+                }
+            }
+
+            gotCaptureExtraTurn -> {
+                "Capture! Roll again"
+            }
+
+            gotDoubleSixExtraTurn -> {
+                "Double six! Roll again"
+            }
+
+            else -> {
+                "Next player: ${currentPlayerName()}"
+            }
+        }
+
+        if (gotDoubleSixExtraTurn) {
+            SoundManager.playExtraTurn()
+        }
+
+        selectedToken = null
+        selectedMoveOption = null
+        movableTokens = emptyList()
+        isAnimatingMove = false
     }
 
     BackHandler {
@@ -185,8 +380,12 @@ fun LudoGameScreen(
             movableTokens = emptyList()
             selectedToken = null
             animatedTokenPositions = emptyMap()
-            if (!isRolling && !isAnimatingMove && boardState.winner == null) {
-                gameMessage = "Roll the dice"
+            if (!isRolling && !isAnimatingMove && boardState.winner == null && !aiBusy) {
+                gameMessage = if (currentPlayerIsAI()) {
+                    "${currentPlayerName()}'s turn"
+                } else {
+                    "Roll the dice"
+                }
             }
         }
     }
@@ -201,7 +400,11 @@ fun LudoGameScreen(
             val moveOption = selectedMoveOption
             if (moveOption == null) {
                 movableTokens = emptyList()
-                gameMessage = "Choose a dice value to use for movement"
+                gameMessage = if (currentPlayerIsAI()) {
+                    "${currentPlayerName()} is thinking..."
+                } else {
+                    "Choose a dice value to use for movement"
+                }
             } else {
                 val currentPlayer = boardState.players.first { it.color == boardState.currentPlayer }
                 val moveSource =
@@ -223,10 +426,75 @@ fun LudoGameScreen(
                     if (selectedMoveOption?.key == selectedKey) {
                         selectedMoveOption = null
                         movableTokens = emptyList()
-                        gameMessage = "Choose another dice value"
+                        gameMessage = if (currentPlayerIsAI()) {
+                            "${currentPlayerName()} is thinking..."
+                        } else {
+                            "Choose another dice value"
+                        }
                     }
                 } else {
-                    gameMessage = "Select a token to move with ${moveOption.value}"
+                    gameMessage = if (currentPlayerIsAI()) {
+                        "${currentPlayerName()} is choosing a move..."
+                    } else {
+                        "Select a token to move with ${moveOption.value}"
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(
+        boardState.currentPlayer,
+        boardState.gamePhase,
+        boardState.diceRoll,
+        remainingDiceValues,
+        totalAvailable,
+        isRolling,
+        isAnimatingMove,
+        aiBusy,
+        boardState.winner
+    ) {
+        if (boardState.winner != null) return@LaunchedEffect
+        val currentPlayer = currentPlayerState()
+
+        if (currentPlayer.isAI &&
+            boardState.gamePhase == GamePhase.ROLLING &&
+            !isRolling &&
+            !isAnimatingMove &&
+            !aiBusy
+        ) {
+            aiBusy = true
+            delay(700)
+            animateAndRollDice()
+            aiBusy = false
+        } else if (currentPlayer.isAI &&
+            boardState.gamePhase == GamePhase.MOVING &&
+            !isAnimatingMove &&
+            !aiBusy
+        ) {
+            val options = buildMoveOptions()
+            if (options.isNotEmpty()) {
+                val decision = chooseBestAIMove(
+                    player = currentPlayer,
+                    boardState = boardState,
+                    rules = gameRules,
+                    choices = options.map { optionToChoice(it) }
+                )
+
+                if (decision != null) {
+                    val option = options.firstOrNull {
+                        it.value == decision.choice.value &&
+                            ((it.kind == MoveOptionKind.TOTAL && decision.choice.source == MoveSource.TOTAL) ||
+                                (it.kind == MoveOptionKind.DIE && decision.choice.source == MoveSource.DIE))
+                    }
+
+                    if (option != null) {
+                        aiBusy = true
+                        selectedMoveOption = option
+                        delay(500)
+                        executeMove(decision.token, option)
+                        aiBusy = false
+                    }
                 }
             }
         }
@@ -249,166 +517,12 @@ fun LudoGameScreen(
                 displayedPosition = ::displayedPosition,
                 isAnimatingMove = isAnimatingMove,
                 onTokenClick = { token ->
+                    if (currentPlayerIsAI()) return@LudoBoard
                     val moveOption = selectedMoveOption ?: return@LudoBoard
                     if (isAnimatingMove) return@LudoBoard
 
-                    selectedToken = token
-                    val beforeMove = boardState
-                    val moveSource =
-                        if (moveOption.kind == MoveOptionKind.TOTAL) {
-                            MoveSource.TOTAL
-                        } else {
-                            MoveSource.DIE
-                        }
-
-                    isAnimatingMove = true
-
                     scope.launch {
-                        val path = buildMovementPath(token, moveOption.value)
-
-                        for (stepPosition in path) {
-                            animatedTokenPositions =
-                                animatedTokenPositions.toMutableMap().apply {
-                                    this[tokenKey(token)] = stepPosition
-                                }
-                            SoundManager.playMove()
-                            delay(160)
-                        }
-
-                        val movedState = moveToken(
-                            beforeMove,
-                            token,
-                            moveOption.value,
-                            gameRules,
-                            moveSource
-                        )
-
-                        animatedTokenPositions =
-                            animatedTokenPositions.toMutableMap().apply {
-                                remove(tokenKey(token))
-                            }
-
-                        val didCapture = didCaptureEnemy(
-                            beforeMove,
-                            movedState,
-                            beforeMove.currentPlayer
-                        )
-
-                        if (didCapture) {
-                            SoundManager.playCapture()
-                        }
-
-                        if (movedState.winner != null) {
-                            SoundManager.playWin()
-                            boardState = movedState.copy(
-                                gamePhase = GamePhase.GAME_OVER
-                            )
-                            gameMessage = "${movedState.winner.name} wins!"
-                            selectedMoveOption = null
-                            movableTokens = emptyList()
-                            remainingDiceValues = emptyList()
-                            totalAvailable = false
-                            selectedToken = null
-                            isAnimatingMove = false
-                            return@launch
-                        }
-
-                        val newRemainingDiceValues =
-                            if (moveOption.kind == MoveOptionKind.TOTAL) {
-                                emptyList()
-                            } else {
-                                val temp = remainingDiceValues.toMutableList()
-                                val index = temp.indexOf(moveOption.value)
-                                if (index != -1) temp.removeAt(index)
-                                temp.toList()
-                            }
-
-                        val gotCaptureExtraTurn =
-                            didCapture &&
-                                gameRules.captureReward == CaptureReward.EXTRA_TURN
-
-                        val originalRoll = beforeMove.diceRoll
-                        val gotDoubleSixExtraTurn =
-                            originalRoll != null &&
-                                shouldGrantExtraTurnAfterRoll(
-                                    originalRoll,
-                                    gameRules
-                                )
-
-                        val currentPlayerAfterMove =
-                            movedState.players.first {
-                                it.color == beforeMove.currentPlayer
-                            }
-
-                        val anyRemainingPlayable =
-                            newRemainingDiceValues.any { remainingValue ->
-                                getMovableTokens(
-                                    currentPlayerAfterMove,
-                                    remainingValue,
-                                    gameRules,
-                                    MoveSource.DIE
-                                ).isNotEmpty()
-                            }
-
-                        remainingDiceValues = newRemainingDiceValues
-                        totalAvailable = false
-
-                        boardState = when {
-                            newRemainingDiceValues.isNotEmpty() &&
-                                anyRemainingPlayable -> {
-                                movedState.copy(
-                                    currentPlayer = beforeMove.currentPlayer,
-                                    gamePhase = GamePhase.MOVING,
-                                    diceRoll = beforeMove.diceRoll,
-                                    availableMoves = newRemainingDiceValues
-                                )
-                            }
-
-                            gotCaptureExtraTurn || gotDoubleSixExtraTurn -> {
-                                movedState.copy(
-                                    currentPlayer = beforeMove.currentPlayer,
-                                    gamePhase = GamePhase.ROLLING,
-                                    diceRoll = null,
-                                    availableMoves = emptyList()
-                                )
-                            }
-
-                            else -> {
-                                movedState.copy(
-                                    currentPlayer = getNextPlayer(beforeMove.currentPlayer),
-                                    gamePhase = GamePhase.ROLLING,
-                                    diceRoll = null,
-                                    availableMoves = emptyList()
-                                )
-                            }
-                        }
-
-                        gameMessage = when {
-                            newRemainingDiceValues.isNotEmpty() && anyRemainingPlayable -> {
-                                "Play the remaining die"
-                            }
-
-                            gotCaptureExtraTurn -> {
-                                "Capture! Roll again"
-                            }
-
-                            gotDoubleSixExtraTurn -> {
-                                "Double six! Roll again"
-                            }
-
-                            else -> {
-                                "Next player: ${boardState.currentPlayer.name}"
-                            }
-                        }
-
-                        if (gotDoubleSixExtraTurn) {
-                            SoundManager.playExtraTurn()
-                        }
-
-                        selectedToken = null
-                        selectedMoveOption = null
-                        movableTokens = emptyList()
-                        isAnimatingMove = false
+                        executeMove(token, moveOption)
                     }
                 },
                 centerDiceState = centerDiceState,
@@ -416,6 +530,7 @@ fun LudoGameScreen(
                 die2Display = die2Display,
                 isRolling = isRolling,
                 onCenterDiceClick = {
+                    if (currentPlayerIsAI()) return@LudoBoard
                     if (!isRolling &&
                         !isAnimatingMove &&
                         boardState.gamePhase == GamePhase.ROLLING
@@ -500,7 +615,7 @@ fun LudoGameScreen(
                     confirmButton = {
                         Button(
                             onClick = {
-                                boardState = initializeGameState(gameRules)
+                                boardState = initializeGameState(gameRules, setupConfig)
                                 selectedToken = null
                                 movableTokens = emptyList()
                                 gameMessage = "New game started"
@@ -511,6 +626,7 @@ fun LudoGameScreen(
                                 animatedTokenPositions = emptyMap()
                                 isRolling = false
                                 isAnimatingMove = false
+                                aiBusy = false
                                 die1Display = 1
                                 die2Display = 1
                                 centerDiceState = CenterDiceAnimState.IDLE
@@ -561,7 +677,7 @@ fun LudoGameScreen(
                 }
 
                 Text(
-                    text = "Current Player: ${boardState.currentPlayer.name}",
+                    text = "Current Player: ${currentPlayerName()}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = when (boardState.currentPlayer) {
@@ -587,13 +703,15 @@ fun LudoGameScreen(
                                 isTotal = option.kind == MoveOptionKind.TOTAL,
                                 isSelected = selectedMoveOption?.key == option.key,
                                 onClick = {
-                                    if (boardState.gamePhase == GamePhase.MOVING &&
+                                    if (!currentPlayerIsAI() &&
+                                        boardState.gamePhase == GamePhase.MOVING &&
                                         !isAnimatingMove
                                     ) {
                                         selectedMoveOption = option
                                     }
                                 },
-                                isEnabled = boardState.gamePhase == GamePhase.MOVING &&
+                                isEnabled = !currentPlayerIsAI() &&
+                                    boardState.gamePhase == GamePhase.MOVING &&
                                     !isAnimatingMove
                             )
                         }
