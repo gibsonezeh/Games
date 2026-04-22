@@ -46,7 +46,7 @@ fun LudoSetupScreen(
     onStartGame: (LudoSetupConfig) -> Unit
 ) {
     val names = remember {
-        mutableStateListOf("Player 1", "Player 2", "Player 3", "Player 4")
+        mutableStateListOf("You", "Kadwise AI", "Player 3", "Player 4")
     }
 
     var playerCount by remember {
@@ -70,7 +70,7 @@ fun LudoSetupScreen(
 
     val subtitle = when (mode) {
         LudoMode.QUICK_PLAY -> "Start instantly or rename your player"
-        LudoMode.PLAY_VS_AI -> "Set your player name before the match"
+        LudoMode.PLAY_VS_AI -> "Set your player name and face Kadwise AI"
         LudoMode.PASS_AND_PLAY -> "Choose player count and names"
         LudoMode.BLUETOOTH -> "Prepare player info before connection"
         LudoMode.WIFI -> "Prepare player info before network play"
@@ -140,17 +140,23 @@ fun LudoSetupScreen(
             }
 
             items(playerCount) { index ->
+                val isAIField = mode == LudoMode.PLAY_VS_AI && index == 1
                 val label = when {
-                    mode == LudoMode.PLAY_VS_AI && index == 1 -> "AI Name"
+                    isAIField -> "AI Name"
                     else -> "Player ${index + 1} Name"
                 }
 
                 OutlinedTextField(
                     value = names[index],
-                    onValueChange = { names[index] = it },
+                    onValueChange = {
+                        if (!isAIField) {
+                            names[index] = it
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(label) },
                     singleLine = true,
+                    readOnly = isAIField,
                     shape = RoundedCornerShape(16.dp),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Words
@@ -168,8 +174,8 @@ fun LudoSetupScreen(
                             .mapIndexed { index, name ->
                                 val trimmed = name.trim()
                                 when {
+                                    mode == LudoMode.PLAY_VS_AI && index == 1 -> "Kadwise AI"
                                     trimmed.isNotEmpty() -> trimmed
-                                    mode == LudoMode.PLAY_VS_AI && index == 1 -> "AI"
                                     else -> "Player ${index + 1}"
                                 }
                             }
