@@ -6,6 +6,7 @@ object BluetoothSessionHolder {
     var socket: BluetoothSocket? = null
     var remoteDeviceName: String = "Bluetooth Player"
     var isHost: Boolean = false
+    var localPlayerColor: PlayerColor = PlayerColor.GREEN
 
     fun clear() {
         try {
@@ -15,5 +16,6 @@ object BluetoothSessionHolder {
         socket = null
         remoteDeviceName = "Bluetooth Player"
         isHost = false
+        localPlayerColor = PlayerColor.GREEN
     }
 }
