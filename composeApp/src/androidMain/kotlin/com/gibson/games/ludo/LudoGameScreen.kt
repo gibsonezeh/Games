@@ -60,7 +60,6 @@ fun LudoGameScreen(
     var selectedToken by remember { mutableStateOf<Token?>(null) }
     var movableTokens by remember { mutableStateOf<List<Token>>(emptyList()) }
     var gameMessage by remember { mutableStateOf("Roll the dice") }
-    var aiBusy by remember { mutableStateOf(false) }
 
     var selectedMoveOption by remember { mutableStateOf<MoveOption?>(null) }
     var remainingDiceValues by remember { mutableStateOf<List<Int>>(emptyList()) }
@@ -74,6 +73,9 @@ fun LudoGameScreen(
     var die1Display by remember { mutableStateOf(1) }
     var die2Display by remember { mutableStateOf(1) }
     var centerDiceState by remember { mutableStateOf(CenterDiceAnimState.IDLE) }
+
+    var aiRollingInProgress by remember { mutableStateOf(false) }
+    var aiMoveInProgress by remember { mutableStateOf(false) }
 
     fun tokenKey(token: Token): Pair<PlayerColor, Int> = token.color to token.id
 
@@ -128,11 +130,10 @@ fun LudoGameScreen(
     }
 
     fun buildImmediateMoveOptionsForAI(): List<MoveOption> {
-        val roll = boardState.diceRoll ?: return emptyList()
+        val existing = buildMoveOptions()
+        if (existing.isNotEmpty()) return existing
 
-        if (remainingDiceValues.isNotEmpty() || totalAvailable) {
-            return buildMoveOptions()
-        }
+        val roll = boardState.diceRoll ?: return emptyList()
 
         return listOf(
             MoveOption(
@@ -408,7 +409,9 @@ fun LudoGameScreen(
             movableTokens = emptyList()
             selectedToken = null
             animatedTokenPositions = emptyMap()
-            if (!isRolling && !isAnimatingMove && boardState.winner == null && !aiBusy) {
+            if (!isRolling && !isAnimatingMove && boardState.winner == null &&
+                !aiRollingInProgress && !aiMoveInProgress
+            ) {
                 gameMessage = if (currentPlayerIsAI()) {
                     "${currentPlayerName()}'s turn"
                 } else {
@@ -471,63 +474,62 @@ fun LudoGameScreen(
         }
     }
 
+    // AI: roll automatically on its rolling phase
+    LaunchedEffect(
+        boardState.currentPlayer,
+        boardState.gamePhase,
+        isRolling,
+        isAnimatingMove,
+        boardState.winner
+    ) {
+        if (boardState.winner != null) return@LaunchedEffect
+        if (!currentPlayerIsAI()) return@LaunchedEffect
+        if (boardState.gamePhase != GamePhase.ROLLING) return@LaunchedEffect
+        if (isRolling || isAnimatingMove || aiRollingInProgress) return@LaunchedEffect
+
+        aiRollingInProgress = true
+        delay(700)
+        animateAndRollDice()
+        aiRollingInProgress = false
+    }
+
+    // AI: choose and execute move automatically on its moving phase
     LaunchedEffect(
         boardState.currentPlayer,
         boardState.gamePhase,
         boardState.diceRoll,
         remainingDiceValues,
         totalAvailable,
-        isRolling,
         isAnimatingMove,
-        aiBusy,
         boardState.winner
     ) {
         if (boardState.winner != null) return@LaunchedEffect
+        if (!currentPlayerIsAI()) return@LaunchedEffect
+        if (boardState.gamePhase != GamePhase.MOVING) return@LaunchedEffect
+        if (isAnimatingMove || aiMoveInProgress) return@LaunchedEffect
+
         val currentPlayer = currentPlayerState()
+        val options = buildImmediateMoveOptionsForAI()
+        if (options.isEmpty()) return@LaunchedEffect
 
-        if (currentPlayer.isAI &&
-            boardState.gamePhase == GamePhase.ROLLING &&
-            !isRolling &&
-            !isAnimatingMove &&
-            !aiBusy
-        ) {
-            aiBusy = true
-            delay(700)
-            animateAndRollDice()
-            aiBusy = false
-        } else if (currentPlayer.isAI &&
-            boardState.gamePhase == GamePhase.MOVING &&
-            !isAnimatingMove &&
-            !aiBusy
-        ) {
-            val options = buildImmediateMoveOptionsForAI()
-            if (options.isNotEmpty()) {
-                val decision = chooseBestAIMove(
-                    player = currentPlayer,
-                    boardState = boardState,
-                    rules = gameRules,
-                    choices = options.map { optionToChoice(it) }
-                )
+        val decision = chooseBestAIMove(
+            player = currentPlayer,
+            boardState = boardState,
+            rules = gameRules,
+            choices = options.map { optionToChoice(it) }
+        ) ?: return@LaunchedEffect
 
-                if (decision != null) {
-                    val option = options.firstOrNull {
-                        it.value == decision.choice.value &&
-                            ((it.kind == MoveOptionKind.TOTAL && decision.choice.source == MoveSource.TOTAL) ||
-                                (it.kind == MoveOptionKind.DIE && decision.choice.source == MoveSource.DIE))
-                    }
+        val option = options.firstOrNull {
+            it.value == decision.choice.value &&
+                ((it.kind == MoveOptionKind.TOTAL && decision.choice.source == MoveSource.TOTAL) ||
+                    (it.kind == MoveOptionKind.DIE && decision.choice.source == MoveSource.DIE))
+        } ?: return@LaunchedEffect
 
-                    if (option != null) {
-                        aiBusy = true
-                        selectedMoveOption = option
-                        delay(500)
-                        executeMove(decision.token, option)
-                        aiBusy = false
-                    }
-                } else {
-                    aiBusy = false
-                }
-            }
-        }
+        aiMoveInProgress = true
+        selectedMoveOption = option
+        delay(500)
+        executeMove(decision.token, option)
+        aiMoveInProgress = false
     }
 
     Box(
@@ -656,7 +658,8 @@ fun LudoGameScreen(
                                 animatedTokenPositions = emptyMap()
                                 isRolling = false
                                 isAnimatingMove = false
-                                aiBusy = false
+                                aiRollingInProgress = false
+                                aiMoveInProgress = false
                                 die1Display = 1
                                 die2Display = 1
                                 centerDiceState = CenterDiceAnimState.IDLE
