@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 private enum class LudoScreen {
     MODE_MENU,
     SETUP,
+    BLUETOOTH,
     GAME,
     SETTINGS
 }
@@ -37,10 +38,10 @@ fun LudoNavigationScreen(
                 onModeSelected = { mode ->
                     selectedMode = mode
                     currentScreen = when (mode) {
+                        LudoMode.BLUETOOTH -> LudoScreen.BLUETOOTH
                         LudoMode.QUICK_PLAY,
                         LudoMode.PLAY_VS_AI,
                         LudoMode.PASS_AND_PLAY,
-                        LudoMode.BLUETOOTH,
                         LudoMode.WIFI,
                         LudoMode.ONLINE -> LudoScreen.SETUP
                     }
@@ -56,6 +57,26 @@ fun LudoNavigationScreen(
                 },
                 onStartGame = { config ->
                     setupConfig = config
+                    currentScreen = LudoScreen.GAME
+                }
+            )
+        }
+
+        LudoScreen.BLUETOOTH -> {
+            LudoBluetoothScreen(
+                onBackClicked = {
+                    BluetoothSessionHolder.clear()
+                    currentScreen = LudoScreen.MODE_MENU
+                },
+                onConnected = { remoteName, isHost ->
+                    BluetoothSessionHolder.remoteDeviceName = remoteName
+                    BluetoothSessionHolder.isHost = isHost
+
+                    setupConfig = LudoSetupConfig(
+                        mode = LudoMode.BLUETOOTH,
+                        playerCount = 2,
+                        playerNames = listOf("You", remoteName)
+                    )
                     currentScreen = LudoScreen.GAME
                 }
             )
