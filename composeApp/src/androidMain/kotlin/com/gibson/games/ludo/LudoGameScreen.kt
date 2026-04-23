@@ -127,6 +127,35 @@ fun LudoGameScreen(
         return options
     }
 
+    fun buildImmediateMoveOptionsForAI(): List<MoveOption> {
+        val roll = boardState.diceRoll ?: return emptyList()
+
+        if (remainingDiceValues.isNotEmpty() || totalAvailable) {
+            return buildMoveOptions()
+        }
+
+        return listOf(
+            MoveOption(
+                key = "die_0_${roll.die1}",
+                title = "Die 1",
+                value = roll.die1,
+                kind = MoveOptionKind.DIE
+            ),
+            MoveOption(
+                key = "die_1_${roll.die2}",
+                title = "Die 2",
+                value = roll.die2,
+                kind = MoveOptionKind.DIE
+            ),
+            MoveOption(
+                key = "total_${roll.total}",
+                title = "Total",
+                value = roll.total,
+                kind = MoveOptionKind.TOTAL
+            )
+        )
+    }
+
     suspend fun animateAndRollDice() {
         if (isRolling || isAnimatingMove || boardState.gamePhase != GamePhase.ROLLING) return
 
@@ -471,7 +500,7 @@ fun LudoGameScreen(
             !isAnimatingMove &&
             !aiBusy
         ) {
-            val options = buildMoveOptions()
+            val options = buildImmediateMoveOptionsForAI()
             if (options.isNotEmpty()) {
                 val decision = chooseBestAIMove(
                     player = currentPlayer,
@@ -494,6 +523,8 @@ fun LudoGameScreen(
                         executeMove(decision.token, option)
                         aiBusy = false
                     }
+                } else {
+                    aiBusy = false
                 }
             }
         }
