@@ -67,6 +67,7 @@ fun LudoGameScreen(
     var boardState by remember(gameRules, setupConfig) {
         mutableStateOf(initializeGameState(gameRules, setupConfig))
     }
+
     var isRolling by remember { mutableStateOf(false) }
     var isAnimatingMove by remember { mutableStateOf(false) }
     var selectedToken by remember { mutableStateOf<Token?>(null) }
@@ -190,6 +191,12 @@ fun LudoGameScreen(
     ) {
         if (isRolling || isAnimatingMove || boardState.gamePhase != GamePhase.ROLLING) return
 
+        val finalRoll = forcedRoll ?: rollTwoDice()
+
+        if (isBluetoothGame && shouldBroadcastBluetooth) {
+            bluetoothMessageManager.send("ROLL_START:${finalRoll.die1},${finalRoll.die2}")
+        }
+
         isRolling = true
         selectedMoveOption = null
         movableTokens = emptyList()
@@ -206,8 +213,6 @@ fun LudoGameScreen(
 
         SoundManager.playRoll()
         centerDiceState = CenterDiceAnimState.SPLIT
-
-        val finalRoll = forcedRoll ?: rollTwoDice()
 
         repeat(10) {
             die1Display = Random.nextInt(1, 7)
@@ -227,10 +232,6 @@ fun LudoGameScreen(
         boardState = handleTurn(boardState, gameRules, finalRoll)
         isRolling = false
 
-        if (isBluetoothGame && shouldBroadcastBluetooth) {
-            bluetoothMessageManager.send("ROLL:${finalRoll.die1},${finalRoll.die2}")
-        }
-
         if (boardState.gamePhase == GamePhase.ROLLING &&
             boardState.diceRoll == null &&
             boardState.winner == null
@@ -246,16 +247,23 @@ fun LudoGameScreen(
     ) {
         if (isAnimatingMove) return
 
-        selectedMoveOption = moveOption
-        selectedToken = token
-
-        val beforeMove = boardState
         val moveSource =
             if (moveOption.kind == MoveOptionKind.TOTAL) {
                 MoveSource.TOTAL
             } else {
                 MoveSource.DIE
             }
+
+        if (isBluetoothGame && shouldBroadcastBluetooth) {
+            bluetoothMessageManager.send(
+                "MOVE_START:${token.color.name},${token.id},${moveOption.value},${moveSource.name}"
+            )
+        }
+
+        selectedMoveOption = moveOption
+        selectedToken = token
+
+        val beforeMove = boardState
 
         isAnimatingMove = true
 
@@ -282,12 +290,6 @@ fun LudoGameScreen(
             animatedTokenPositions.toMutableMap().apply {
                 remove(tokenKey(token))
             }
-
-        if (isBluetoothGame && shouldBroadcastBluetooth) {
-            bluetoothMessageManager.send(
-                "MOVE:${token.color.name},${token.id},${moveOption.value},${moveSource.name}"
-            )
-        }
 
         val didCapture = didCaptureEnemy(
             beforeMove,
@@ -488,11 +490,59 @@ fun LudoGameScreen(
         bluetoothMessageManager.startListening(
             onMessage = { message ->
                 when {
+                    message.startsWith("ROLL_START:") -> {
+                        val parts = message.removePrefix("ROLL_START:").split(",")
+                        if (parts.size == 2) {
+                            val d1 = parts[0].toIntOrNull()
+                            val d2 = parts[1].toIntOrNull()
+
+                            if (d1 != null && d2 != null) {
+                                scope.launch {
+                                    animateAndRollDice(
+                                        shouldBroadcastBluetooth = false,
+                                        forcedRoll = DiceRoll(d1, d2)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    message.startsWith("MOVE_START:") -> {
+                        val parts = message.removePrefix("MOVE_START:").split(",")
+                        if (parts.size == 4) {
+                            val color = runCatching { PlayerColor.valueOf(parts[0]) }.getOrNull()
+                            val tokenId = parts[1].toIntOrNull()
+                            val steps = parts[2].toIntOrNull()
+                            val source = runCatching { MoveSource.valueOf(parts[3]) }.getOrNull()
+
+                            if (color != null && tokenId != null && steps != null && source != null) {
+                                val player = boardState.players.firstOrNull { it.color == color }
+                                val token = player?.tokens?.firstOrNull { it.id == tokenId }
+
+                                if (token != null) {
+                                    scope.launch {
+                                        executeMove(
+                                            token = token,
+                                            moveOption = choiceToMoveOption(
+                                                MoveChoice(
+                                                    value = steps,
+                                                    source = source
+                                                )
+                                            ),
+                                            shouldBroadcastBluetooth = false
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     message.startsWith("ROLL:") -> {
                         val parts = message.removePrefix("ROLL:").split(",")
                         if (parts.size == 2) {
                             val d1 = parts[0].toIntOrNull()
                             val d2 = parts[1].toIntOrNull()
+
                             if (d1 != null && d2 != null) {
                                 scope.launch {
                                     animateAndRollDice(
