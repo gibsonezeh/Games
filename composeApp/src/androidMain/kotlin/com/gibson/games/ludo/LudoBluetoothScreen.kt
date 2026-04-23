@@ -11,31 +11,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -70,13 +51,33 @@ fun LudoBluetoothScreen(
     val discoveredDevices = remember { mutableStateListOf<BluetoothDevice>() }
     val pairedDevices = remember { mutableStateListOf<BluetoothDevice>() }
 
-    fun deviceLabel(device: BluetoothDevice): String {
-        val name = try {
-            device.name
+    fun safeDeviceName(device: BluetoothDevice): String {
+        return try {
+            device.name ?: "Unknown Device"
         } catch (_: SecurityException) {
-            null
+            "Unknown Device"
         }
-        return if (!name.isNullOrBlank()) name else device.address
+    }
+
+    fun safeDeviceAddress(device: BluetoothDevice): String {
+        return try {
+            device.address ?: "Hidden address"
+        } catch (_: SecurityException) {
+            "Hidden address"
+        }
+    }
+
+    fun deviceLabel(device: BluetoothDevice): String {
+        val name = safeDeviceName(device)
+        return if (name.isNotBlank() && name != "Unknown Device") {
+            name
+        } else {
+            safeDeviceAddress(device)
+        }
+    }
+
+    fun sameDevice(a: BluetoothDevice, b: BluetoothDevice): Boolean {
+        return safeDeviceAddress(a) == safeDeviceAddress(b)
     }
 
     fun refreshPairedDevices() {
@@ -88,9 +89,11 @@ fun LudoBluetoothScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
         val allGranted = grants.values.all { it }
+
         if (allGranted) {
             refreshPairedDevices()
-            statusMessage = "Bluetooth permissions granted."
+            statusMessage = "Bluetooth permissions granted. Tap Join Game again."
+            lobbyState = BluetoothLobbyState.MENU
         } else {
             lobbyState = BluetoothLobbyState.ERROR
             statusMessage = "Bluetooth permissions are required."
@@ -102,7 +105,8 @@ fun LudoBluetoothScreen(
     ) {
         if (manager.isBluetoothEnabled()) {
             refreshPairedDevices()
-            statusMessage = "Bluetooth enabled."
+            statusMessage = "Bluetooth enabled. Tap Join Game again."
+            lobbyState = BluetoothLobbyState.MENU
         } else {
             lobbyState = BluetoothLobbyState.ERROR
             statusMessage = "Bluetooth must be enabled."
@@ -111,7 +115,7 @@ fun LudoBluetoothScreen(
 
     val discoverableLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) { }
+    ) {}
 
     fun ensureBluetoothReady(onReady: () -> Unit) {
         if (!manager.isBluetoothSupported()) {
@@ -141,6 +145,36 @@ fun LudoBluetoothScreen(
         onReady()
     }
 
+    fun connectToDevice(device: BluetoothDevice) {
+        val label = deviceLabel(device)
+        statusMessage = "Connecting to $label..."
+
+        manager.connectToDevice(
+            device = device,
+            onConnected = { socket ->
+                connectedDeviceName = try {
+                    socket.remoteDevice?.name
+                        ?: socket.remoteDevice?.address
+                        ?: label
+                } catch (_: SecurityException) {
+                    label
+                }
+
+                BluetoothSessionHolder.socket = socket
+                BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
+                BluetoothSessionHolder.isHost = false
+                BluetoothSessionHolder.localPlayerColor = PlayerColor.RED
+
+                lobbyState = BluetoothLobbyState.CONNECTED
+                statusMessage = "Connected to $connectedDeviceName. You are RED."
+            },
+            onError = { message ->
+                lobbyState = BluetoothLobbyState.ERROR
+                statusMessage = message
+            }
+        )
+    }
+
     DisposableEffect(Unit) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -157,18 +191,19 @@ fun LudoBluetoothScreen(
                                 intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                             }
 
-                        if (device != null && discoveredDevices.none { it.address == device.address }) {
+                        if (device != null && discoveredDevices.none { sameDevice(it, device) }) {
                             discoveredDevices.add(device)
                         }
                     }
 
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                         if (lobbyState == BluetoothLobbyState.JOINING) {
-                            statusMessage = if (discoveredDevices.isEmpty() && pairedDevices.isEmpty()) {
-                                "No nearby Bluetooth devices found."
-                            } else {
-                                "Tap a device to connect."
-                            }
+                            statusMessage =
+                                if (discoveredDevices.isEmpty() && pairedDevices.isEmpty()) {
+                                    "No nearby Bluetooth devices found."
+                                } else {
+                                    "Tap a device to connect."
+                                }
                         }
                     }
                 }
@@ -184,7 +219,7 @@ fun LudoBluetoothScreen(
             context,
             receiver,
             filter,
-            ContextCompat.RECEIVER_EXPORTED
+            ContextCompat.RECEIVER_NOT_EXPORTED
         )
 
         onDispose {
@@ -192,6 +227,7 @@ fun LudoBluetoothScreen(
                 context.unregisterReceiver(receiver)
             } catch (_: Exception) {
             }
+
             manager.closeAll()
         }
     }
@@ -273,24 +309,40 @@ fun LudoBluetoothScreen(
                                     BluetoothSessionHolder.localPlayerColor = PlayerColor.GREEN
 
                                     lobbyState = BluetoothLobbyState.HOSTING
-                                    statusMessage = "Hosting game as GREEN. Waiting for RED player..."
+                                    statusMessage =
+                                        "Hosting game as GREEN. Waiting for RED player..."
 
                                     val discoverableIntent = Intent(
                                         BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE
                                     ).apply {
-                                        putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120)
+                                        putExtra(
+                                            BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION,
+                                            120
+                                        )
                                     }
+
                                     discoverableLauncher.launch(discoverableIntent)
 
                                     manager.startServer(
                                         onConnected = { socket ->
-                                            connectedDeviceName = socket.remoteDevice?.name
-                                                ?: socket.remoteDevice?.address
-                                                ?: "Bluetooth Player"
+                                            connectedDeviceName = try {
+                                                socket.remoteDevice?.name
+                                                    ?: socket.remoteDevice?.address
+                                                    ?: "Bluetooth Player"
+                                            } catch (_: SecurityException) {
+                                                "Bluetooth Player"
+                                            }
+
                                             BluetoothSessionHolder.socket = socket
-                                            BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
+                                            BluetoothSessionHolder.remoteDeviceName =
+                                                connectedDeviceName
+                                            BluetoothSessionHolder.isHost = true
+                                            BluetoothSessionHolder.localPlayerColor =
+                                                PlayerColor.GREEN
+
                                             lobbyState = BluetoothLobbyState.CONNECTED
-                                            statusMessage = "Connected to $connectedDeviceName. You are GREEN."
+                                            statusMessage =
+                                                "Connected to $connectedDeviceName. You are GREEN."
                                         },
                                         onError = { message ->
                                             lobbyState = BluetoothLobbyState.ERROR
@@ -324,7 +376,9 @@ fun LudoBluetoothScreen(
                                     lobbyState = BluetoothLobbyState.JOINING
                                     discoveredDevices.clear()
                                     refreshPairedDevices()
-                                    statusMessage = "Join as RED player. Scanning nearby devices..."
+                                    statusMessage =
+                                        "Join as RED player. Scanning nearby devices..."
+
                                     manager.startDiscovery()
                                 }
                             },
@@ -387,53 +441,12 @@ fun LudoBluetoothScreen(
                             )
                         }
 
-                        items(pairedDevices, key = { it.address }) { device ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        statusMessage = "Connecting to ${deviceLabel(device)}..."
-                                        manager.connectToDevice(
-                                            device = device,
-                                            onConnected = { socket ->
-                                                connectedDeviceName = socket.remoteDevice?.name
-                                                    ?: socket.remoteDevice?.address
-                                                    ?: deviceLabel(device)
-                                                BluetoothSessionHolder.socket = socket
-                                                BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
-                                                lobbyState = BluetoothLobbyState.CONNECTED
-                                                statusMessage = "Connected to $connectedDeviceName. You are RED."
-                                            },
-                                            onError = { message ->
-                                                lobbyState = BluetoothLobbyState.ERROR
-                                                statusMessage = message
-                                            }
-                                        )
-                                    },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color.White
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = deviceLabel(device),
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = device.address,
-                                        color = Color(0xFF6B7280),
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
+                        itemsIndexed(pairedDevices) { _, device ->
+                            BluetoothDeviceCard(
+                                name = deviceLabel(device),
+                                address = safeDeviceAddress(device),
+                                onClick = { connectToDevice(device) }
+                            )
                         }
                     }
 
@@ -447,53 +460,12 @@ fun LudoBluetoothScreen(
                             )
                         }
 
-                        items(discoveredDevices, key = { it.address }) { device ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        statusMessage = "Connecting to ${deviceLabel(device)}..."
-                                        manager.connectToDevice(
-                                            device = device,
-                                            onConnected = { socket ->
-                                                connectedDeviceName = socket.remoteDevice?.name
-                                                    ?: socket.remoteDevice?.address
-                                                    ?: deviceLabel(device)
-                                                BluetoothSessionHolder.socket = socket
-                                                BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
-                                                lobbyState = BluetoothLobbyState.CONNECTED
-                                                statusMessage = "Connected to $connectedDeviceName. You are RED."
-                                            },
-                                            onError = { message ->
-                                                lobbyState = BluetoothLobbyState.ERROR
-                                                statusMessage = message
-                                            }
-                                        )
-                                    },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color.White
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = deviceLabel(device),
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = device.address,
-                                        color = Color(0xFF6B7280),
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
+                        itemsIndexed(discoveredDevices) { _, device ->
+                            BluetoothDeviceCard(
+                                name = deviceLabel(device),
+                                address = safeDeviceAddress(device),
+                                onClick = { connectToDevice(device) }
+                            )
                         }
                     }
 
@@ -611,6 +583,7 @@ fun LudoBluetoothScreen(
 
             item {
                 Spacer(modifier = Modifier.height(6.dp))
+
                 Button(
                     onClick = {
                         manager.closeAll()
@@ -632,6 +605,44 @@ fun LudoBluetoothScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun BluetoothDeviceCard(
+    name: String,
+    address: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = name,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = address,
+                color = Color(0xFF6B7280),
+                fontSize = 12.sp
+            )
         }
     }
 }
