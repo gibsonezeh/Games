@@ -1,12 +1,9 @@
 package com.gibson.games.ludo
 
-import android.Manifest
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
@@ -55,15 +52,6 @@ private enum class BluetoothLobbyState {
     JOINING,
     CONNECTED,
     ERROR
-}
-
-private fun Context.findActivity(): Activity? {
-    var current = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
 }
 
 @Composable
@@ -123,10 +111,7 @@ fun LudoBluetoothScreen(
 
     val discoverableLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        // Hosting can continue even if user closes the dialog early,
-        // but discoverability helps nearby devices find the host.
-    }
+    ) { }
 
     fun ensureBluetoothReady(onReady: () -> Unit) {
         if (!manager.isBluetoothSupported()) {
@@ -284,8 +269,11 @@ fun LudoBluetoothScreen(
                             onClick = {
                                 ensureBluetoothReady {
                                     isHost = true
+                                    BluetoothSessionHolder.isHost = true
+                                    BluetoothSessionHolder.localPlayerColor = PlayerColor.GREEN
+
                                     lobbyState = BluetoothLobbyState.HOSTING
-                                    statusMessage = "Hosting game. Waiting for player..."
+                                    statusMessage = "Hosting game as GREEN. Waiting for RED player..."
 
                                     val discoverableIntent = Intent(
                                         BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE
@@ -300,8 +288,9 @@ fun LudoBluetoothScreen(
                                                 ?: socket.remoteDevice?.address
                                                 ?: "Bluetooth Player"
                                             BluetoothSessionHolder.socket = socket
+                                            BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
                                             lobbyState = BluetoothLobbyState.CONNECTED
-                                            statusMessage = "Connected to $connectedDeviceName"
+                                            statusMessage = "Connected to $connectedDeviceName. You are GREEN."
                                         },
                                         onError = { message ->
                                             lobbyState = BluetoothLobbyState.ERROR
@@ -329,10 +318,13 @@ fun LudoBluetoothScreen(
                             onClick = {
                                 ensureBluetoothReady {
                                     isHost = false
+                                    BluetoothSessionHolder.isHost = false
+                                    BluetoothSessionHolder.localPlayerColor = PlayerColor.RED
+
                                     lobbyState = BluetoothLobbyState.JOINING
                                     discoveredDevices.clear()
                                     refreshPairedDevices()
-                                    statusMessage = "Scanning nearby devices..."
+                                    statusMessage = "Join as RED player. Scanning nearby devices..."
                                     manager.startDiscovery()
                                 }
                             },
@@ -354,7 +346,7 @@ fun LudoBluetoothScreen(
                 BluetoothLobbyState.HOSTING -> {
                     item {
                         Text(
-                            text = "Waiting for another player to connect...",
+                            text = "Waiting for another player to connect...\nYou will play as GREEN.",
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
@@ -365,6 +357,7 @@ fun LudoBluetoothScreen(
                         Button(
                             onClick = {
                                 manager.closeAll()
+                                BluetoothSessionHolder.clear()
                                 lobbyState = BluetoothLobbyState.MENU
                                 statusMessage = "Choose how to connect."
                             },
@@ -407,8 +400,9 @@ fun LudoBluetoothScreen(
                                                     ?: socket.remoteDevice?.address
                                                     ?: deviceLabel(device)
                                                 BluetoothSessionHolder.socket = socket
+                                                BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
                                                 lobbyState = BluetoothLobbyState.CONNECTED
-                                                statusMessage = "Connected to $connectedDeviceName"
+                                                statusMessage = "Connected to $connectedDeviceName. You are RED."
                                             },
                                             onError = { message ->
                                                 lobbyState = BluetoothLobbyState.ERROR
@@ -466,8 +460,9 @@ fun LudoBluetoothScreen(
                                                     ?: socket.remoteDevice?.address
                                                     ?: deviceLabel(device)
                                                 BluetoothSessionHolder.socket = socket
+                                                BluetoothSessionHolder.remoteDeviceName = connectedDeviceName
                                                 lobbyState = BluetoothLobbyState.CONNECTED
-                                                statusMessage = "Connected to $connectedDeviceName"
+                                                statusMessage = "Connected to $connectedDeviceName. You are RED."
                                             },
                                             onError = { message ->
                                                 lobbyState = BluetoothLobbyState.ERROR
@@ -528,6 +523,7 @@ fun LudoBluetoothScreen(
                         Button(
                             onClick = {
                                 manager.cancelDiscovery()
+                                BluetoothSessionHolder.clear()
                                 lobbyState = BluetoothLobbyState.MENU
                                 statusMessage = "Choose how to connect."
                             },
@@ -549,7 +545,11 @@ fun LudoBluetoothScreen(
                 BluetoothLobbyState.CONNECTED -> {
                     item {
                         Text(
-                            text = "Connected to $connectedDeviceName",
+                            text = if (isHost) {
+                                "Connected to $connectedDeviceName\nYou are GREEN."
+                            } else {
+                                "Connected to $connectedDeviceName\nYou are RED."
+                            },
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -589,6 +589,7 @@ fun LudoBluetoothScreen(
                     item {
                         Button(
                             onClick = {
+                                BluetoothSessionHolder.clear()
                                 lobbyState = BluetoothLobbyState.MENU
                                 statusMessage = "Choose how to connect."
                             },
