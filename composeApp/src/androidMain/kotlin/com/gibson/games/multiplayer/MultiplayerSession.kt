@@ -1,6 +1,7 @@
 package com.gibson.games.multiplayer
 
 import android.bluetooth.BluetoothSocket
+import java.net.Socket
 import java.util.UUID
 
 enum class MultiplayerConnectionType {
@@ -16,11 +17,6 @@ enum class MultiplayerRole {
     JOINER
 }
 
-data class MultiplayerPeer(
-    val playerId: String,
-    val displayName: String
-)
-
 object MultiplayerSession {
     var connectionType: MultiplayerConnectionType = MultiplayerConnectionType.NONE
     var role: MultiplayerRole = MultiplayerRole.NONE
@@ -32,28 +28,57 @@ object MultiplayerSession {
     var remoteDisplayName: String = "Player"
 
     var bluetoothSocket: BluetoothSocket? = null
+    var wifiSocket: Socket? = null
 
     val isConnected: Boolean
-        get() = bluetoothSocket?.isConnected == true ||
-            connectionType == MultiplayerConnectionType.WIFI ||
-            connectionType == MultiplayerConnectionType.ONLINE
+        get() = when (connectionType) {
+            MultiplayerConnectionType.BLUETOOTH -> bluetoothSocket?.isConnected == true
+            MultiplayerConnectionType.WIFI -> wifiSocket?.isConnected == true && wifiSocket?.isClosed == false
+            MultiplayerConnectionType.ONLINE -> true
+            MultiplayerConnectionType.NONE -> false
+        }
 
     fun setBluetoothConnection(
         socket: BluetoothSocket,
         role: MultiplayerRole,
         remoteName: String
     ) {
-        this.connectionType = MultiplayerConnectionType.BLUETOOTH
+        clearSocketsOnly()
+        connectionType = MultiplayerConnectionType.BLUETOOTH
         this.role = role
-        this.bluetoothSocket = socket
-        this.remoteDisplayName = remoteName.ifBlank { "Player" }
+        bluetoothSocket = socket
+        remoteDisplayName = remoteName.ifBlank { "Player" }
     }
 
-    fun clear() {
+    fun setWifiConnection(
+        socket: Socket,
+        role: MultiplayerRole,
+        remoteName: String = "WiFi Player"
+    ) {
+        clearSocketsOnly()
+        connectionType = MultiplayerConnectionType.WIFI
+        this.role = role
+        wifiSocket = socket
+        remoteDisplayName = remoteName.ifBlank { "WiFi Player" }
+    }
+
+    private fun clearSocketsOnly() {
         try {
             bluetoothSocket?.close()
         } catch (_: Exception) {
         }
+
+        try {
+            wifiSocket?.close()
+        } catch (_: Exception) {
+        }
+
+        bluetoothSocket = null
+        wifiSocket = null
+    }
+
+    fun clear() {
+        clearSocketsOnly()
 
         connectionType = MultiplayerConnectionType.NONE
         role = MultiplayerRole.NONE
@@ -61,6 +86,5 @@ object MultiplayerSession {
         localDisplayName = "You"
         remotePlayerId = UUID.randomUUID().toString()
         remoteDisplayName = "Player"
-        bluetoothSocket = null
     }
 }
