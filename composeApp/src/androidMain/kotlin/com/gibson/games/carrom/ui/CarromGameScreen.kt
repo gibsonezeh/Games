@@ -1,6 +1,7 @@
 package com.gibson.games.carrom.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -13,7 +14,12 @@ import kotlinx.coroutines.delay
 import kotlin.math.sqrt
 
 @Composable
-fun CarromGameScreen() {
+fun CarromGameScreen(
+    onExit: () -> Unit
+) {
+    BackHandler {
+        onExit()
+    }
 
     val engine = remember { CarromGameEngine() }
     var state by remember { mutableStateOf(engine.createInitialState()) }
