@@ -5,11 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.gibson.games.multiplayer.MultiplayerLobbyScreen
+import com.gibson.games.multiplayer.MultiplayerSession
 
 private enum class LudoScreen {
     MODE_MENU,
     SETUP,
-    BLUETOOTH,
+    MULTIPLAYER,
     GAME,
     SETTINGS
 }
@@ -38,13 +40,34 @@ fun LudoNavigationScreen(
                 onModeSelected = { mode ->
                     selectedMode = mode
                     currentScreen = when (mode) {
-                        LudoMode.BLUETOOTH -> LudoScreen.BLUETOOTH
+                        LudoMode.BLUETOOTH -> LudoScreen.MULTIPLAYER
                         LudoMode.QUICK_PLAY,
                         LudoMode.PLAY_VS_AI,
                         LudoMode.PASS_AND_PLAY,
                         LudoMode.WIFI,
                         LudoMode.ONLINE -> LudoScreen.SETUP
                     }
+                }
+            )
+        }
+
+        LudoScreen.MULTIPLAYER -> {
+            MultiplayerLobbyScreen(
+                onBackClicked = {
+                    MultiplayerSession.clear()
+                    currentScreen = LudoScreen.MODE_MENU
+                },
+                onConnected = {
+                    setupConfig = LudoSetupConfig(
+                        mode = LudoMode.BLUETOOTH,
+                        playerCount = 2,
+                        playerNames = listOf(
+                            MultiplayerSession.localDisplayName,
+                            MultiplayerSession.remoteDisplayName
+                        )
+                    )
+
+                    currentScreen = LudoScreen.GAME
                 }
             )
         }
@@ -57,26 +80,6 @@ fun LudoNavigationScreen(
                 },
                 onStartGame = { config ->
                     setupConfig = config
-                    currentScreen = LudoScreen.GAME
-                }
-            )
-        }
-
-        LudoScreen.BLUETOOTH -> {
-            LudoBluetoothScreen(
-                onBackClicked = {
-                    BluetoothSessionHolder.clear()
-                    currentScreen = LudoScreen.MODE_MENU
-                },
-                onConnected = { remoteName, isHost ->
-                    BluetoothSessionHolder.remoteDeviceName = remoteName
-                    BluetoothSessionHolder.isHost = isHost
-
-                    setupConfig = LudoSetupConfig(
-                        mode = LudoMode.BLUETOOTH,
-                        playerCount = 2,
-                        playerNames = listOf("You", remoteName)
-                    )
                     currentScreen = LudoScreen.GAME
                 }
             )
