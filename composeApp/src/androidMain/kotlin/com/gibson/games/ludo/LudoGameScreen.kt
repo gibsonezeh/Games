@@ -63,11 +63,28 @@ fun LudoGameScreen(
         setupConfig.mode == LudoMode.ONLINE) &&
         MultiplayerSession.isConnected
 
-    fun isLocalPlayersTurn(boardState: BoardState): Boolean {
-        // Multiplayer core does not assign Ludo colors or seats.
-        // Later, Ludo setup can decide which user controls which color.
-        return !isMultiplayerGame || true
+    fun localControlledColors(boardState: BoardState): Set<PlayerColor> {
+    if (!isMultiplayerGame) {
+        return PlayerColor.entries.toSet()
     }
+
+    return when (MultiplayerSession.role) {
+        com.gibson.games.multiplayer.MultiplayerRole.HOST -> {
+            setOf(boardState.players.getOrNull(0)?.color ?: PlayerColor.GREEN)
+        }
+
+        com.gibson.games.multiplayer.MultiplayerRole.JOINER -> {
+            setOf(boardState.players.getOrNull(1)?.color ?: PlayerColor.RED)
+        }
+
+        else -> PlayerColor.entries.toSet()
+    }
+}
+
+fun isLocalPlayersTurn(boardState: BoardState): Boolean {
+    if (!isMultiplayerGame) return true
+    return boardState.currentPlayer in localControlledColors(boardState)
+}
 
     var boardState by remember(gameRules, setupConfig) {
         mutableStateOf(initializeGameState(gameRules, setupConfig))
