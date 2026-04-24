@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.gibson.games.multiplayer.MultiplayerConnectionType
 import com.gibson.games.multiplayer.MultiplayerLobbyScreen
 import com.gibson.games.multiplayer.MultiplayerSession
 
@@ -40,12 +41,13 @@ fun LudoNavigationScreen(
                 onModeSelected = { mode ->
                     selectedMode = mode
                     currentScreen = when (mode) {
-                        LudoMode.BLUETOOTH -> LudoScreen.MULTIPLAYER
+                        LudoMode.BLUETOOTH,
+                        LudoMode.WIFI,
+                        LudoMode.ONLINE -> LudoScreen.MULTIPLAYER
+
                         LudoMode.QUICK_PLAY,
                         LudoMode.PLAY_VS_AI,
-                        LudoMode.PASS_AND_PLAY,
-                        LudoMode.WIFI,
-                        LudoMode.ONLINE -> LudoScreen.SETUP
+                        LudoMode.PASS_AND_PLAY -> LudoScreen.SETUP
                     }
                 }
             )
@@ -58,8 +60,15 @@ fun LudoNavigationScreen(
                     currentScreen = LudoScreen.MODE_MENU
                 },
                 onConnected = {
+                    val connectedMode = when (MultiplayerSession.connectionType) {
+                        MultiplayerConnectionType.BLUETOOTH -> LudoMode.BLUETOOTH
+                        MultiplayerConnectionType.WIFI -> LudoMode.WIFI
+                        MultiplayerConnectionType.ONLINE -> LudoMode.ONLINE
+                        MultiplayerConnectionType.NONE -> selectedMode
+                    }
+
                     setupConfig = LudoSetupConfig(
-                        mode = LudoMode.BLUETOOTH,
+                        mode = connectedMode,
                         playerCount = 2,
                         playerNames = listOf(
                             MultiplayerSession.localDisplayName,
