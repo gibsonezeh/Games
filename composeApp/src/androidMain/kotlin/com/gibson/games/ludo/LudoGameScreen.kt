@@ -57,9 +57,8 @@ fun LudoGameScreen(
     val multiplayerMessageManager = remember { MultiplayerMessageManager() }
 
     val isMultiplayerGame =
-        setupConfig.mode == LudoMode.BLUETOOTH &&
-            MultiplayerSession.connectionType == MultiplayerConnectionType.BLUETOOTH &&
-            MultiplayerSession.isConnected
+    (setupConfig.mode == LudoMode.BLUETOOTH || setupConfig.mode == LudoMode.WIFI) &&
+        MultiplayerSession.isConnected
 
     fun isLocalPlayersTurn(boardState: BoardState): Boolean {
         // Multiplayer core does not assign Ludo colors or seats.
