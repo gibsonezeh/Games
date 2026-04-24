@@ -16,6 +16,12 @@ enum class Game(
     ZUMA(
         displayName = "Zuma Game",
         description = "Shoot colored balls, match 3, and stop the chain before it reaches the end.",
-        accentColor = Color(0xFFEF4444) // 🔴 red/orange vibe for action
+        accentColor = Color(0xFFEF4444)
+    ),
+
+    CARROM(
+        displayName = "Carrom Disc Pool",
+        description = "Strike, aim, and pocket discs with realistic physics in this classic carrom experience.",
+        accentColor = Color(0xFFD97706) // 🟤 wood/gold feel (perfect for carrom)
     )
 }
