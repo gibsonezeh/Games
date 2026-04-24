@@ -58,7 +58,9 @@ fun LudoGameScreen(
     val multiplayerMessageManager = remember { MultiplayerMessageManager() }
 
     val isMultiplayerGame =
-    (setupConfig.mode == LudoMode.BLUETOOTH || setupConfig.mode == LudoMode.WIFI) &&
+    (setupConfig.mode == LudoMode.BLUETOOTH ||
+        setupConfig.mode == LudoMode.WIFI ||
+        setupConfig.mode == LudoMode.ONLINE) &&
         MultiplayerSession.isConnected
 
     fun isLocalPlayersTurn(boardState: BoardState): Boolean {
