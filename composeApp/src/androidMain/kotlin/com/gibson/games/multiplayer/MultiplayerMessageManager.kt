@@ -13,11 +13,23 @@ class MultiplayerMessageManager {
     private var listenScope: CoroutineScope? = null
     private var listenJob: Job? = null
 
+    private val onlineManager = OnlineConnectionManager()
+
     fun startListening(
         onMessage: (String) -> Unit,
         onDisconnected: (() -> Unit)? = null
     ) {
         stop()
+
+        if (MultiplayerSession.connectionType == MultiplayerConnectionType.ONLINE) {
+            onlineManager.startListening(
+                onMessage = onMessage,
+                onError = {
+                    onDisconnected?.invoke()
+                }
+            )
+            return
+        }
 
         val inputStream = when (MultiplayerSession.connectionType) {
             MultiplayerConnectionType.BLUETOOTH -> MultiplayerSession.bluetoothSocket?.inputStream
@@ -48,9 +60,7 @@ class MultiplayerMessageManager {
         when (MultiplayerSession.connectionType) {
             MultiplayerConnectionType.BLUETOOTH -> sendBluetooth(message)
             MultiplayerConnectionType.WIFI -> sendWifi(message)
-            MultiplayerConnectionType.ONLINE -> {
-                // Future online transport
-            }
+            MultiplayerConnectionType.ONLINE -> onlineManager.send(message)
             MultiplayerConnectionType.NONE -> Unit
         }
     }
@@ -82,6 +92,8 @@ class MultiplayerMessageManager {
     }
 
     fun stop() {
+        onlineManager.stopListening()
+
         listenJob?.cancel()
         listenJob = null
 
