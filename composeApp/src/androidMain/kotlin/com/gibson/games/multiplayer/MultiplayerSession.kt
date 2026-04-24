@@ -30,11 +30,13 @@ object MultiplayerSession {
     var bluetoothSocket: BluetoothSocket? = null
     var wifiSocket: Socket? = null
 
+    var onlineRoomCode: String = ""
+
     val isConnected: Boolean
         get() = when (connectionType) {
             MultiplayerConnectionType.BLUETOOTH -> bluetoothSocket?.isConnected == true
             MultiplayerConnectionType.WIFI -> wifiSocket?.isConnected == true && wifiSocket?.isClosed == false
-            MultiplayerConnectionType.ONLINE -> true
+            MultiplayerConnectionType.ONLINE -> onlineRoomCode.isNotBlank()
             MultiplayerConnectionType.NONE -> false
         }
 
@@ -48,6 +50,7 @@ object MultiplayerSession {
         this.role = role
         bluetoothSocket = socket
         remoteDisplayName = remoteName.ifBlank { "Player" }
+        onlineRoomCode = ""
     }
 
     fun setWifiConnection(
@@ -60,6 +63,19 @@ object MultiplayerSession {
         this.role = role
         wifiSocket = socket
         remoteDisplayName = remoteName.ifBlank { "WiFi Player" }
+        onlineRoomCode = ""
+    }
+
+    fun setOnlineConnection(
+        role: MultiplayerRole,
+        roomCode: String,
+        remoteName: String = "Online Player"
+    ) {
+        clearSocketsOnly()
+        connectionType = MultiplayerConnectionType.ONLINE
+        this.role = role
+        onlineRoomCode = roomCode.trim().uppercase()
+        remoteDisplayName = remoteName.ifBlank { "Online Player" }
     }
 
     private fun clearSocketsOnly() {
@@ -82,9 +98,13 @@ object MultiplayerSession {
 
         connectionType = MultiplayerConnectionType.NONE
         role = MultiplayerRole.NONE
+
         localPlayerId = UUID.randomUUID().toString()
         localDisplayName = "You"
+
         remotePlayerId = UUID.randomUUID().toString()
         remoteDisplayName = "Player"
+
+        onlineRoomCode = ""
     }
 }
