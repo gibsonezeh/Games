@@ -104,5 +104,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:22.6.0")
     implementation("com.google.firebase:firebase-analytics")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-database")
     debugImplementation(compose.uiTooling)
 }
