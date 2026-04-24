@@ -19,14 +19,19 @@ class MultiplayerMessageManager {
     ) {
         stop()
 
-        val socket = MultiplayerSession.bluetoothSocket ?: return
+        val inputStream = when (MultiplayerSession.connectionType) {
+            MultiplayerConnectionType.BLUETOOTH -> MultiplayerSession.bluetoothSocket?.inputStream
+            MultiplayerConnectionType.WIFI -> MultiplayerSession.wifiSocket?.getInputStream()
+            MultiplayerConnectionType.ONLINE -> null
+            MultiplayerConnectionType.NONE -> null
+        } ?: return
 
         val scope = CoroutineScope(Dispatchers.IO)
         listenScope = scope
 
         listenJob = scope.launch {
             try {
-                val reader = BufferedReader(InputStreamReader(socket.inputStream))
+                val reader = BufferedReader(InputStreamReader(inputStream))
 
                 while (true) {
                     val line = reader.readLine() ?: break
@@ -42,9 +47,7 @@ class MultiplayerMessageManager {
     fun send(message: String) {
         when (MultiplayerSession.connectionType) {
             MultiplayerConnectionType.BLUETOOTH -> sendBluetooth(message)
-            MultiplayerConnectionType.WIFI -> {
-                // Future Wi-Fi transport
-            }
+            MultiplayerConnectionType.WIFI -> sendWifi(message)
             MultiplayerConnectionType.ONLINE -> {
                 // Future online transport
             }
@@ -58,6 +61,19 @@ class MultiplayerMessageManager {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val writer = PrintWriter(socket.outputStream, true)
+                writer.println(message)
+                writer.flush()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun sendWifi(message: String) {
+        val socket = MultiplayerSession.wifiSocket ?: return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val writer = PrintWriter(socket.getOutputStream(), true)
                 writer.println(message)
                 writer.flush()
             } catch (_: Exception) {
