@@ -33,10 +33,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +56,8 @@ private enum class MultiplayerLobbyState {
     BLUETOOTH_JOINING,
     WIFI_HOSTING,
     WIFI_JOINING,
+    ONLINE_HOSTING,
+    ONLINE_JOINING,
     CONNECTED,
     ERROR
 }
@@ -67,11 +70,13 @@ fun MultiplayerLobbyScreen(
     val context = LocalContext.current
     val bluetoothManager = remember { BluetoothConnectionManager(context) }
     val wifiManager = remember { WifiConnectionManager() }
+    val onlineManager = remember { OnlineConnectionManager() }
 
     var lobbyState by remember { mutableStateOf(MultiplayerLobbyState.MENU) }
     var statusMessage by remember { mutableStateOf("Choose a multiplayer connection.") }
     var connectedDeviceName by remember { mutableStateOf("Player") }
     var hostIp by remember { mutableStateOf("") }
+    var roomCode by remember { mutableStateOf("") }
 
     val discoveredDevices = remember { mutableStateListOf<BluetoothDevice>() }
     val pairedDevices = remember { mutableStateListOf<BluetoothDevice>() }
@@ -94,11 +99,7 @@ fun MultiplayerLobbyScreen(
 
     fun deviceLabel(device: BluetoothDevice): String {
         val name = safeDeviceName(device)
-        return if (name.isNotBlank() && name != "Unknown Device") {
-            name
-        } else {
-            safeDeviceAddress(device)
-        }
+        return if (name.isNotBlank() && name != "Unknown Device") name else safeDeviceAddress(device)
     }
 
     fun sameDevice(a: BluetoothDevice, b: BluetoothDevice): Boolean {
@@ -113,9 +114,7 @@ fun MultiplayerLobbyScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
-        val allGranted = grants.values.all { it }
-
-        if (allGranted) {
+        if (grants.values.all { it }) {
             refreshPairedDevices()
             statusMessage = "Bluetooth permissions granted."
             lobbyState = MultiplayerLobbyState.MENU
@@ -149,8 +148,7 @@ fun MultiplayerLobbyScreen(
             return
         }
 
-        val permissions = bluetoothManager.requiredRuntimePermissions()
-        val missing = permissions.filter {
+        val missing = bluetoothManager.requiredRuntimePermissions().filter {
             ContextCompat.checkSelfPermission(context, it) !=
                 android.content.pm.PackageManager.PERMISSION_GRANTED
         }
@@ -161,9 +159,7 @@ fun MultiplayerLobbyScreen(
         }
 
         if (!bluetoothManager.isBluetoothEnabled()) {
-            enableBluetoothLauncher.launch(
-                Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            )
+            enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             return
         }
 
@@ -178,9 +174,7 @@ fun MultiplayerLobbyScreen(
             device = device,
             onConnected = { socket ->
                 connectedDeviceName = try {
-                    socket.remoteDevice?.name
-                        ?: socket.remoteDevice?.address
-                        ?: label
+                    socket.remoteDevice?.name ?: socket.remoteDevice?.address ?: label
                 } catch (_: SecurityException) {
                     label
                 }
@@ -256,6 +250,7 @@ fun MultiplayerLobbyScreen(
 
             bluetoothManager.closeAll()
             wifiManager.closeAll()
+            onlineManager.stopListening()
         }
     }
 
@@ -269,8 +264,8 @@ fun MultiplayerLobbyScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
+                Brush.verticalGradient(
+                    listOf(
                         Color(0xFF0B4FAF),
                         Color(0xFF1D4ED8),
                         Color(0xFF2563EB)
@@ -300,10 +295,7 @@ fun MultiplayerLobbyScreen(
                             .padding(horizontal = 20.dp, vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "🎮",
-                            fontSize = 40.sp
-                        )
+                        Text("🎮", fontSize = 40.sp)
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -328,22 +320,19 @@ fun MultiplayerLobbyScreen(
             when (lobbyState) {
                 MultiplayerLobbyState.MENU -> {
                     item {
-                        Button(
+                        MultiplayerButton(
+                            text = "Bluetooth Host",
+                            color = Color(0xFF06B6D4),
                             onClick = {
                                 ensureBluetoothReady {
                                     lobbyState = MultiplayerLobbyState.BLUETOOTH_HOSTING
                                     statusMessage = "Hosting Bluetooth session. Waiting for player..."
 
-                                    val discoverableIntent = Intent(
-                                        BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE
-                                    ).apply {
-                                        putExtra(
-                                            BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION,
-                                            120
-                                        )
-                                    }
-
-                                    discoverableLauncher.launch(discoverableIntent)
+                                    discoverableLauncher.launch(
+                                        Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
+                                            putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120)
+                                        }
+                                    )
 
                                     bluetoothManager.startServer(
                                         onConnected = { socket ->
@@ -370,19 +359,14 @@ fun MultiplayerLobbyScreen(
                                         }
                                     )
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF06B6D4)
-                            )
-                        ) {
-                            Text("Bluetooth Host", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        )
                     }
 
                     item {
-                        Button(
+                        MultiplayerButton(
+                            text = "Bluetooth Join",
+                            color = Color(0xFF10B981),
                             onClick = {
                                 ensureBluetoothReady {
                                     lobbyState = MultiplayerLobbyState.BLUETOOTH_JOINING
@@ -391,25 +375,18 @@ fun MultiplayerLobbyScreen(
                                     statusMessage = "Scanning nearby Bluetooth devices..."
                                     bluetoothManager.startDiscovery()
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
-                            )
-                        ) {
-                            Text("Bluetooth Join", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        )
                     }
 
                     item {
-                        Button(
+                        MultiplayerButton(
+                            text = "WiFi Host",
+                            color = Color(0xFFF59E0B),
                             onClick = {
                                 val ip = wifiManager.getLocalIpAddress()
-
                                 lobbyState = MultiplayerLobbyState.WIFI_HOSTING
-                                statusMessage =
-                                    "WiFi hosting started. Connect from another device using IP: $ip"
+                                statusMessage = "WiFi hosting started. Connect using IP: $ip"
                                 connectedDeviceName = "WiFi Player"
 
                                 wifiManager.startServer(
@@ -428,31 +405,54 @@ fun MultiplayerLobbyScreen(
                                         statusMessage = message
                                     }
                                 )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF59E0B)
-                            )
-                        ) {
-                            Text("WiFi Host", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        )
                     }
 
                     item {
-                        Button(
+                        MultiplayerButton(
+                            text = "WiFi Join",
+                            color = Color(0xFFA855F7),
                             onClick = {
                                 lobbyState = MultiplayerLobbyState.WIFI_JOINING
                                 statusMessage = "Enter host IP address."
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFA855F7)
-                            )
-                        ) {
-                            Text("WiFi Join", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        )
+                    }
+
+                    item {
+                        MultiplayerButton(
+                            text = "Online Host",
+                            color = Color(0xFFEF4444),
+                            onClick = {
+                                lobbyState = MultiplayerLobbyState.ONLINE_HOSTING
+                                statusMessage = "Creating online room..."
+
+                                onlineManager.createRoom(
+                                    onRoomCreated = { code ->
+                                        roomCode = code
+                                        connectedDeviceName = "Online Player"
+                                        statusMessage = "Room created. Share this code: $code"
+                                    },
+                                    onError = { message ->
+                                        lobbyState = MultiplayerLobbyState.ERROR
+                                        statusMessage = message
+                                    }
+                                )
+                            }
+                        )
+                    }
+
+                    item {
+                        MultiplayerButton(
+                            text = "Online Join",
+                            color = Color(0xFF22C55E),
+                            onClick = {
+                                roomCode = ""
+                                lobbyState = MultiplayerLobbyState.ONLINE_JOINING
+                                statusMessage = "Enter online room code."
+                            }
+                        )
                     }
                 }
 
@@ -470,7 +470,12 @@ fun MultiplayerLobbyScreen(
                 MultiplayerLobbyState.BLUETOOTH_JOINING -> {
                     if (pairedDevices.isNotEmpty()) {
                         item {
-                            Text("Paired Devices", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Paired Devices",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         itemsIndexed(pairedDevices) { _, device ->
@@ -484,7 +489,12 @@ fun MultiplayerLobbyScreen(
 
                     if (discoveredDevices.isNotEmpty()) {
                         item {
-                            Text("Nearby Devices", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Nearby Devices",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         itemsIndexed(discoveredDevices) { _, device ->
@@ -531,11 +541,13 @@ fun MultiplayerLobbyScreen(
                     }
 
                     item {
-                        Button(
+                        MultiplayerButton(
+                            text = "Connect",
+                            color = Color(0xFF10B981),
                             onClick = {
                                 if (hostIp.isBlank()) {
                                     statusMessage = "Enter host IP address first."
-                                    return@Button
+                                    return@MultiplayerButton
                                 }
 
                                 statusMessage = "Connecting to WiFi host..."
@@ -558,15 +570,78 @@ fun MultiplayerLobbyScreen(
                                         statusMessage = message
                                     }
                                 )
-                            },
+                            }
+                        )
+                    }
+                }
+
+                MultiplayerLobbyState.ONLINE_HOSTING -> {
+                    item {
+                        Text(
+                            text = "Room Code:\n$roomCode",
+                            color = Color.White,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+
+                    item {
+                        Text(
+                            text = "Share this code with the other player.",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    item {
+                        MultiplayerButton(
+                            text = "Continue",
+                            color = Color(0xFF10B981),
+                            onClick = onConnected
+                        )
+                    }
+                }
+
+                MultiplayerLobbyState.ONLINE_JOINING -> {
+                    item {
+                        OutlinedTextField(
+                            value = roomCode,
+                            onValueChange = { roomCode = it.uppercase() },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
+                            label = { Text("Room Code") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters
                             )
-                        ) {
-                            Text("Connect", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                        )
+                    }
+
+                    item {
+                        MultiplayerButton(
+                            text = "Join Room",
+                            color = Color(0xFF10B981),
+                            onClick = {
+                                if (roomCode.isBlank()) {
+                                    statusMessage = "Enter room code first."
+                                    return@MultiplayerButton
+                                }
+
+                                statusMessage = "Joining online room..."
+
+                                onlineManager.joinRoom(
+                                    code = roomCode,
+                                    onJoined = {
+                                        connectedDeviceName = "Online Host"
+                                        lobbyState = MultiplayerLobbyState.CONNECTED
+                                        statusMessage = "Joined room $roomCode"
+                                    },
+                                    onError = { message ->
+                                        lobbyState = MultiplayerLobbyState.ERROR
+                                        statusMessage = message
+                                    }
+                                )
+                            }
+                        )
                     }
                 }
 
@@ -581,16 +656,11 @@ fun MultiplayerLobbyScreen(
                     }
 
                     item {
-                        Button(
-                            onClick = onConnected,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
-                            )
-                        ) {
-                            Text("Continue", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                        MultiplayerButton(
+                            text = "Continue",
+                            color = Color(0xFF10B981),
+                            onClick = onConnected
+                        )
                     }
                 }
 
@@ -609,42 +679,54 @@ fun MultiplayerLobbyScreen(
             item {
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Button(
+                MultiplayerButton(
+                    text = "Back to Multiplayer Menu",
+                    color = Color.White.copy(alpha = 0.18f),
                     onClick = {
                         bluetoothManager.closeAll()
                         wifiManager.closeAll()
+                        onlineManager.stopListening()
                         MultiplayerSession.clear()
                         lobbyState = MultiplayerLobbyState.MENU
                         statusMessage = "Choose a multiplayer connection."
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.18f)
-                    )
-                ) {
-                    Text("Back to Multiplayer Menu", color = Color.White, fontWeight = FontWeight.Bold)
-                }
+                    }
+                )
 
-                Button(
+                MultiplayerButton(
+                    text = "Exit Multiplayer",
+                    color = Color.White.copy(alpha = 0.18f),
                     onClick = {
                         bluetoothManager.closeAll()
                         wifiManager.closeAll()
+                        onlineManager.stopListening()
                         MultiplayerSession.clear()
                         onBackClicked()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.18f)
-                    )
-                ) {
-                    Text("Exit Multiplayer", color = Color.White, fontWeight = FontWeight.Bold)
-                }
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun MultiplayerButton(
+    text: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = color)
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -659,9 +741,7 @@ private fun MultiplayerDeviceCard(
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
