@@ -22,6 +22,13 @@ enum class Game(
     CARROM(
         displayName = "Carrom Disc Pool",
         description = "Strike, aim, and pocket discs with realistic physics in this classic carrom experience.",
-        accentColor = Color(0xFFD97706) // 🟤 wood/gold feel (perfect for carrom)
+        accentColor = Color(0xFFD97706)
+    ),
+
+    // ✅ ADD THIS
+    TETRIS(
+        displayName = "Tetris",
+        description = "Stack falling blocks, clear lines, and survive as long as possible.",
+        accentColor = Color(0xFF6366F1) // nice arcade purple-blue
     )
 }
