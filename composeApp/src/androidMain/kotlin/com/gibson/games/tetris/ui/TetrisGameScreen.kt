@@ -1,11 +1,12 @@
 package com.gibson.games.tetris.ui
 
-import android.content.Context
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.gibson.games.tetris.audio.TetrisSound
 import com.gibson.games.tetris.audio.TetrisSoundManager
-import com.gibson.games.tetris.engine.*
+import com.gibson.games.tetris.engine.Direction
+import com.gibson.games.tetris.engine.TetrisAction
+import com.gibson.games.tetris.engine.TetrisGameEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -17,12 +18,10 @@ fun TetrisGameScreen(
     val engine = remember { TetrisGameEngine() }
     var state by remember { mutableStateOf(engine.createInitialState()) }
 
-    // 🔊 Sound manager
     val soundManager = remember {
         TetrisSoundManager(context)
     }
 
-    // 🎮 Game loop
     LaunchedEffect(state.level, state.isRunning, state.isGameOver) {
         while (isActive && state.isRunning && !state.isGameOver) {
             val speed = (650L - 55L * (state.level - 1))
@@ -39,7 +38,6 @@ fun TetrisGameScreen(
 
     TetrisGameBody(
         controls = tetrisControls(
-
             onMove = { direction ->
                 state = if (direction == Direction.Up) {
                     soundManager.play(TetrisSound.Drop, state.isMute)
@@ -49,17 +47,14 @@ fun TetrisGameScreen(
                     engine.dispatch(state, TetrisAction.Move(direction))
                 }
             },
-
             onRotate = {
                 soundManager.play(TetrisSound.Rotate, state.isMute)
                 state = engine.dispatch(state, TetrisAction.Rotate)
             },
-
             onRestart = {
                 soundManager.play(TetrisSound.Start, state.isMute)
                 state = engine.dispatch(state, TetrisAction.Reset)
             },
-
             onPause = {
                 state = if (state.isRunning) {
                     engine.dispatch(state, TetrisAction.Pause)
@@ -67,16 +62,17 @@ fun TetrisGameScreen(
                     engine.dispatch(state, TetrisAction.Resume)
                 }
             },
-
             onMute = {
                 state = engine.dispatch(state, TetrisAction.Mute)
             }
         )
     ) {
-        TetrisGameScreenContent(state = state)
+        TetrisGameScreenContent(
+            state = state,
+            ghostPiece = engine.getGhostPiece(state)
+        )
     }
 
-    // 🔊 Release sound when leaving
     DisposableEffect(Unit) {
         onDispose {
             soundManager.release()
