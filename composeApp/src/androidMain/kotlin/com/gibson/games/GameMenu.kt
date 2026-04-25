@@ -179,13 +179,14 @@ private fun GameMenuCard(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = when (game) {
-                    Game.LUDO -> "🎲"
-                    Game.ZUMA -> "🟢"
-                    Game.CARROM -> "🎯"
-                },
-                fontSize = 36.sp
-            )
+    text = when (game) {
+        Game.LUDO -> "🎲"
+        Game.ZUMA -> "🟢"
+        Game.CARROM -> "🎯"
+        Game.TETRIS -> "🧱"
+    },
+    fontSize = 36.sp
+)
         }
     }
 }
