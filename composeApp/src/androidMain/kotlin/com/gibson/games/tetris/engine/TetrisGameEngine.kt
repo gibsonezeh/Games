@@ -30,8 +30,7 @@ class TetrisGameEngine {
     }
 
     return state.currentPiece.moveBy(0, step)
-    }
-
+}
     fun dispatch(
         state: TetrisState,
         action: TetrisAction
