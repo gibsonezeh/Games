@@ -12,6 +12,26 @@ class TetrisGameEngine {
         )
     }
 
+    fun getGhostPiece(state: TetrisState): Tetromino {
+    if (!state.isRunning) return Tetromino.Empty
+
+    var step = 0
+
+    while (
+        state.currentPiece
+            .moveBy(0, step + 1)
+            .isValidInMatrix(
+                bricks = state.bricks,
+                matrixWidth = state.matrixWidth,
+                matrixHeight = state.matrixHeight
+            )
+    ) {
+        step++
+    }
+
+    return state.currentPiece.moveBy(0, step)
+    }
+
     fun dispatch(
         state: TetrisState,
         action: TetrisAction
