@@ -33,6 +33,7 @@ import kotlin.math.min
 @Composable
 fun TetrisGameScreenContent(
     state: TetrisState,
+    ghostPiece: Tetromino = Tetromino.Empty,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -60,20 +61,12 @@ fun TetrisGameScreenContent(
                 size.height / state.matrixHeight
             )
 
-            drawMatrix(
-                brickSize = brickSize,
-                matrixWidth = state.matrixWidth,
-                matrixHeight = state.matrixHeight
-            )
+            drawMatrix(brickSize, state.matrixWidth, state.matrixHeight)
+            drawMatrixBorder(brickSize, state.matrixWidth, state.matrixHeight)
+            drawBricks(state.bricks, brickSize, state.matrixWidth, state.matrixHeight)
 
-            drawMatrixBorder(
-                brickSize = brickSize,
-                matrixWidth = state.matrixWidth,
-                matrixHeight = state.matrixHeight
-            )
-
-            drawBricks(
-                bricks = state.bricks,
+            drawGhostTetromino(
+                tetromino = ghostPiece,
                 brickSize = brickSize,
                 matrixWidth = state.matrixWidth,
                 matrixHeight = state.matrixHeight
@@ -231,12 +224,7 @@ private fun DrawScope.drawMatrix(
 ) {
     for (x in 0 until matrixWidth) {
         for (y in 0 until matrixHeight) {
-            drawBrick(
-                brickSize = brickSize,
-                x = x,
-                y = y,
-                color = TetrisBrickGhost
-            )
+            drawBrick(brickSize, x, y, TetrisBrickGhost)
         }
     }
 }
@@ -265,19 +253,9 @@ private fun DrawScope.drawBricks(
     matrixWidth: Int,
     matrixHeight: Int
 ) {
-    clipRect(
-        left = 0f,
-        top = 0f,
-        right = matrixWidth * brickSize,
-        bottom = matrixHeight * brickSize
-    ) {
+    clipRect(0f, 0f, matrixWidth * brickSize, matrixHeight * brickSize) {
         bricks.forEach { brick ->
-            drawBrick(
-                brickSize = brickSize,
-                x = brick.x,
-                y = brick.y,
-                color = TetrisBrick
-            )
+            drawBrick(brickSize, brick.x, brick.y, TetrisBrick)
         }
     }
 }
@@ -288,21 +266,45 @@ private fun DrawScope.drawTetromino(
     matrixWidth: Int,
     matrixHeight: Int
 ) {
-    clipRect(
-        left = 0f,
-        top = 0f,
-        right = matrixWidth * brickSize,
-        bottom = matrixHeight * brickSize
-    ) {
+    clipRect(0f, 0f, matrixWidth * brickSize, matrixHeight * brickSize) {
         tetromino.cells.forEach { cell ->
-            drawBrick(
-                brickSize = brickSize,
-                x = cell.x,
-                y = cell.y,
-                color = TetrisBrick
-            )
+            drawBrick(brickSize, cell.x, cell.y, TetrisBrick)
         }
     }
+}
+
+private fun DrawScope.drawGhostTetromino(
+    tetromino: Tetromino,
+    brickSize: Float,
+    matrixWidth: Int,
+    matrixHeight: Int
+) {
+    clipRect(0f, 0f, matrixWidth * brickSize, matrixHeight * brickSize) {
+        tetromino.cells.forEach { cell ->
+            drawGhostBrick(brickSize, cell.x, cell.y)
+        }
+    }
+}
+
+private fun DrawScope.drawGhostBrick(
+    brickSize: Float,
+    x: Int,
+    y: Int
+) {
+    val actualLocation = Offset(
+        x = x * brickSize,
+        y = y * brickSize
+    )
+
+    val outerSize = brickSize * 0.8f
+    val outerOffset = (brickSize - outerSize) / 2
+
+    drawRect(
+        color = TetrisBrick.copy(alpha = 0.35f),
+        topLeft = actualLocation + Offset(outerOffset, outerOffset),
+        size = Size(outerSize, outerSize),
+        style = Stroke(outerSize / 10)
+    )
 }
 
 private fun DrawScope.drawBrick(
