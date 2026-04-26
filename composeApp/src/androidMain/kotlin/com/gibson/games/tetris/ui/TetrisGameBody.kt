@@ -143,7 +143,7 @@ fun TetrisGameBody(
             ) {
                 GameButton(
                     Modifier.align(Alignment.TopCenter),
-                    onClick = { controls.onMove(Direction.Up) },
+                    onClick = controls.onRotate,
                     autoInvokeWhenPressed = false,
                     size = DirectionButtonSize
                 ) {
@@ -185,11 +185,11 @@ fun TetrisGameBody(
             ) {
                 GameButton(
                     Modifier.align(Alignment.CenterEnd),
-                    onClick = controls.onRotate,
+                    onClick = controls.onDrop,
                     autoInvokeWhenPressed = false,
                     size = RotateButtonSize
                 ) {
-                    ButtonText(it, "ROTATE")
+                    ButtonText(it, "DROP")
                 }
             }
         }
@@ -267,6 +267,7 @@ fun DrawScope.drawScreenBorder(
 data class TetrisControls(
     val onMove: (Direction) -> Unit,
     val onRotate: () -> Unit,
+    val onDrop: () -> Unit,
     val onRestart: () -> Unit,
     val onPause: () -> Unit,
     val onMute: () -> Unit
@@ -275,6 +276,7 @@ data class TetrisControls(
 fun tetrisControls(
     onMove: (Direction) -> Unit = {},
     onRotate: () -> Unit = {},
+    onDrop: () -> Unit = {},
     onRestart: () -> Unit = {},
     onPause: () -> Unit = {},
     onMute: () -> Unit = {}
@@ -282,6 +284,7 @@ fun tetrisControls(
     return TetrisControls(
         onMove = onMove,
         onRotate = onRotate,
+        onDrop = onDrop,
         onRestart = onRestart,
         onPause = onPause,
         onMute = onMute
