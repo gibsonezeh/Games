@@ -38,34 +38,54 @@ fun TetrisGameScreen(
 
     TetrisGameBody(
         controls = tetrisControls(
-            onMove = { direction ->
-                state = if (direction == Direction.Up) {
-                    soundManager.play(TetrisSound.Drop, state.isMute)
-                    engine.dispatch(state, TetrisAction.Drop)
-                } else {
-                    soundManager.play(TetrisSound.Move, state.isMute)
-                    engine.dispatch(state, TetrisAction.Move(direction))
-                }
-            },
-            onRotate = {
-                soundManager.play(TetrisSound.Rotate, state.isMute)
-                state = engine.dispatch(state, TetrisAction.Rotate)
-            },
-            onRestart = {
-                soundManager.play(TetrisSound.Start, state.isMute)
-                state = engine.dispatch(state, TetrisAction.Reset)
-            },
-            onPause = {
-                state = if (state.isRunning) {
-                    engine.dispatch(state, TetrisAction.Pause)
-                } else {
-                    engine.dispatch(state, TetrisAction.Resume)
-                }
-            },
-            onMute = {
-                state = engine.dispatch(state, TetrisAction.Mute)
-            }
+    onMove = { direction ->
+        soundManager.play(TetrisSound.Move, state.isMute)
+
+        state = engine.dispatch(
+            state = state,
+            action = TetrisAction.Move(direction)
         )
+    },
+
+    onRotate = {
+        soundManager.play(TetrisSound.Rotate, state.isMute)
+
+        state = engine.dispatch(
+            state = state,
+            action = TetrisAction.Rotate
+        )
+    },
+
+    onDrop = {
+        soundManager.play(TetrisSound.Drop, state.isMute)
+
+        state = engine.dispatch(
+            state = state,
+            action = TetrisAction.Drop
+        )
+    },
+
+    onRestart = {
+        soundManager.play(TetrisSound.Start, state.isMute)
+
+        state = engine.dispatch(
+            state = state,
+            action = TetrisAction.Reset
+        )
+    },
+
+    onPause = {
+        state = if (state.isRunning) {
+            engine.dispatch(state, TetrisAction.Pause)
+        } else {
+            engine.dispatch(state, TetrisAction.Resume)
+        }
+    },
+
+    onMute = {
+        state = engine.dispatch(state, TetrisAction.Mute)
+    }
+)
     ) {
         TetrisGameScreenContent(
             state = state,
