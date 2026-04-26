@@ -89,30 +89,22 @@ fun TetrisGameScreenContent(
         }
 
         TetrisScoreboard(
+            state = state,
             nextPiece = if (state.currentPiece == Tetromino.Empty) {
                 Tetromino.Empty
             } else {
                 state.nextPiece.rotate()
-            },
-            score = state.score,
-            lines = state.lines,
-            level = state.level,
-            isMute = state.isMute,
-            isPaused = state.isPaused
+            }
         )
     }
 }
 
 @Composable
 fun TetrisScoreboard(
+    state: TetrisState,
     modifier: Modifier = Modifier,
     brickSize: Float = 35f,
-    nextPiece: Tetromino,
-    score: Int = 0,
-    lines: Int = 0,
-    level: Int = 1,
-    isMute: Boolean = false,
-    isPaused: Boolean = false
+    nextPiece: Tetromino
 ) {
     Row(modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.weight(0.65f))
@@ -123,20 +115,38 @@ fun TetrisScoreboard(
                 .weight(0.35f)
         ) {
             val textSize = 12.sp
-            val margin = 12.dp
+            val margin = 10.dp
+
+            if (state.isOnboard) {
+                Text("Start Level", fontSize = textSize, color = Color.Black)
+                LedNumber(Modifier.fillMaxWidth(), state.startLevel, 2)
+
+                Spacer(modifier = Modifier.height(margin))
+
+                Text("Start Lines", fontSize = textSize, color = Color.Black)
+                LedNumber(Modifier.fillMaxWidth(), state.startLines, 3)
+
+                Spacer(modifier = Modifier.height(margin))
+
+                Text("▲▼ Level", fontSize = 10.sp, color = Color.Black)
+                Text("◀▶ Lines", fontSize = 10.sp, color = Color.Black)
+                Text("DROP = Start", fontSize = 10.sp, color = Color.Black)
+
+                Spacer(modifier = Modifier.height(margin))
+            }
 
             Text("Score", fontSize = textSize, color = Color.Black)
-            LedNumber(Modifier.fillMaxWidth(), score, 6)
+            LedNumber(Modifier.fillMaxWidth(), state.score, 6)
 
             Spacer(modifier = Modifier.height(margin))
 
             Text("Lines", fontSize = textSize, color = Color.Black)
-            LedNumber(Modifier.fillMaxWidth(), lines, 6)
+            LedNumber(Modifier.fillMaxWidth(), state.lines, 6)
 
             Spacer(modifier = Modifier.height(margin))
 
             Text("Level", fontSize = textSize, color = Color.Black)
-            LedNumber(Modifier.fillMaxWidth(), level, 1)
+            LedNumber(Modifier.fillMaxWidth(), state.level, 2)
 
             Spacer(modifier = Modifier.height(margin))
 
@@ -169,17 +179,17 @@ fun TetrisScoreboard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (isMute) "🔇" else "♪",
+                    text = if (state.isMute) "🔇" else "♪",
                     fontSize = 14.sp,
-                    color = if (isMute) TetrisBrick else TetrisBrickGhost
+                    color = if (state.isMute) TetrisBrick else TetrisBrickGhost
                 )
 
                 Spacer(modifier = Modifier.width(6.dp))
 
                 Text(
-                    text = if (isPaused) "Ⅱ" else "▸",
+                    text = if (state.isPaused) "Ⅱ" else "▸",
                     fontSize = 14.sp,
-                    color = if (isPaused) TetrisBrick else TetrisBrickGhost
+                    color = if (state.isPaused) TetrisBrick else TetrisBrickGhost
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -198,7 +208,7 @@ private fun DrawScope.drawStatusText(
     alpha: Float
 ) {
     val text = when (gameStatus) {
-        TetrisGameStatus.Onboard -> "TETRIS"
+        TetrisGameStatus.Onboard -> "PRESS START"
         TetrisGameStatus.GameOver -> "GAME OVER"
         else -> null
     } ?: return
@@ -209,7 +219,7 @@ private fun DrawScope.drawStatusText(
         brickSize * matrixHeight / 2,
         Paint().apply {
             color = Color.Black.copy(alpha = alpha).toArgb()
-            textSize = if (text == "TETRIS") 80f else 48f
+            textSize = if (text == "PRESS START") 42f else 48f
             textAlign = Paint.Align.CENTER
             style = Paint.Style.FILL_AND_STROKE
             strokeWidth = 4f
