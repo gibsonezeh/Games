@@ -38,40 +38,40 @@ fun TetrisGameScreen(
 
     TetrisGameBody(
         controls = tetrisControls(
-    onMove = { direction ->
-        soundManager.play(TetrisSound.Move, state.isMute)
 
-        state = engine.dispatch(
-            state = state,
-            action = TetrisAction.Move(direction)
-        )
+    onMove = { direction ->
+        if (state.isOnboard) {
+            when (direction) {
+                Direction.Left -> state = engine.dispatch(state, TetrisAction.SetStartLines(-1))
+                Direction.Right -> state = engine.dispatch(state, TetrisAction.SetStartLines(1))
+                Direction.Down -> state = engine.dispatch(state, TetrisAction.SetLevel(-1))
+                Direction.Up -> state = engine.dispatch(state, TetrisAction.SetLevel(1))
+            }
+        } else {
+            soundManager.play(TetrisSound.Move, state.isMute)
+            state = engine.dispatch(state, TetrisAction.Move(direction))
+        }
     },
 
     onRotate = {
-        soundManager.play(TetrisSound.Rotate, state.isMute)
-
-        state = engine.dispatch(
-            state = state,
-            action = TetrisAction.Rotate
-        )
+        if (!state.isOnboard) {
+            soundManager.play(TetrisSound.Rotate, state.isMute)
+            state = engine.dispatch(state, TetrisAction.Rotate)
+        }
     },
 
     onDrop = {
-        soundManager.play(TetrisSound.Drop, state.isMute)
-
-        state = engine.dispatch(
-            state = state,
-            action = TetrisAction.Drop
-        )
+        if (state.isOnboard) {
+            soundManager.play(TetrisSound.Start, state.isMute)
+            state = engine.dispatch(state, TetrisAction.StartGame)
+        } else {
+            soundManager.play(TetrisSound.Drop, state.isMute)
+            state = engine.dispatch(state, TetrisAction.Drop)
+        }
     },
 
     onRestart = {
-        soundManager.play(TetrisSound.Start, state.isMute)
-
-        state = engine.dispatch(
-            state = state,
-            action = TetrisAction.Reset
-        )
+        state = state.copy(gameStatus = TetrisGameStatus.Onboard)
     },
 
     onPause = {
