@@ -6,27 +6,37 @@ data class TetrisState(
     val bricks: List<Brick> = emptyList(),
     val currentPiece: Tetromino = Tetromino.Empty,
     val nextPieces: List<Tetromino> = emptyList(),
+
     val matrixWidth: Int = MATRIX_WIDTH,
     val matrixHeight: Int = MATRIX_HEIGHT,
+
     val gameStatus: TetrisGameStatus = TetrisGameStatus.Onboard,
+
     val score: Int = 0,
     val lines: Int = 0,
+
+    val startLevel: Int = 1,
+    val startLines: Int = 0,
+
     val isMute: Boolean = false
 ) {
     val level: Int
-        get() = min(10, 1 + lines / 20)
+        get() = startLevel + (lines / 20)
 
     val nextPiece: Tetromino
         get() = nextPieces.firstOrNull() ?: Tetromino.Empty
 
-    val isPaused: Boolean
+    val isPaused
         get() = gameStatus == TetrisGameStatus.Paused
 
-    val isRunning: Boolean
+    val isRunning
         get() = gameStatus == TetrisGameStatus.Running
 
-    val isGameOver: Boolean
+    val isGameOver
         get() = gameStatus == TetrisGameStatus.GameOver
+
+    val isOnboard
+        get() = gameStatus == TetrisGameStatus.Onboard
 }
 
 enum class TetrisGameStatus {
