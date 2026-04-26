@@ -3,39 +3,63 @@ package com.gibson.games.tetris.engine
 class TetrisGameEngine {
 
     fun createInitialState(): TetrisState {
-        val reserve = generateTetrominoReserve()
-
         return TetrisState(
-            currentPiece = reserve.first(),
-            nextPieces = reserve.drop(1),
-            gameStatus = TetrisGameStatus.Running
+            gameStatus = TetrisGameStatus.Onboard
         )
     }
 
     fun getGhostPiece(state: TetrisState): Tetromino {
-    if (!state.isRunning) return Tetromino.Empty
+        if (!state.isRunning) return Tetromino.Empty
 
-    var step = 0
+        var step = 0
 
-    while (
-        state.currentPiece
-            .moveBy(0, step + 1)
-            .isValidInMatrix(
-                bricks = state.bricks,
-                matrixWidth = state.matrixWidth,
-                matrixHeight = state.matrixHeight
-            )
-    ) {
-        step++
+        while (
+            state.currentPiece
+                .moveBy(0, step + 1)
+                .isValidInMatrix(
+                    bricks = state.bricks,
+                    matrixWidth = state.matrixWidth,
+                    matrixHeight = state.matrixHeight
+                )
+        ) {
+            step++
+        }
+
+        return state.currentPiece.moveBy(0, step)
     }
 
-    return state.currentPiece.moveBy(0, step)
-}
     fun dispatch(
         state: TetrisState,
         action: TetrisAction
     ): TetrisState {
         return when (action) {
+
+            TetrisAction.StartGame -> {
+                val reserve = generateTetrominoReserve(state.matrixWidth)
+
+                state.copy(
+                    bricks = emptyList(),
+                    currentPiece = reserve.first(),
+                    nextPieces = reserve.drop(1),
+                    score = 0,
+                    lines = state.startLines,
+                    gameStatus = TetrisGameStatus.Running
+                )
+            }
+
+            is TetrisAction.SetLevel -> {
+                if (!state.isOnboard) state
+                else state.copy(
+                    startLevel = (state.startLevel + action.delta).coerceIn(1, 10)
+                )
+            }
+
+            is TetrisAction.SetStartLines -> {
+                if (!state.isOnboard) state
+                else state.copy(
+                    startLines = (state.startLines + action.delta).coerceIn(0, 200)
+                )
+            }
 
             TetrisAction.Reset -> createInitialState().copy(
                 isMute = state.isMute
