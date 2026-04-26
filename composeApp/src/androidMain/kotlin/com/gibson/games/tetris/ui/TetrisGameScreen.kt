@@ -7,6 +7,7 @@ import com.gibson.games.tetris.audio.TetrisSoundManager
 import com.gibson.games.tetris.engine.Direction
 import com.gibson.games.tetris.engine.TetrisAction
 import com.gibson.games.tetris.engine.TetrisGameEngine
+import com.gibson.games.tetris.engine.TetrisGameStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
